@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  firstName String
+  lastName  String
+  email     String   @unique
+  username  String   @unique
+  password  String
+  role      UserRole @default(EMPLOYEE)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  logs              ActivityLog[]
+  managedCameras    Camera[]           @relation("ManagedBy")
+  maintenanceTasks  MaintenanceRecord[] @relation("Technician")
+}
+
+model Camera {
+  id          Int      @id @default(autoincrement())
+  name        String
+  latitude    Float
+  longitude   Float
+  rtspUrl     String   @db.Text
+  subStream   String?  @db.Text
+  username    String?
+  password    String?
+  thumbnailUrl String?  @db.Text // เก็บพาธรูป Snapshot ล่าสุด
+  status      CameraStatus @default(ACTIVE)
+  lastSeen    DateTime?
+  
+  userId      Int
+  user        User     @relation("ManagedBy", fields: [userId], references: [id])
+  
+  groups      CameraGroup[]
+  eventLogs   CameraEventLog[]
+  maintenance MaintenanceRecord[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model CameraGroup {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  
+  // ✅ Telegram Settings
+  telegramBotToken String?
+  telegramChatId   String?
+  isNotifyEnabled  Boolean @default(true)
+
+  // ✅ AI Future Integration (Reuse Logic from Mikrotik)
+  aiEnabled       Boolean @default(false)
+  aiSystemPrompt  String? @db.Text
+  
+  cameras     Camera[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CameraEventLog {
+  id        Int      @id @default(autoincrement())
+  cameraId  Int
+  camera    Camera   @relation(fields: [cameraId], references: [id], onDelete: Cascade)
+  
+  eventType String   // ONLINE, OFFLINE, ERROR, REBOOT
+  details   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([cameraId])
+  @@index([createdAt])
+}
+
+model MaintenanceRecord {
+  id            Int      @id @default(autoincrement())
+  cameraId      Int
+  camera        Camera   @relation(fields: [cameraId], references: [id])
+  
+  technicianId  Int
+  technician    User     @relation("Technician", fields: [technicianId], references: [id])
+  
+  taskTitle     String
+  details       String?  @db.Text
+  cost          Decimal? @db.Decimal(10, 2)
+  status        String   @default("COMPLETED") // PENDING, IN_PROGRESS, COMPLETED
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([cameraId])
+  @@index([technicianId])
+}
+
+model SystemSetting {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+model ActivityLog {
+  id        Int        @id @default(autoincrement())
+  userId    Int
+  action    String
+  details   String?    @db.Text
+  ipAddress String?
+  createdAt DateTime   @default(now())
+  user      User       @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  EMPLOYEE
+  GUEST
+}
+
+enum CameraStatus {
+  ACTIVE
+  INACTIVE
+  ERROR
+  MAINTENANCE
+}
