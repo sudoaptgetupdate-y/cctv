@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, LayoutDashboard, Map as MapIcon, Camera, Settings, Users } from 'lucide-react';
+import { LogOut, LayoutDashboard, Map as MapIcon, Camera, Settings, Users, ClipboardList } from 'lucide-react';
 
 const MainLayout = () => {
   const { user, logout } = useAuth();
@@ -11,6 +11,7 @@ const MainLayout = () => {
     { path: '/dashboard', name: 'Dashboard', icon: LayoutDashboard },
     { path: '/cameras', name: 'Cameras', icon: Camera },
     { path: '/groups', name: 'Groups/Zones', icon: Users },
+    { path: '/logs', name: 'Audit Logs', icon: ClipboardList },
     { path: '/settings', name: 'Settings', icon: Settings },
   ];
 

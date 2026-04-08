@@ -5,6 +5,8 @@ import MainLayout from './layouts/MainLayout';
 import DashboardHome from './pages/DashboardHome';
 import Cameras from './pages/Cameras';
 import Groups from './pages/Groups';
+import Settings from './pages/Settings';
+import AuditLogs from './pages/AuditLogs';
 
 function App() {
   return (
@@ -18,7 +20,8 @@ function App() {
             <Route path="/dashboard" element={<DashboardHome />} />
             <Route path="/cameras" element={<Cameras />} />
             <Route path="/groups" element={<Groups />} />
-            <Route path="/settings" element={<div>Settings Page</div>} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/logs" element={<AuditLogs />} />
           </Route>
         </Route>
         

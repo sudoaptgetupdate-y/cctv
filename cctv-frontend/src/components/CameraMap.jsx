@@ -1,8 +1,22 @@
-import React from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import React, { useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Camera, Radio } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
+
+// คอมโพเนนต์ช่วยปรับมุมมองแผนที่ให้ครอบคลุมกล้องทุกตัว
+const AutoBounds = ({ cameras }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (cameras.length > 0) {
+      const bounds = L.latLngBounds(cameras.map(c => [c.latitude, c.longitude]));
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+    }
+  }, [cameras, map]);
+  
+  return null;
+};
 
 const createCameraIcon = (status) => {
   const color = status === 'ACTIVE' ? '#10b981' : '#ef4444';
@@ -40,6 +54,7 @@ const CameraMap = ({ cameras, onSelectCamera }) => {
   return (
     <div className="w-full h-full rounded-xl overflow-hidden shadow-inner bg-slate-100">
       <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }}>
+        <AutoBounds cameras={cameras} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Camera, MapPin, Link as LinkIcon, Save, X, Search } from 'lucide-react';
+import { Plus, Edit2, Trash2, Camera, MapPin, Link as LinkIcon, Save, X, Search, PlayCircle } from 'lucide-react';
 import cameraService from '../services/cameraService';
 import groupService from '../services/groupService';
+import StreamModal from '../components/StreamModal';
 
 const Cameras = () => {
   const [cameras, setCameras] = useState([]);
@@ -11,6 +12,7 @@ const Cameras = () => {
   
   // State สำหรับ Modal
   const [showModal, setShowModal] = useState(false);
+  const [selectedCamera, setSelectedCamera] = useState(null);
   const [editingCamera, setEditingCamera] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -183,6 +185,11 @@ const Cameras = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-2">
                       <button 
+                        onClick={() => setSelectedCamera(camera)}
+                        className="p-2 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all" title="ดูสตรีมสด">
+                        <PlayCircle className="h-4 w-4" />
+                      </button>
+                      <button 
                         onClick={() => handleOpenModal(camera)}
                         className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all" title="แก้ไข">
                         <Edit2 className="h-4 w-4" />
@@ -200,6 +207,14 @@ const Cameras = () => {
           </table>
         </div>
       </div>
+
+      {/* สตรีมมิ่ง Modal */}
+      {selectedCamera && (
+        <StreamModal 
+          camera={selectedCamera} 
+          onClose={() => setSelectedCamera(null)} 
+        />
+      )}
 
       {/* Modal - เพิ่ม/แก้ไขกล้อง */}
       {showModal && (

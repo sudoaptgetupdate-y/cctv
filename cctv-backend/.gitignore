@@ -3,3 +3,6 @@ node_modules
 dist
 .DS_Store
 *.log
+# Executables
+ffmpeg.exe
+go2rtc.exe

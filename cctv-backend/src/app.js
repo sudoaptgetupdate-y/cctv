@@ -6,6 +6,8 @@ const authRoutes = require('./routes/authRoutes');
 const cameraRoutes = require('./routes/cameraRoutes');
 const groupRoutes = require('./routes/groupRoutes');
 const streamRoutes = require('./routes/streamRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
+const logRoutes = require('./routes/logRoutes');
 
 const app = express();
 
@@ -24,6 +26,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/cameras', cameraRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/streams', streamRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/logs', logRoutes);
 
 // Error Handling
 app.use(errorMiddleware);
