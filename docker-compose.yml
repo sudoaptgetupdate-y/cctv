@@ -39,25 +39,28 @@ services:
   backend:
     build:
       context: ./cctv-backend
+      dockerfile: Dockerfile
     restart: always
     environment:
       DATABASE_URL: "mysql://cctv_user:cctv_password@db:3306/cctv_db"
-      JWT_SECRET: "your_secret_key"
+      JWT_SECRET: "lkfgxifde" # ใช้จาก .env เดิมของคุณ
       PORT: 5000
+      GO2RTC_URL: "http://host.docker.internal:1984" # ชี้ไปที่ Host gateway
     depends_on:
       - db
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # สำคัญสำหรับ Linux Docker
     networks:
       - cctv-network
-    # ไม่ต้อง expose port 5000 ออกข้างนอกแล้ว ให้คุยผ่าน Proxy แทน
 
   # 💻 Frontend (React + Nginx)
   frontend:
     build:
       context: ./cctv-frontend
+      dockerfile: Dockerfile
     restart: always
     networks:
       - cctv-network
-    # ไม่ต้อง expose port 3000 ออกข้างนอกแล้ว ให้คุยผ่าน Proxy แทน
 
 networks:
   cctv-network:
