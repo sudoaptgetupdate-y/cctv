@@ -1,10 +1,10 @@
-# 🐳 Docker Setup Guide for Ubuntu 22.04 (The Hybrid Way)
+# 🐳 Docker Setup Guide for Ubuntu 22.04 / 24.04 (The Hybrid Way)
 
 คู่มือนี้สำหรับใช้ในการ Deploy ระบบ **CCTV Monitoring System** บนเซิร์ฟเวอร์จริง (Production) โดยใช้ Docker ตามกลยุทธ์ "The Hybrid Way" (พัฒนาบนเครื่อง Local แต่รันแบบ Container บน Server)
 
 ---
 
-## 1. เตรียมความพร้อมบน Ubuntu 22.04
+## 1. เตรียมความพร้อมบน Ubuntu
 
 รันคำสั่งเหล่านี้บนเครื่อง Ubuntu เพื่อติดตั้ง Docker และ Docker Compose v2:
 
@@ -27,117 +27,114 @@ docker compose version
 
 ---
 
-## 2. โครงสร้างไฟล์สำหรับ Docker
+## 2. โครงสร้างไฟล์สำหรับ Docker (File Structure)
 
-สร้างไฟล์เหล่านี้ไว้ใน Root ของโปรเจ็ค (ข้างๆ โฟลเดอร์ `cctv-backend` และ `cctv-frontend`):
+เมื่อคุณ Clone โปรเจ็คลงมาแล้ว โครงสร้างไฟล์ที่สำคัญจะเป็นดังนี้:
 
-### 📄 `Dockerfile.backend` (ในโฟลเดอร์ cctv-backend)
-```dockerfile
-FROM node:20-slim
-
-# ติดตั้ง OpenSSL สำหรับ Prisma และ FFmpeg สำหรับ Snapshot
-RUN apt-get update && apt-get install -y openssl ffmpeg && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm install
-
-COPY . .
-
-# Generate Prisma Client
-RUN npx prisma generate
-
-EXPOSE 5000
-
-CMD ["npm", "start"]
+```text
+~/projects/cctv/               <-- Root Directory
+├── docker-compose.yml         <-- ไฟล์ควบคุมการทำงานของทุก Container
+├── cctv-backend/
+│   ├── Dockerfile             <-- วิธีการ Build Node.js + FFmpeg
+│   └── ...
+├── cctv-frontend/
+│   ├── Dockerfile             <-- วิธีการ Build React (Multi-stage build)
+│   ├── nginx.conf             <-- Config สำหรับ Nginx ภายใน Container
+│   └── ...
+└── (Auto-generated Folders)
+    ├── mysql_data/            <-- ข้อมูลจริงใน Database (MariaDB)
+    ├── proxy_data/            <-- ข้อมูล Nginx Proxy Manager
+    └── proxy_letsencrypt/     <-- ใบรับรอง SSL (HTTPS)
 ```
 
-### 📄 `Dockerfile.frontend` (ในโฟลเดอร์ cctv-frontend)
-```dockerfile
-# Stage 1: Build
-FROM node:20-slim as build-stage
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
+---
 
-# Stage 2: Production (Nginx)
-FROM nginx:stable-alpine
-COPY --from=build-stage /app/dist /usr/share/nginx/html
-# ก๊อปปี้ไฟล์ config ของ nginx เพื่อรองรับ React Router
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
-```
+## 3. รายละเอียดไฟล์ Config หลัก
 
 ### 📄 `docker-compose.yml` (ในโฟลเดอร์หลัก)
 ```yaml
 services:
+  # 🌐 Reverse Proxy (Nginx Proxy Manager)
+  proxy:
+    image: 'jc21/nginx-proxy-manager:latest'
+    restart: always
+    ports:
+      - '80:80'   # HTTP
+      - '443:443' # HTTPS
+      - '81:81'   # Admin UI
+    volumes:
+      - ./proxy_data:/data
+      - ./proxy_letsencrypt:/etc/letsencrypt
+    networks:
+      - cctv-network
+
+  # 🗄️ Database
   db:
     image: mariadb:10.11
     restart: always
     environment:
       MARIADB_ROOT_PASSWORD: your_root_password
       MARIADB_DATABASE: cctv_db
-      MARIADB_USER: cctv_user
-      MARIADB_PASSWORD: cctv_password
+      MARIADB_USER: your_admin_user
+      MARIADB_PASSWORD: your_admin_password
     volumes:
       - ./mysql_data:/var/lib/mysql
-    ports:
-      - "3306:3306"
+    networks:
+      - cctv-network
 
+  # 🎥 Streaming (go2rtc)
   go2rtc:
     image: alexxit/go2rtc
     restart: always
-    network_mode: host # สำคัญสำหรับการทำ WebRTC / UDP
+    network_mode: host # ต้องใช้ host mode สำหรับ WebRTC/UDP บน Linux
     volumes:
       - ./cctv-backend/go2rtc.yaml:/config/go2rtc.yaml
 
+  # ⚙️ Backend API
   backend:
     build:
       context: ./cctv-backend
       dockerfile: Dockerfile
     restart: always
     environment:
-      DATABASE_URL: "mysql://cctv_user:cctv_password@db:3306/cctv_db"
-      JWT_SECRET: "your_secret_key"
+      DATABASE_URL: "mysql://your_admin_user:your_admin_password@db:3306/cctv_db"
+      JWT_SECRET: "your_jwt_secret"
       PORT: 5000
+      GO2RTC_URL: "http://host.docker.internal:1984"
     depends_on:
       - db
-    ports:
-      - "5000:5000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - cctv-network
 
+  # 💻 Frontend (React + Nginx)
   frontend:
     build:
       context: ./cctv-frontend
       dockerfile: Dockerfile
     restart: always
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
+    networks:
+      - cctv-network
+
+networks:
+  cctv-network:
+    driver: bridge
 ```
 
 ---
 
-## 3. ขั้นตอนการ Deploy จริง (The Hybrid Workflow)
-
-ทำตามขั้นตอนนี้ทุกครั้งที่มีการอัปเดตโค้ด:
+## 4. ขั้นตอนการ Deploy จริง (Verified Workflow)
 
 ### 1. เครื่อง Local (Local PC)
 สั่ง Push โค้ดที่เสร็จแล้วขึ้น Git:
 ```bash
 git add .
-git commit -m "feat: redesign layout and add i18n"
+git commit -m "deploy: update docker configuration and file structure"
 git push origin main
 ```
 
 ### 2. เครื่องเซิร์ฟเวอร์ (Ubuntu Server)
-
-เราจะใช้โฟลเดอร์ `/home/$USER/projects/` เป็นที่เก็บโปรเจ็คเพื่อให้ง่ายต่อการจัดการ Permissions:
-
 ```bash
 # SSH เข้าเซิร์ฟเวอร์
 ssh user@your-server-ip
@@ -145,56 +142,51 @@ ssh user@your-server-ip
 # สร้างโฟลเดอร์สำหรับเก็บโปรเจ็ค (ถ้ายังไม่มี)
 mkdir -p ~/projects && cd ~/projects
 
-# Clone โปรเจ็คลงมา
-git clone https://github.com/sudoaptgetupdate-y/cctv.git
+# Clone หรือ Pull โค้ดล่าสุด
+git clone <your-git-repo-url>
 cd cctv
-
-# (ถ้า Clone มาแล้ว) ดึงโค้ดล่าสุด
 git pull origin main
 ```
 
-### 3. สั่งรันด้วย Docker Compose
-สั่ง Build และรัน Container ทั้งหมด:
+### 3. สั่งรันระบบและตั้งค่าฐานข้อมูล (ครั้งแรก)
 ```bash
+# 1. สั่ง Build และรัน Container ทั้งหมด
 docker compose up -d --build
+
+# 2. รัน Database Migration (สร้าง Table)
+docker compose exec backend npx prisma migrate deploy
+
+# 3. ใส่ข้อมูลเริ่มต้น (Seed Data - ถ้ามี)
+docker compose exec backend node prisma/seed.js
+
+# 4. Restart Backend เพื่อเริ่มต้นระบบใหม่ที่พร้อม 100%
+docker compose restart backend
 ```
-*หมายเหตุ: `--build` จะช่วยให้ Docker ตรวจสอบว่าโค้ดมีการเปลี่ยนแปลงและสร้าง Image ใหม่เฉพาะส่วนที่เปลี่ยน*
 
 ---
 
-## 4. ตรวจสอบสถานะ
+## 5. ตรวจสอบสถานะและตั้งค่า Proxy
 
+### ดูสถานะของทุก Service:
 ```bash
-# ดู Container ที่รันอยู่
 docker compose ps
-
-# ดู Log ของ Backend เพื่อเช็คการเชื่อมต่อ DB
-docker compose logs -f backend
 ```
 
----
+### ดู Log ล่าสุดของ Backend:
+```bash
+docker compose logs -f --tail 50 backend
+```
 
-## 5. การตั้งค่า Reverse Proxy (Nginx Proxy Manager)
-
-เมื่อคุณรัน `docker compose up -d` แล้ว ระบบจะเปิดหน้าจัดการ Proxy ไว้ที่ Port `81`:
-
-1.  เข้าหน้าจัดการ: `http://your-server-ip:81`
-2.  Default Login:
-    *   Email: `admin@example.com`
-    *   Password: `changeme`
-3.  **สร้าง Proxy Host ใหม่:**
-    *   **Domain Names:** ใส่โดเมนของคุณ (เช่น `cctv.local` หรือ `your-domain.com`)
-    *   **Forward Scheme:** `http`
-    *   **Forward Hostname:** `frontend` (ชื่อ service ใน docker-compose)
-    *   **Forward Port:** `80`
-4.  **สำหรับการทำ API Proxy:**
-    *   สร้าง Proxy Host อีกตัว (เช่น `api.your-domain.com`)
-    *   Forward ไปที่ Hostname: `backend` และ Port: `5000`
+### การตั้งค่า Reverse Proxy (Nginx Proxy Manager):
+1. เข้าไปที่ `http://your-server-ip:81`
+2. Login ด้วย `admin@example.com` / `changeme`
+3. **Frontend:** สร้าง Proxy Host ใหม่ ชี้โดเมนของคุณไปที่ Hostname `frontend` Port `80`
+4. **API:** สร้าง Proxy Host ใหม่ ชี้โดเมน (เช่น api.yourdomain.com) ไปที่ Hostname `backend` Port `5000`
 
 ---
 
 ## 💡 ทริคสำหรับการใช้งานบน Ubuntu
-- **Prisma Migration:** หากมีการเปลี่ยน Schema ใน Production ให้รัน:
-  `docker compose exec backend npx prisma migrate deploy`
-- **Database Backup:** ควรทำสำรองโฟลเดอร์ `mysql_data` ไว้เสมอ
-- **Nginx Reverse Proxy:** แนะนำให้ใช้ **Nginx Proxy Manager** วางไว้ข้างหน้าเพื่อทำ HTTPS (SSL) ได้ง่ายๆ ครับ
+- **Prisma Migration:** หากมีการเปลี่ยน Schema ในอนาคต ให้รัน `migrate deploy` ทุกครั้ง
+- **Log Management:** หากต้องการดู Log ของทุกตัวพร้อมกัน ใช้ `docker compose logs -f`
+- **Database Backup:** ควรทำสำรองโฟลเดอร์ `mysql_data` ไว้สม่ำเสมอ
+- **Host Networking:** go2rtc รันแบบ `host` mode เพื่อให้ WebRTC ทำงานได้ดีที่สุดบน Linux

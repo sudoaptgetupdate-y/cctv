@@ -12,16 +12,21 @@ async function main() {
     console.log('✅ Database connected!');
 
     // 2. สร้าง Admin User
-    console.log('👤 Creating Admin user...');
-    const adminPassword = await bcrypt.hash('admin1234', 10);
+    const adminUsername = process.env.INITIAL_ADMIN_USER || 'admin';
+    const rawPassword = process.env.INITIAL_ADMIN_PASSWORD || 'admin1234';
+    
+    console.log(`👤 Creating/Updating Admin user: ${adminUsername}...`);
+    const adminPassword = await bcrypt.hash(rawPassword, 10);
     
     const admin = await prisma.user.upsert({
-      where: { username: 'admin' },
-      update: {},
+      where: { username: adminUsername },
+      update: {
+        password: adminPassword, // อัปเดตรหัสผ่านทุกครั้งที่รัน Seed ใหม่
+      },
       create: {
-        username: 'admin',
+        username: adminUsername,
         password: adminPassword,
-        email: 'admin@cctv.local',
+        email: `${adminUsername}@cctv.local`,
         firstName: 'System',
         lastName: 'Administrator',
         role: 'SUPER_ADMIN',
