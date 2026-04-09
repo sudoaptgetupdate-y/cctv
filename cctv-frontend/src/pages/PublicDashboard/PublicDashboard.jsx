@@ -4,6 +4,7 @@ import cameraService from '../../services/cameraService';
 import groupService from '../../services/groupService';
 import CameraMap from '../../components/CameraMap';
 import StreamModal from '../../components/StreamModal';
+import Footer from '../../components/Footer';
 
 const PublicDashboard = () => {
   const [cameras, setCameras] = useState([]);
@@ -218,10 +219,10 @@ const PublicDashboard = () => {
                             >
                               <div className="flex-1 min-w-0 pr-2">
                                 <p className="text-xs font-bold text-slate-700 group-hover:text-primary-600 truncate transition-colors">{camera.name}</p>
-                                <p className="text-[9px] font-medium text-slate-400 uppercase flex items-center gap-1">
+                                <div className="text-[9px] font-medium text-slate-400 uppercase flex items-center gap-1">
                                   <div className="w-1 h-1 rounded-full bg-emerald-500"></div>
                                   Live Streaming
-                                </p>
+                                </div>
                               </div>
                               <Play className="h-3 w-3 text-slate-300 group-hover:text-primary-500 transition-colors" />
                             </button>
@@ -261,6 +262,11 @@ const PublicDashboard = () => {
           </div>
         </div>
       </main>
+
+      {/* 🏁 Global Footer */}
+      <div className="bg-white border-t border-slate-100 shrink-0">
+         <Footer />
+      </div>
 
       {/* 🎬 Live Stream Modal */}
       {selectedCamera && (

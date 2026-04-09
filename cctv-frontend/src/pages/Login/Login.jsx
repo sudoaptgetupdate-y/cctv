@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { User, Lock, Loader2, Camera, ShieldCheck, Play } from 'lucide-react';
+import Footer from '../../components/Footer';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -101,9 +102,9 @@ const Login = () => {
           </button>
         </form>
 
-        <p className="mt-12 text-center text-slate-400 text-xs font-medium uppercase tracking-widest">
-          Smart CCTV System v1.0
-        </p>
+        <div className="mt-auto py-8">
+          <Footer />
+        </div>
       </div>
 
       {/* ฝั่งขวา: รูปภาพ/กราฟิก (โชว์เฉพาะจอใหญ่) */}

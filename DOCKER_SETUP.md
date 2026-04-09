@@ -135,10 +135,21 @@ git push origin main
 ```
 
 ### 2. เครื่องเซิร์ฟเวอร์ (Ubuntu Server)
-SSH เข้าไปแล้วดึงโค้ดล่าสุด:
+
+เราจะใช้โฟลเดอร์ `/home/$USER/projects/` เป็นที่เก็บโปรเจ็คเพื่อให้ง่ายต่อการจัดการ Permissions:
+
 ```bash
+# SSH เข้าเซิร์ฟเวอร์
 ssh user@your-server-ip
-cd /path/to/cctv-project
+
+# สร้างโฟลเดอร์สำหรับเก็บโปรเจ็ค (ถ้ายังไม่มี)
+mkdir -p ~/projects && cd ~/projects
+
+# Clone โปรเจ็คลงมา
+git clone https://github.com/sudoaptgetupdate-y/cctv.git
+cd cctv
+
+# (ถ้า Clone มาแล้ว) ดึงโค้ดล่าสุด
 git pull origin main
 ```
 
@@ -160,6 +171,25 @@ docker compose ps
 # ดู Log ของ Backend เพื่อเช็คการเชื่อมต่อ DB
 docker compose logs -f backend
 ```
+
+---
+
+## 5. การตั้งค่า Reverse Proxy (Nginx Proxy Manager)
+
+เมื่อคุณรัน `docker compose up -d` แล้ว ระบบจะเปิดหน้าจัดการ Proxy ไว้ที่ Port `81`:
+
+1.  เข้าหน้าจัดการ: `http://your-server-ip:81`
+2.  Default Login:
+    *   Email: `admin@example.com`
+    *   Password: `changeme`
+3.  **สร้าง Proxy Host ใหม่:**
+    *   **Domain Names:** ใส่โดเมนของคุณ (เช่น `cctv.local` หรือ `your-domain.com`)
+    *   **Forward Scheme:** `http`
+    *   **Forward Hostname:** `frontend` (ชื่อ service ใน docker-compose)
+    *   **Forward Port:** `80`
+4.  **สำหรับการทำ API Proxy:**
+    *   สร้าง Proxy Host อีกตัว (เช่น `api.your-domain.com`)
+    *   Forward ไปที่ Hostname: `backend` และ Port: `5000`
 
 ---
 

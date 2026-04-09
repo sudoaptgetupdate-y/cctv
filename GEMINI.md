@@ -25,8 +25,21 @@
 ## 🎯 เป้าหมายถัดไป (Next Tasks)
 1.  [ ] **MainLayout Redesign:** ปรับโฉมหน้า Admin ให้เหมือนกับโปรเจ็ค `dev-mkt` (กำลังจะทำใน Session ถัดไป)
 2.  [ ] **Acknowledge System:** เพิ่มฟีเจอร์ "รับทราบเหตุการณ์" ใน Camera Event History เพื่อติดตามการแก้ไขปัญหา
-3.  [ ] **Snapshot Service:** ระบบบันทึกภาพนิ่งจากกล้อง (Thumbnail) ผ่าน FFmpeg เพื่อแสดงใน Dashboard และส่งให้ AI วิเคราะห์ภาพ
-4.  [ ] **Interactive Telegram Bot:** พัฒนา Webhook ให้ Bot สามารถตอบโต้และสรุปสถานะระบบด้วย AI เมื่อผู้ใช้สอบถาม
+3.  [ ] **Interactive Telegram Bot:** พัฒนา Webhook ให้ Bot สามารถตอบโต้และสรุปสถานะระบบด้วย AI เมื่อผู้ใช้สอบถาม
+
+## 🤖 Gemini Execution Commands
+สำหรับการเรียกใช้งาน Gemini ในโปรเจ็คนี้ (ใช้ใน Terminal):
+
+### 1. ทำงานเฉพาะโปรเจ็ค CCTV (Standard)
+```bash
+gemini "objective" --path D:\1.Development\dev-cctv\cctv
+```
+
+### 2. ทำงานแบบดึงต้นแบบจากโปรเจ็ค MKT (Hybrid Context)
+*ใช้สำหรับเมื่อต้องการให้ Gemini ดูโค้ดจาก dev-mkt เพื่อนำมาปรับปรุง dev-cctv*
+```bash
+gemini "objective" --path D:\1.Development\dev-cctv\cctv --path D:\1.Development\dev-mkt\mikrotik-config
+```
 
 ## 📝 บันทึกถึง Gemini
 - **Refactoring Note:** โครงสร้างโฟลเดอร์ใน `src/pages` แบ่งตามฟีเจอร์ชัดเจน และ Shared Components อยู่ใน `src/components`
