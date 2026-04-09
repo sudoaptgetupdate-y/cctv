@@ -10,6 +10,15 @@ const groupController = {
     }
   },
 
+  async getAllPublic(req, res, next) {
+    try {
+      const groups = await groupService.getAllPublic();
+      res.json({ success: true, data: groups });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async getById(req, res, next) {
     try {
       const group = await groupService.getGroupById(req.params.id);

@@ -1,18 +1,41 @@
-import React, { useState, useEffect } from 'react';
-import { X, Maximize2, Shield, Info, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Maximize2, Minimize2, Shield, Info, Loader2, Camera, GripHorizontal } from 'lucide-react';
 import WebRTCPlayer from './WebRTCPlayer';
 import streamService from '../services/streamService';
 
-const StreamModal = ({ camera, onClose }) => {
+const StreamModal = ({ camera, onClose, initialPosition }) => {
   const [streamConfig, setStreamConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  
+  // Dragging State
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+  const modalRef = useRef(null);
+
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   useEffect(() => {
     if (camera) {
       loadStreamInfo();
+      
+      if (isMobile) {
+        // บนมือถือ ให้เด้งจากด้านล่าง (Bottom Sheet Style)
+        setPosition({ x: 16, y: window.innerHeight - 280 });
+      } else if (initialPosition) {
+        // บน Desktop ตามตำแหน่งกล้อง
+        setPosition({ 
+          x: Math.min(window.innerWidth - 460, Math.max(20, initialPosition.x + 20)), 
+          y: Math.min(window.innerHeight - 320, Math.max(20, initialPosition.y - 150))
+        });
+      } else {
+        // มุมขวาล่างปกติ
+        setPosition({ x: window.innerWidth - 470, y: window.innerHeight - 300 });
+      }
     }
-  }, [camera]);
+  }, [camera, initialPosition, isMobile]);
 
   const loadStreamInfo = async () => {
     try {
@@ -22,91 +45,120 @@ const StreamModal = ({ camera, onClose }) => {
       setStreamConfig(info);
     } catch (err) {
       console.error('Failed to load stream info:', err);
-      setError('ไม่สามารถดึงข้อมูลสตรีมมิ่งได้ กรุณาลองใหม่อีกครั้ง');
+      setError('ไม่สามารถดึงข้อมูลสตรีมมิ่งได้');
     } finally {
       setLoading(false);
     }
   };
 
+  // Logic การลาก (Drag) - ปิดการลากบนมือถือเพื่อความง่าย
+  const handleMouseDown = (e) => {
+    if (isFullscreen || isMobile) return;
+    setIsDragging(true);
+    dragStart.current = {
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    };
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDragging) return;
+      const newX = e.clientX - dragStart.current.x;
+      const newY = e.clientY - dragStart.current.y;
+      setPosition({ 
+        x: Math.min(window.innerWidth - 100, Math.max(-200, newX)), 
+        y: Math.min(window.innerHeight - 100, Math.max(0, newY)) 
+      });
+    };
+
+    const handleMouseUp = () => setIsDragging(false);
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+
   if (!camera) return null;
 
+  const containerClasses = isFullscreen
+    ? "fixed inset-0 z-[3000] flex items-center justify-center p-0 md:p-8"
+    : `fixed z-[3000] ${isMobile ? 'left-4 right-4' : 'w-[350px] md:w-[450px]'} aspect-video transition-all duration-300 ease-out`;
+
+  const contentClasses = isFullscreen
+    ? "relative bg-slate-900 w-full h-full md:max-w-6xl md:h-auto md:aspect-video rounded-none md:rounded-[2.5rem] shadow-2xl border border-slate-800 overflow-hidden animate-zoomIn flex flex-col"
+    : `relative bg-slate-900 w-full h-full rounded-3xl shadow-2xl border-2 border-primary-500/30 overflow-hidden ${isMobile ? 'animate-slideUp' : 'animate-slideIn'} flex flex-col group select-none`;
+
   return (
-    <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 md:p-8">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md" onClick={onClose}></div>
+    <div 
+      className={containerClasses} 
+      style={(!isFullscreen && !isMobile) ? { left: `${position.x}px`, top: `${position.y}px`, transition: isDragging ? 'none' : 'all 0.2s ease-out' } : (!isFullscreen && isMobile ? { bottom: '24px', top: 'auto' } : {})}
+    >
+      {isFullscreen && (
+        <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md" onClick={() => setIsFullscreen(false)}></div>
+      )}
       
-      {/* Modal Content */}
-      <div className="relative bg-slate-900 w-full max-w-5xl rounded-[2.5rem] shadow-2xl border border-slate-800 overflow-hidden animate-zoomIn flex flex-col">
+      <div className={contentClasses}>
         {/* Header */}
-        <div className="px-8 py-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-slate-900 to-slate-800">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-rose-500/10 rounded-2xl border border-rose-500/20 text-rose-500">
-              <Shield className="h-6 w-6" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-white">{camera.name}</h3>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Secure Feed</span>
-                <span className="text-slate-500 text-[10px]">•</span>
-                <span className="text-slate-400 text-[10px] font-medium uppercase tracking-tighter">ID: {camera.id}</span>
-              </div>
-            </div>
+        <div 
+          onMouseDown={handleMouseDown}
+          className={`px-4 py-3 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-slate-900 to-slate-800 ${(!isFullscreen && !isMobile) ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'} transition-opacity z-10`}
+        >
+          <div className="flex items-center gap-2">
+            {!isMobile && <GripHorizontal className="h-4 w-4 text-slate-500" />}
+            <Camera className="h-4 w-4 text-primary-500" />
+            <h3 className="text-xs md:text-sm font-bold text-white truncate max-w-[120px] md:max-w-[250px]">{camera.name}</h3>
           </div>
-          <button 
-            onClick={onClose}
-            className="p-2 hover:bg-slate-800 rounded-full transition-all text-slate-400 hover:text-white"
-          >
-            <X className="h-6 w-6" />
-          </button>
+          
+          <div className="flex items-center gap-1">
+            <button 
+              type="button"
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              className="p-2 hover:bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors"
+              title={isFullscreen ? "ย่อหน้าต่าง" : "ขยายเต็มจอ"}
+            >
+              {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+            </button>
+            <button 
+              type="button"
+              onClick={onClose}
+              className="p-2 hover:bg-rose-500/20 rounded-lg text-slate-300 hover:text-rose-500 transition-colors"
+              title="ปิด"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {/* Player Section */}
-        <div className="p-4 md:p-8 bg-slate-950 flex-grow min-h-[300px] flex items-center justify-center">
+        <div className="relative flex-grow bg-slate-950 flex items-center justify-center overflow-hidden">
           {loading ? (
             <div className="flex flex-col items-center">
-              <Loader2 className="h-10 w-10 text-primary-500 animate-spin mb-4" />
-              <p className="text-slate-400 text-sm">กำลังติดต่อเซิร์ฟเวอร์...</p>
+              <Loader2 className="h-6 w-6 text-primary-500 animate-spin mb-2" />
+              <p className="text-slate-500 text-[9px] uppercase font-bold tracking-widest">Loading...</p>
             </div>
           ) : error ? (
-            <div className="text-center p-8 bg-rose-500/5 border border-rose-500/20 rounded-3xl max-w-sm">
-              <p className="text-rose-400 text-sm mb-4">{error}</p>
-              <button 
-                onClick={loadStreamInfo}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs rounded-xl transition-all"
-              >
-                ลองใหม่อีกครั้ง
-              </button>
+            <div className="text-center p-4">
+              <p className="text-rose-400 text-[10px] mb-2">{error}</p>
+              <button onClick={loadStreamInfo} className="text-[9px] font-bold text-white bg-rose-600 px-3 py-1 rounded-lg">Retry</button>
             </div>
           ) : (
-            <WebRTCPlayer 
-              streamId={streamConfig.streamId} 
-              go2rtcUrl={streamConfig.go2rtcUrl} 
-            />
+            <div className="w-full h-full">
+               <WebRTCPlayer streamId={streamConfig.streamId} go2rtcUrl={streamConfig.go2rtcUrl} />
+            </div>
           )}
-        </div>
 
-        {/* Footer / Meta Info */}
-        <div className="px-8 py-6 bg-slate-900 border-t border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
-            <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Status</p>
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${camera.status === 'ACTIVE' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : 'bg-rose-500'}`}></div>
-                <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">{camera.status}</span>
-              </div>
+          {!isFullscreen && !loading && !error && (
+            <div className="absolute bottom-2 left-2 flex items-center gap-1.5 px-2 py-0.5 bg-black/40 backdrop-blur-md rounded-md">
+               <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse"></div>
+               <span className="text-[8px] font-black text-white uppercase">Live</span>
             </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">Location</p>
-              <p className="text-xs font-mono text-slate-300">{camera.latitude.toFixed(4)}, {camera.longitude.toFixed(4)}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 p-3 bg-slate-800/50 rounded-xl border border-slate-700">
-            <Info className="h-4 w-4 text-primary-400" />
-            <p className="text-[10px] text-slate-400 font-medium">
-              กำลังสตรีมมิ่งผ่าน <b>go2rtc Gateway</b> เพื่อลดภาระของตัวกล้องและรักษาความปลอดภัย
-            </p>
-          </div>
+          )}
         </div>
       </div>
     </div>

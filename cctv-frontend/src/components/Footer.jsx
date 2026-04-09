@@ -4,7 +4,7 @@ const Footer = () => {
       <p className="font-semibold text-slate-500">
         © {new Date().getFullYear()} Engineer of NTPLC Nakhon Si Thammarat. All rights reserved.
       </p>
-      <p className="mt-1">Network Management System | Designed for MikroTik RouterOS</p>
+      <p className="mt-1">CCTV Monitoring System | Security & Analytics Solution</p>
     </footer>
   );
 };

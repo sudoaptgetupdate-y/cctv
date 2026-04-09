@@ -13,6 +13,26 @@ const cameraService = {
     });
   },
 
+  // ดึงข้อมูลกล้องสาธารณะ (ไม่รวม Username/Password และดึงเฉพาะที่ ACTIVE)
+  async getAllPublic() {
+    return await prisma.camera.findMany({
+      where: { status: 'ACTIVE' },
+      select: {
+        id: true,
+        name: true,
+        latitude: true,
+        longitude: true,
+        rtspUrl: true, // RTSP URL จำเป็นต้องใช้ในการสตรีม
+        subStream: true,
+        status: true,
+        groups: {
+          select: { id: true, name: true }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
+  },
+
   // ดึงข้อมูลกล้องตาม ID
   async getCameraById(id) {
     return await prisma.camera.findUnique({
@@ -61,6 +81,27 @@ const cameraService = {
   async deleteCamera(id) {
     return await prisma.camera.delete({
       where: { id: parseInt(id) }
+    });
+  },
+
+  // รับทราบเหตุการณ์ (Acknowledge)
+  async acknowledgeCamera(id, data) {
+    return await prisma.camera.update({
+      where: { id: parseInt(id) },
+      data: {
+        isAcknowledged: true,
+        acknowledgeReason: data.reason || 'Manually Acknowledged',
+        acknowledgedAt: new Date(),
+      }
+    });
+  },
+
+  // ดึงประวัติเหตุการณ์ของกล้อง
+  async getCameraEvents(id, limit = 50) {
+    return await prisma.cameraEventLog.findMany({
+      where: { cameraId: parseInt(id) },
+      orderBy: { createdAt: 'desc' },
+      take: limit
     });
   }
 };

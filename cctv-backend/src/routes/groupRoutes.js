@@ -3,6 +3,9 @@ const router = express.Router();
 const groupController = require('../controllers/groupController');
 const { verifyToken, requireRole } = require('../middlewares/authMiddleware');
 
+// Route สาธารณะ
+router.get('/public', groupController.getAllPublic);
+
 // ทุกการจัดการกลุ่มต้อง Login ก่อน
 router.use(verifyToken);
 

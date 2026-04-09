@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE `Camera` ADD COLUMN `acknowledgeReason` TEXT NULL,
+    ADD COLUMN `acknowledgedAt` DATETIME(3) NULL,
+    ADD COLUMN `isAcknowledged` BOOLEAN NOT NULL DEFAULT true;

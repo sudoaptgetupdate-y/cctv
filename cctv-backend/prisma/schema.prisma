@@ -37,6 +37,11 @@ model Camera {
   status      CameraStatus @default(ACTIVE)
   lastSeen    DateTime?
   
+  // ✅ Acknowledgement System
+  isAcknowledged    Boolean   @default(true)
+  acknowledgeReason String?   @db.Text
+  acknowledgedAt    DateTime?
+  
   userId      Int
   user        User     @relation("ManagedBy", fields: [userId], references: [id])
   

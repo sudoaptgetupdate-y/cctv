@@ -3,7 +3,10 @@ const router = express.Router();
 const cameraController = require('../controllers/cameraController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 
-// ทุก Route ในนี้ต้องผ่านการตรวจสอบ Token (Login ก่อน)
+// Route สาธารณะ (ไม่ต้อง Login)
+router.get('/public', cameraController.getAllPublic);
+
+// ทุก Route หลังจากนี้ต้องผ่านการตรวจสอบ Token (Login ก่อน)
 router.use(verifyToken);
 
 router.get('/', cameraController.getAll);
@@ -11,5 +14,9 @@ router.get('/:id', cameraController.getById);
 router.post('/', cameraController.create);
 router.put('/:id', cameraController.update);
 router.delete('/:id', cameraController.delete);
+
+// ✅ Acknowledge & Events
+router.post('/:id/acknowledge', cameraController.acknowledge);
+router.get('/:id/events', cameraController.getEvents);
 
 module.exports = router;

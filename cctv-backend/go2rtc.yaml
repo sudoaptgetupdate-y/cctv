@@ -14,15 +14,18 @@ webrtc:
   candidates:
     - 127.0.0.1:8555
     - 10.0.0.100:8555
+    - 172.17.17.135:8555
     - host:8555
 
 
 # ✅ ตำแหน่ง FFmpeg
 ffmpeg:
-  bin: "D:\\1.Devoleopment\\cctv-project\\cctv\\cctv-backend\\ffmpeg.exe"
+  bin: "D:\\1.Development\\dev-cctv\\cctv\\cctv-backend\\ffmpeg.exe"
 
 streams:
   test_manual:
     - ffmpeg:rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov
   camera_2:
     - ffmpeg:rtsp://admin:Lkfgxifde0905@192.168.10.219:554/cam/realmonitor?channel=1&subtype=0#video=h264#audio=aac
+  test_camera:
+    - http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4

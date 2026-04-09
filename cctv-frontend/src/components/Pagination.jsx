@@ -55,7 +55,7 @@ const Pagination = ({ currentPage, totalPages, setCurrentPage, isSticky = true }
         <button 
           onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
           disabled={currentPage === 1} 
-          title={t('common.previous', 'Previous')}
+          title={t('common.previous')}
           className="p-2 rounded-full text-blue-500 hover:bg-blue-100 hover:text-blue-700 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-blue-500 transition-all"
         >
           <ChevronLeft size={20} strokeWidth={2.5} />
@@ -87,7 +87,7 @@ const Pagination = ({ currentPage, totalPages, setCurrentPage, isSticky = true }
         <button 
           onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
           disabled={currentPage === totalPages} 
-          title={t('common.next', 'Next')}
+          title={t('common.next')}
           className="p-2 rounded-full text-blue-500 hover:bg-blue-100 hover:text-blue-700 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-blue-500 transition-all"
         >
           <ChevronRight size={20} strokeWidth={2.5} />

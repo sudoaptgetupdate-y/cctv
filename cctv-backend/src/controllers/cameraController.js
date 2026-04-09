@@ -10,6 +10,15 @@ const cameraController = {
     }
   },
 
+  async getAllPublic(req, res, next) {
+    try {
+      const cameras = await cameraService.getAllPublic();
+      res.json({ success: true, data: cameras });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async getById(req, res, next) {
     try {
       const camera = await cameraService.getCameraById(req.params.id);
@@ -43,6 +52,24 @@ const cameraController = {
     try {
       await cameraService.deleteCamera(req.params.id);
       res.json({ success: true, message: 'Camera deleted successfully' });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async acknowledge(req, res, next) {
+    try {
+      const camera = await cameraService.acknowledgeCamera(req.params.id, req.body);
+      res.json({ success: true, message: 'Camera acknowledged successfully', data: camera });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async getEvents(req, res, next) {
+    try {
+      const events = await cameraService.getCameraEvents(req.params.id);
+      res.json({ success: true, data: events });
     } catch (error) {
       next(error);
     }

@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { RefreshCw, Map as MapIcon, PlayCircle, ShieldCheck } from 'lucide-react';
-import cameraService from '../services/cameraService';
-import CameraMap from '../components/CameraMap';
-import StreamModal from '../components/StreamModal';
+import cameraService from '../../services/cameraService';
+import CameraMap from '../../components/CameraMap';
+import StreamModal from '../../components/StreamModal';
 
-const DashboardHome = () => {
+const AdminDashboard = () => {
   const [cameras, setCameras] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, online: 0, offline: 0 });
   const [selectedCamera, setSelectedCamera] = useState(null);
+  const [initialPosition, setInitialPosition] = useState(null);
 
   // ฟังก์ชันจำลองการกดดูสตรีมทดสอบ
   const handleFastTest = () => {
@@ -19,6 +20,7 @@ const DashboardHome = () => {
       latitude: 13.7563,
       longitude: 100.5018
     });
+    setInitialPosition(null);
   };
 
   useEffect(() => {
@@ -42,6 +44,11 @@ const DashboardHome = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSelectCamera = (camera, pos = null) => {
+    setInitialPosition(pos);
+    setSelectedCamera(camera);
   };
 
   return (
@@ -80,7 +87,7 @@ const DashboardHome = () => {
       </div>
 
       {/* ส่วนแผนที่ */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-grow flex flex-col min-h-[500px]">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-grow flex flex-col min-h-0">
         <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <h3 className="font-bold text-slate-700 flex items-center gap-2">
             <MapIcon className="h-4 w-4 text-primary-500" />
@@ -90,10 +97,10 @@ const DashboardHome = () => {
              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
-        <div className="flex-grow relative min-h-[500px]">
+        <div className="flex-grow relative min-h-0">
           <CameraMap 
             cameras={cameras} 
-            onSelectCamera={(camera) => setSelectedCamera(camera)} 
+            onSelectCamera={handleSelectCamera} 
           />
         </div>
       </div>
@@ -102,6 +109,7 @@ const DashboardHome = () => {
       {selectedCamera && (
         <StreamModal 
           camera={selectedCamera} 
+          initialPosition={initialPosition}
           onClose={() => setSelectedCamera(null)} 
         />
       )}
@@ -109,4 +117,4 @@ const DashboardHome = () => {
   );
 };
 
-export default DashboardHome;
+export default AdminDashboard;

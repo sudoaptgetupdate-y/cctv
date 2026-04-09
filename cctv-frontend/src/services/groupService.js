@@ -1,10 +1,15 @@
 import apiClient from '../utils/apiClient';
-
 const groupService = {
   async getAll() {
-    const res = await apiClient.get('/groups');
-    return res.data.data;
+    const response = await apiClient.get('/groups');
+    return response.data.data;
   },
+
+  async getPublic() {
+    const response = await apiClient.get('/groups/public');
+    return response.data.data;
+  },
+
   async getById(id) {
     const res = await apiClient.get(`/groups/${id}`);
     return res.data.data;

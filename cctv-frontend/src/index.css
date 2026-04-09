@@ -3,36 +3,60 @@
 @tailwind utilities;
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  --font-family-main: "IBM Plex Sans Thai", "IBM Plex Sans", sans-serif;
 }
 
-body {
-  margin: 0;
-  display: block; /* เปลี่ยนจาก flex เป็น block เพื่อความง่ายในการไล่ความสูง */
-  min-width: 320px;
-  min-height: 100vh;
-  background-color: #f8fafc;
+@layer base {
+  html {
+    font-family: var(--font-family-main);
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  body {
+    @apply antialiased text-slate-800 bg-slate-50;
+    font-family: var(--font-family-main);
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+  }
+
+  input, button, textarea, select, optgroup, option {
+    font-family: inherit;
+  }
 }
 
 #root {
   width: 100%;
 }
 
-/* 🗺️ Leaflet Fix - สำคัญมาก */
+/* 🗺️ Leaflet Fix */
 .leaflet-container {
   width: 100%;
-  height: 500px !important; /* บังคับความสูงเริ่มต้น */
-  min-height: 500px;
+  height: 100%;
   z-index: 1;
-  border-radius: 1rem;
 }
 
 .custom-popup .leaflet-popup-content-wrapper {
   border-radius: 1.25rem;
   padding: 4px;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* 📜 Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-slate-800/50 rounded-full;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-700;
 }
 
 /* Animation สำหรับ Modal */

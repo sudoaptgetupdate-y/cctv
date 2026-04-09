@@ -8,7 +8,7 @@ const WebRTCPlayer = ({ streamId }) => {
   // 🚀 ใช้ WebRTC เป็นหลัก (Ultra-Low Latency) และ MSE เป็นตัวสำรอง
   // - webrtc: ภาพสดทันใจ ไม่หมุนค้าง (ถ้าเน็ตช้าภาพจะกระตุกแทนการหมุนโหลด)
   // - mse: เสถียรกว่าในแง่คุณภาพของภาพ แต่มีโอกาสหมุนโหลด (Buffering)
-  const playerUrl = `/go2rtc-ui/stream.html?src=${streamId}&mode=webrtc,mse&autoplay=1&mute=1`;
+  const playerUrl = `/go2rtc-ui/stream.html?src=${streamId}&mode=webrtc,mse&autoplay=1&mute=1&controls=1`;
 
   useEffect(() => {
     setLoading(true);
@@ -16,12 +16,14 @@ const WebRTCPlayer = ({ streamId }) => {
   }, [streamId]);
 
   return (
-    <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-slate-800 flex items-center justify-center">
+    <div className="relative w-full h-full bg-black rounded-xl overflow-hidden flex items-center justify-center">
       <iframe
         key={streamId}
         src={playerUrl}
         className="w-full h-full border-none"
         scrolling="no"
+        allowFullScreen
+        allow="autoplay; fullscreen; picture-in-picture"
         onLoad={() => setLoading(false)}
       />
       

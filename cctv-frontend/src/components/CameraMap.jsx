@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { Camera, Radio } from 'lucide-react';
+import { Camera, Radio, Activity } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 
 // คอมโพเนนต์ช่วยปรับมุมมองแผนที่ให้ครอบคลุมกล้องทุกตัว
@@ -14,6 +14,21 @@ const AutoBounds = ({ cameras }) => {
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
     }
   }, [cameras, map]);
+  
+  return null;
+};
+
+// คอมโพเนนต์สำหรับเลื่อนแผนที่ไปยังกล้องที่เลือก (Focus)
+const FlyToCamera = ({ focusedCamera }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (focusedCamera) {
+      map.flyTo([focusedCamera.latitude, focusedCamera.longitude], 17, {
+        duration: 1.5
+      });
+    }
+  }, [focusedCamera, map]);
   
   return null;
 };
@@ -45,7 +60,7 @@ const createCameraIcon = (status) => {
   });
 };
 
-const CameraMap = ({ cameras, onSelectCamera }) => {
+const CameraMap = ({ cameras, onSelectCamera, focusedCamera }) => {
   const defaultCenter = [13.7563, 100.5018];
   const center = cameras.length > 0 
     ? [cameras[0].latitude, cameras[0].longitude] 
@@ -55,6 +70,7 @@ const CameraMap = ({ cameras, onSelectCamera }) => {
     <div className="w-full h-full rounded-xl overflow-hidden shadow-inner bg-slate-100">
       <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }}>
         <AutoBounds cameras={cameras} />
+        <FlyToCamera focusedCamera={focusedCamera} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -65,34 +81,34 @@ const CameraMap = ({ cameras, onSelectCamera }) => {
             key={camera.id} 
             position={[camera.latitude, camera.longitude]}
             icon={createCameraIcon(camera.status)}
-          >
-            <Popup className="custom-popup">
-              <div className="p-2 min-w-[200px]">
-                <div className="flex items-center justify-between mb-2 border-b pb-2">
-                  <h3 className="font-bold text-slate-800">{camera.name}</h3>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    camera.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
-                  }`}>
-                    {camera.status}
-                  </span>
-                </div>
+            eventHandlers={{
+              click: (e) => {
+                // คำนวณตำแหน่ง Pixel บนหน้าจอจากพิกัด LatLng
+                const point = e.target._map.latLngToContainerPoint(e.latlng);
+                // ดึงพิกัดจริงของ Map container เพื่อหาตำแหน่งสัมพัทธ์กับหน้าจอ
+                const mapRect = e.target._map.getContainer().getBoundingClientRect();
                 
-                <div className="space-y-2 mb-4">
-                  <p className="text-xs text-slate-500 flex items-center gap-2">
-                    <Radio className="h-3 w-3" /> 
-                    <span>พิกัด: {camera.latitude.toFixed(4)}, {camera.longitude.toFixed(4)}</span>
-                  </p>
-                </div>
+                const screenPos = {
+                  x: point.x + mapRect.left,
+                  y: point.y + mapRect.top
+                };
 
-                <button 
-                  className="w-full bg-primary-600 text-white text-xs font-bold py-2.5 rounded-xl hover:bg-primary-700 transition-all shadow-lg shadow-primary-900/20 flex items-center justify-center gap-2"
-                  onClick={() => onSelectCamera(camera)}
-                >
-                  <Camera className="h-3.5 w-3.5" />
-                  ดูภาพสด (Live Feed)
-                </button>
+                if (onSelectCamera) onSelectCamera(camera, screenPos);
+              },
+            }}
+          >
+            <Tooltip direction="top" offset={[0, -30]} opacity={1} className="custom-tooltip">
+              <div className="p-1 min-w-[150px]">
+                <div className="flex items-center justify-between gap-4 mb-1">
+                  <span className="font-black text-slate-800 text-sm">{camera.name}</span>
+                  <div className={`w-2 h-2 rounded-full ${camera.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold uppercase tracking-tight">
+                  <Activity className="h-3 w-3" />
+                  <span>Click to view live stream</span>
+                </div>
               </div>
-            </Popup>
+            </Tooltip>
           </Marker>
         ))}
       </MapContainer>

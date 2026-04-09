@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
+import './i18n/config' // ✅ เพิ่ม i18n config
 import 'leaflet/dist/leaflet.css' // นำเข้า CSS ของ Leaflet ที่นี่
 import { AuthProvider } from './context/AuthContext.jsx'
 

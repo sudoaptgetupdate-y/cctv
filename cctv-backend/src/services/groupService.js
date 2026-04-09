@@ -13,6 +13,21 @@ const groupService = {
     });
   },
 
+  // สำหรับ Public ดึงเฉพาะรายชื่อกลุ่มที่จำกัดข้อมูล
+  async getAllPublic() {
+    return await prisma.cameraGroup.findMany({
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        _count: {
+          select: { cameras: true }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
+  },
+
   // ดึงข้อมูลกลุ่มตาม ID พร้อมรายชื่อกล้อง
   async getGroupById(id) {
     return await prisma.cameraGroup.findUnique({

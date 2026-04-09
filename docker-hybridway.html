@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCTV Deployment Guide - The Hybrid Way</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 450px;
+        }
+        body {
+            background-color: #F8FAFC;
+            color: #1E293B;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        .code-block {
+            background-color: #0F172A;
+            color: #E2E8F0;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.875rem;
+            position: relative;
+            overflow-x: auto;
+        }
+        .step-card {
+            transition: all 0.2s ease;
+        }
+        .step-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Chosen Palette: Slate & Blue Professional (Slate/Blue/Indigo) with Emerald for Success indicators -->
+    <!-- Application Structure Plan: A logical flow divided into 3 zones: 1. Strategic Overview (Comparing Local vs Prod), 2. Implementation Pipeline (The Git -> Docker flow), and 3. Operational Manual (Actual commands). This helps distinguish between development habits and production standards. -->
+    <!-- Visualization & Content Choices: 1. Deployment Stages -> Timeline/Process Flow -> Shows the Hybrid Way logic. 2. Effort vs. Stability -> Bar Chart -> Justifies why we use Docker on Prod but not Local. 3. Code Snippets -> Styled Text blocks -> Practical implementation. Confirming NO SVG/Mermaid. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <div class="max-w-5xl mx-auto p-4 md:p-10 space-y-8">
+        
+        <header class="text-center space-y-4">
+            <div class="inline-block px-4 py-1.5 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold uppercase tracking-wider">Deployment Standard</div>
+            <h1 class="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">The Hybrid Way 🚀</h1>
+            <p class="text-lg text-slate-600 max-w-2xl mx-auto italic">
+                "พัฒนาที่เครื่องเราแบบ Agile, รันบนเซิร์ฟเวอร์แบบ Immutable"
+            </p>
+        </header>
+
+        <section class="bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-slate-200">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">1. การเปรียบเทียบสภาพแวดล้อม</h2>
+                    <p class="text-slate-500">เหตุผลที่เราใช้ Docker เฉพาะบน Production</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="updateChart('time')" id="btn-time" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium shadow-sm transition-all">Setup Time</button>
+                    <button onclick="updateChart('stability')" id="btn-stability" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-all">System Stability</button>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="deploymentChart"></canvas>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <span class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-xl">💻</span>
+                        <h3 class="text-xl font-bold text-slate-800">Local PC (Development)</h3>
+                    </div>
+                    <ul class="space-y-2 text-slate-600 text-sm">
+                        <li class="flex items-start gap-2">✅ เน้นความเร็วในการแก้โค้ด (Hot Reload)</li>
+                        <li class="flex items-start gap-2">✅ รัน `npm run dev` เพื่อเห็นผลทันที</li>
+                        <li class="flex items-start gap-2">✅ ใช้เครื่องมือ Debugging ของ OS ได้เต็มที่</li>
+                    </ul>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <span class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-xl">🐳</span>
+                        <h3 class="text-xl font-bold text-slate-800">Production (192.168.123.123)</h3>
+                    </div>
+                    <ul class="space-y-2 text-slate-600 text-sm">
+                        <li class="flex items-start gap-2">✅ สภาพแวดล้อมคงที่ (Immutable)</li>
+                        <li class="flex items-start gap-2">✅ แยกบริการ (Isolation) ไม่ให้ตีกัน</li>
+                        <li class="flex items-start gap-2">✅ Auto-restart หากระบบล่ม (Self-healing)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="space-y-6">
+            <h2 class="text-2xl font-bold text-slate-800 px-2">2. ขั้นตอนการ Deploy (Hybrid Workflow)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <div class="step-card bg-white p-6 rounded-2xl border border-slate-200 space-y-4">
+                    <div class="text-3xl">🛠️</div>
+                    <h4 class="font-bold text-slate-800">Step 1: Local Dev</h4>
+                    <p class="text-sm text-slate-500">พัฒนาบน Local เมื่อพอใจแล้วสั่ง Push โค้ดขึ้น Git</p>
+                    <div class="code-block text-xs">
+                        git add .<br>
+                        git commit -m "update cctv"<br>
+                        git push origin main
+                    </div>
+                </div>
+
+                <div class="step-card bg-white p-6 rounded-2xl border border-slate-200 space-y-4">
+                    <div class="text-3xl">☁️</div>
+                    <h4 class="font-bold text-slate-800">Step 2: Server Pull</h4>
+                    <p class="text-sm text-slate-500">SSH เข้าเซิร์ฟเวอร์ และดึงโค้ดล่าสุดลงมา</p>
+                    <div class="code-block text-xs">
+                        ssh user@192.168.123.123<br>
+                        cd /cctv-project<br>
+                        git pull origin main
+                    </div>
+                </div>
+
+                <div class="step-card bg-indigo-600 p-6 rounded-2xl border border-indigo-700 shadow-lg shadow-indigo-100 space-y-4">
+                    <div class="text-3xl">⚡</div>
+                    <h4 class="font-bold text-white">Step 3: Hybrid Build</h4>
+                    <p class="text-sm text-indigo-100">ใช้ Docker Compose สั่ง Build และรันใหม่ทันที</p>
+                    <div class="code-block bg-indigo-900 text-indigo-100 text-xs">
+                        docker-compose up -d --build
+                    </div>
+                    <p class="text-xs text-indigo-200 italic font-medium">Docker จะใช้ Cache ส่วนที่ไม่ได้เปลี่ยน ทำให้รันเร็วมาก!</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-slate-900 rounded-3xl p-8 md:p-12 text-slate-300">
+            <div class="max-w-3xl">
+                <h2 class="text-2xl font-bold text-white mb-6">💡 ทำไมต้องใช้ `--build` ทุกครั้ง?</h2>
+                <div class="space-y-6 text-slate-400">
+                    <p>
+                        เมื่อเราเลือกใช้ <b>"Hybrid Way"</b> (Git Pull -> Build on Server) การใช้ Flag <code>--build</code> จะบอกให้ Docker ตรวจสอบว่ามีไฟล์ไหนในโฟลเดอร์เปลี่ยนไปบ้าง 
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                            <h5 class="text-emerald-400 font-bold mb-2">ข้อดี (Pro)</h5>
+                            <ul class="text-xs space-y-1">
+                                <li>• ไม่ต้องตั้ง Registry กลาง</li>
+                                <li>• แก้ไข Bug หน้างานได้เร็ว</li>
+                                <li>• ประหยัด Bandwidth ขาออก</li>
+                            </ul>
+                        </div>
+                        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                            <h5 class="text-rose-400 font-bold mb-2">ข้อควรระวัง (Caution)</h5>
+                            <ul class="text-xs space-y-1">
+                                <li>• Server ต้องมี CPU/RAM พอสำหรับ Build</li>
+                                <li>• ครั้งแรกอาจจะนานเพราะต้องโหลด Base Image</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="pt-4 border-t border-slate-800 text-sm italic">
+                        *เหมาะมากสำหรับการพัฒนาระบบที่มีการอัปเดตบ่อย (Agile) และรันบนระบบ Network ภายในตำบล
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="text-center py-10 border-t border-slate-200">
+            <p class="text-slate-400 text-sm">CCTV Monitoring Architecture - Deployment Standard 1.0</p>
+        </footer>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('deploymentChart').getContext('2d');
+        
+        const chartData = {
+            time: {
+                labels: ['Local (Node/PM2)', 'Production (Docker)'],
+                datasets: [{
+                    label: 'Setup & Build Time (Seconds)',
+                    data: [15, 45],
+                    backgroundColor: ['#94A3B8', '#3B82F6'],
+                    borderRadius: 12,
+                    barThickness: 50
+                }]
+            },
+            stability: {
+                labels: ['Local (Node/PM2)', 'Production (Docker)'],
+                datasets: [{
+                    label: 'Stability Score (0-100)',
+                    data: [65, 98],
+                    backgroundColor: ['#94A3B8', '#10B981'],
+                    borderRadius: 12,
+                    barThickness: 50
+                }]
+            }
+        };
+
+        const config = {
+            type: 'bar',
+            data: chartData.time,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        padding: 12,
+                        backgroundColor: '#0F172A',
+                        titleFont: { weight: 'bold' }
+                    }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true,
+                        grid: { color: '#F1F5F9' },
+                        ticks: { font: { weight: '600' } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { weight: 'bold' } }
+                    }
+                }
+            }
+        };
+
+        const deployChart = new Chart(ctx, config);
+
+        function updateChart(type) {
+            deployChart.data = chartData[type];
+            deployChart.update();
+
+            const btnTime = document.getElementById('btn-time');
+            const btnStability = document.getElementById('btn-stability');
+
+            if (type === 'time') {
+                btnTime.className = "px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium shadow-sm transition-all";
+                btnStability.className = "px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-all";
+            } else {
+                btnStability.className = "px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium shadow-sm transition-all";
+                btnTime.className = "px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-all";
+            }
+        }
+    </script>
+</body>
+</html>
