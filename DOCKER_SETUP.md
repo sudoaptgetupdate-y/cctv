@@ -60,7 +60,7 @@ docker compose exec backend node prisma/seed.js
 ### 🔄 กรณีอัปเดตระบบ (Future Updates)
 เมื่อคุณพัฒนาโค้ดบน Local เสร็จและ Push ขึ้น Git แล้ว ให้ทำดังนี้บน Server:
 ```bash
-# 1. ดึงโค้ดล่าสุด (ไม่ต้องห่วงเรื่อง .env หรือข้อมูลหาย เพราะแยกกันอยู่)
+# 1. ดึงโค้ดล่าสุด
 git pull origin main
 
 # 2. สั่ง Re-build และ Re-start เพื่อเปลี่ยนเวอร์ชัน
@@ -74,30 +74,41 @@ docker compose exec backend npx prisma migrate deploy
 
 ## 4. รายละเอียด Config ที่สำคัญ
 
-### 🌐 Docker Compose (docker-compose.yml)
-ไฟล์นี้ถูกตั้งค่าให้ดึงค่าจาก `.env` โดยอัตโนมัติ (เช่น `${DB_USER}`) ทำให้คุณไม่ต้องแก้โค้ดนี้บ่อยๆ
-
-### 🎥 go2rtc (cctv-backend/go2rtc.yaml)
-ตรวจสอบว่าพาธ FFmpeg เป็นของ Linux:
-```yaml
-ffmpeg:
-  bin: "ffmpeg"
-```
-
-### 🗄️ Prisma (prisma/schema.prisma)
-ต้องมี binaryTargets เพื่อให้รันใน Container ได้:
-```prisma
-generator client {
-  provider = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
-}
-```
+*   **docker-compose.yml:** ตั้งค่าให้ดึงค่าจาก `.env` โดยอัตโนมัติ (เช่น `${DB_USER}`)
+*   **go2rtc.yaml:** แก้พาธ FFmpeg เป็น Linux (`bin: "ffmpeg"`)
+*   **prisma/schema.prisma:** เพิ่ม `binaryTargets = ["native", "debian-openssl-3.0.x"]`
 
 ---
 
-## 5. การตรวจสอบและบำรุงรักษา
+## 5. การตั้งค่า Reverse Proxy (Nginx Proxy Manager)
+
+เมื่อรันระบบสำเร็จแล้ว ให้ทำตามขั้นตอนนี้เพื่อเชื่อมต่อ Domain ของคุณเข้ากับระบบ:
+
+### 1. เข้าสู่ระบบ Admin UI
+*   **URL:** `http://your-server-ip:81`
+*   **Default Login:** `admin@example.com` / `changeme`
+
+### 2. ตั้งค่าสำหรับ Frontend (หน้าเว็บหลัก)
+1.  ไปที่ **Hosts > Proxy Hosts** แล้วกด **Add Proxy Host**
+2.  **Tab: Details**
+    *   **Domain Names:** ใส่โดเมนของคุณ (เช่น `cctv.yourdomain.com`)
+    *   **Forward Hostname / IP:** `frontend`
+    *   **Forward Port:** `80`
+    *   **Websockets Support:** ✅ **ON** (จำเป็นสำหรับการ Streaming)
+3.  **Tab: SSL**
+    *   เลือก `Request a new SSL Certificate` และเปิด `Force SSL`
+
+### 3. ตั้งค่าสำหรับ Backend API
+*   **Domain Names:** `api.yourdomain.com`
+*   **Forward Hostname / IP:** `backend`
+*   **Forward Port:** `5000`
+*   **Websockets Support:** ✅ **ON**
+
+---
+
+## 6. การตรวจสอบและบำรุงรักษา
 
 *   **ดูสถานะ:** `docker compose ps`
 *   **ดู Log:** `docker compose logs -f --tail 50 backend`
 *   **Backup ข้อมูล:** สำรองโฟลเดอร์ `mysql_data/` และไฟล์ `.env` ไว้สม่ำเสมอ
-*   **Firewall:** ต้องเปิด Port 80, 443 (Web), 81 (Proxy Manager), และ 1984, 8554, 8555 (Streaming) ในระบบ Firewall ของคุณ
+*   **Firewall:** ต้องเปิด Port 80, 443 (Web), 81 (Proxy UI), 1984, 8554, 8555 (Streaming)

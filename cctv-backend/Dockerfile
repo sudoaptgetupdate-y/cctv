@@ -8,6 +8,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
+# Copy prisma folder explicitly before everything else to ensure migrations are there
+COPY prisma ./prisma/
+
 COPY . .
 
 # Generate Prisma Client

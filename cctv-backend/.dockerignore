@@ -4,5 +4,7 @@ npm-debug.log
 .git
 .gitignore
 *.exe
-prisma/migrations
+# อนุญาตให้ Copy prisma/migrations เข้าไปเพื่อใช้ใน migrate deploy
+!prisma/migrations
 !prisma/schema.prisma
+!prisma/seed.js
