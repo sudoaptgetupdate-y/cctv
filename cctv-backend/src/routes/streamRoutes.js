@@ -67,7 +67,7 @@ router.post('/webrtc/:streamId', express.text({ type: 'text/plain', limit: '1mb'
   }
 });
 
-// ต้อง Login ก่อนถึงจะดึงข้อมูลสตรีมได้
-router.get('/:cameraId', verifyToken, streamController.getStreamInfo);
+// ดึงข้อมูลสตรีม (เช็ค Public อัตโนมัติข้างใน Controller หรือปลดล็อคให้เข้าได้)
+router.get('/:cameraId', streamController.getStreamInfo);
 
 module.exports = router;

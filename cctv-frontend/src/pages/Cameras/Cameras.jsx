@@ -40,7 +40,7 @@ const Cameras = () => {
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', groupId: ''
+    name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', groupId: '', isPublic: false
   });
 
   useEffect(() => {
@@ -102,12 +102,13 @@ const Cameras = () => {
         subStream: camera.subStream || '',
         username: camera.username || '',
         password: camera.password || '',
-        groupId: camera.groups?.[0]?.id || ''
+        groupId: camera.groups?.[0]?.id || '',
+        isPublic: camera.isPublic || false
       });
     } else {
       setEditingCamera(null);
       setFormData({
-        name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', groupId: ''
+        name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', groupId: '', isPublic: false
       });
     }
     setShowFormModal(true);

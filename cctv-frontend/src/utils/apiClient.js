@@ -21,8 +21,14 @@ apiClient.interceptors.request.use((config) => {
 // จัดการเมื่อ Token หมดอายุ (401)
 apiClient.interceptors.response.use((response) => response, (error) => {
   if (error.response && error.response.status === 401) {
+    const isPublicPage = window.location.pathname === '/' || window.location.pathname === '/public';
+    
     localStorage.removeItem('cctv_token');
-    window.location.href = '/login';
+    
+    // ถ้าไม่ใช่หน้า Public ค่อยเด้งไป Login
+    if (!isPublicPage) {
+      window.location.href = '/login';
+    }
   }
   return Promise.reject(error);
 });

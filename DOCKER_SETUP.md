@@ -1,6 +1,6 @@
 # 🐳 Docker Setup Guide for Ubuntu 22.04 / 24.04 (The Hybrid Way)
 
-คู่มือนี้สำหรับใช้ในการ Deploy ระบบ **CCTV Monitoring System** บนเซิร์ฟเวอร์จริง โดยใช้ Docker ตามกลยุทธ์ "The Hybrid Way" (พัฒนาบน Local แต่รันแบบ Container บน Production)
+คู่มือนี้สำหรับใช้ในการ Deploy ระบบ **CCTV Monitoring System** บนเซิร์ฟเวอร์จริง โดยใช้ Docker ตามกลยุทธ์ "The Hybrid Way" ที่ผ่านการ Optimized เพื่อประสิทธิภาพสูงสุด
 
 ---
 
@@ -17,115 +17,55 @@ sudo usermod -aG docker $USER
 
 ---
 
-## 2. การจัดการความลับของระบบ (.env)
+## 2. โครงสร้างไฟล์และความลับ (.env)
 
-สร้างไฟล์ `.env` ใน Root Directory (`~/projects/cctv`) เพื่อเก็บรหัสผ่าน (ไฟล์นี้จะไม่ถูกส่งขึ้น Git):
+สร้างไฟล์ `.env` ใน Root Directory เพื่อเก็บรหัสผ่าน (ไฟล์นี้จะไม่ถูกส่งขึ้น Git):
 
 ```bash
 nano .env
 ```
 **ตัวอย่างข้อมูล:**
 ```text
-# Database Settings
-DB_ROOT_PASSWORD=your_secure_root_password
+DB_ROOT_PASSWORD=your_secure_password
 DB_NAME=cctv_db
 DB_USER=cctv_admin
 DB_PASSWORD=your_secure_password
-
-# Authentication
 JWT_SECRET=your_jwt_secret_key
 ```
 
 ---
 
-## 3. รายละเอียด Config ที่ผ่านการรีไฟน์แล้ว (Verified)
+## 3. การปรับแต่งเพื่อประสิทธิภาพสูงสุด (Best Practices)
 
-### 📄 `docker-compose.yml`
-จุดสำคัญคือ `extra_hosts` ทั้งใน Backend และ Frontend เพื่อให้คุยกับ `go2rtc` ได้:
-```yaml
-services:
-  # ... (proxy & db) ...
+### 🎥 กลยุทธ์การจัดการกล้อง (Zero CPU Usage)
+เพื่อให้ระบบรองรับกล้องได้จำนวนมากโดยไม่กิน CPU (นิ่งที่ ~3-5%):
+1.  **ตั้งค่ากล้องต้นทาง**: ควรตั้งค่ากล้อง (Dahua/Hikvision) ให้ส่งสัญญาณแบบ **H.264** เท่านั้น (หลีกเลี่ยง H.265 หากไม่จำเป็น)
+2.  **ใช้ Sub-stream**: แนะนำให้ใช้ URL ที่เป็น Sub-stream (เช่น `subtype=1`) สำหรับการดูหน้า Dashboard เพื่อความลื่นไหล
+3.  **Dynamic Registration**: ห้ามระบุชื่อกล้องใน `go2rtc.yaml` ตายตัว ระบบจะใช้ Backend API ในการลงทะเบียนกล้องให้เองแบบอัตโนมัติ
 
-  go2rtc:
-    image: alexxit/go2rtc
-    restart: always
-    network_mode: host # สำคัญมากสำหรับ WebRTC
-    volumes:
-      - ./cctv-backend/go2rtc.yaml:/config/go2rtc.yaml
+### 💻 สำหรับการรันบน Proxmox (Virtual Production)
+เพื่อให้ FFmpeg และ Docker ทำงานได้เต็มประสิทธิภาพ:
+1.  ไปที่ **Hardware > CPU**
+2.  เปลี่ยน **Type** เป็น **`host`** (สำคัญมาก เพื่อใช้ชุดคำสั่งพิเศษของ CPU จริง)
+3.  กำหนด Cores อย่างน้อย 4 Cores เพื่อรองรับการทำงานแบบ Multi-tasking
 
-  backend:
-    # ...
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    networks:
-      - cctv-network
+---
 
-  frontend:
-    # ...
-    extra_hosts:
-      - "host.docker.internal:host-gateway" # เพื่อให้ Nginx Proxy ไปหา go2rtc ได้
-    networks:
-      - cctv-network
-```
+## 4. รายละเอียด Nginx Proxy (No Buffering)
 
-### 📄 `cctv-frontend/nginx.conf`
-การตั้งค่า Proxy ที่ถูกต้องเพื่อให้ทั้งหน้าเว็บ, API และ Video Stream วิ่งผ่าน Domain เดียวกัน:
+ไฟล์ `nginx.conf` ถูกปรับแต่งให้ปิด Buffering เพื่อให้วิดีโอแสดงผลทันทีแบบ Zero Latency:
 ```nginx
-server {
-    listen 80;
-    server_name localhost;
-
-    location / {
-        root /usr/share/nginx/html;
-        index index.html index.htm;
-        try_files $uri $uri/ /index.html;
-    }
-
-    # Proxy สำหรับ Video Streaming (go2rtc)
-    location /api/streams/ {
-        proxy_pass http://host.docker.internal:1984/api/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-    }
-
-    # Proxy สำหรับ API Backend
-    location /api/ {
-        proxy_pass http://backend:5000/api/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-    }
+location /go2rtc-ui/ {
+    proxy_pass http://host.docker.internal:1984/;
+    proxy_buffering off; # ปิดการสะสมข้อมูลวิดีโอ
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection 'upgrade';
 }
 ```
 
 ---
 
-## 4. ขั้นตอนการ Deploy & Update
-
-### 🚀 กรณี Deploy ครั้งแรก
-```bash
-git clone <your-repo-url>
-cd cctv
-# สร้างไฟล์ .env (ตามข้อ 2)
-docker compose up -d --build
-docker compose exec backend npx prisma migrate deploy
-docker compose exec backend node prisma/seed.js
-```
-
-### 🔄 กรณีอัปเดตระบบ (หลัง Push โค้ดใหม่)
-```bash
-git pull origin main
-docker compose up -d --build
-# หากมีการแก้ Database Schema
-docker compose exec backend npx prisma migrate deploy
-```
-
----
-
-## 5. การตั้งค่า Nginx Proxy Manager (NPM)
+## 5. การตั้งค่า Reverse Proxy (Nginx Proxy Manager)
 
 1.  เข้า `http://your-server-ip:81` (Admin: `admin@example.com` / `changeme`)
 2.  **Add Proxy Host:**
@@ -137,8 +77,11 @@ docker compose exec backend npx prisma migrate deploy
 
 ---
 
-## 6. การตรวจสอบและแก้ไขปัญหา
+## 6. การดูแลรักษาและแก้ไขปัญหา
 
-*   **วิดีโอไม่ขึ้น?**: ตรวจสอบว่าเปิด Port `1984, 8555 (TCP/UDP)` ที่ Firewall ของ Ubuntu แล้วหรือยัง
-*   **Log Backend**: `docker compose logs -f backend`
-*   **Log Frontend**: `docker compose logs -f frontend`
+*   **ล้าง Cache กล้อง**: หากเปลี่ยนค่าใน DB แล้ววิดีโอไม่เปลี่ยนตาม ให้สั่ง:
+    `docker compose restart go2rtc`
+*   **ดูสถานะ CPU**: ใช้คำสั่ง `docker stats` เพื่อตรวจสอบว่ามีการ Transcode แอบแฝงหรือไม่ (ถ้าใช้ H.264 ควรต่ำกว่า 10%)
+*   **Log ตรวจสอบ**: 
+    *   `docker compose logs -f backend` (ดูการลงทะเบียนกล้อง)
+    *   `docker compose logs -f go2rtc` (ดูการดึงสัญญาณภาพ)

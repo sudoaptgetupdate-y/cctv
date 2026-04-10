@@ -38,6 +38,9 @@ model Camera {
   status      CameraStatus @default(ACTIVE)
   lastSeen    DateTime?
   
+  // ✅ Public Visibility
+  isPublic          Boolean   @default(false)
+  
   // ✅ Acknowledgement System
   isAcknowledged    Boolean   @default(true)
   acknowledgeReason String?   @db.Text

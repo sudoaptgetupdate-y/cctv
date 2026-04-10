@@ -13,18 +13,21 @@ const cameraService = {
     });
   },
 
-  // ดึงข้อมูลกล้องสาธารณะ (ไม่รวม Username/Password และดึงเฉพาะที่ ACTIVE)
+  // ดึงข้อมูลกล้องสาธารณะ (ปกปิดข้อมูลลับ)
   async getAllPublic() {
     return await prisma.camera.findMany({
-      where: { status: 'ACTIVE' },
+      where: { 
+        status: 'ACTIVE',
+        isPublic: true // ✅ ดึงเฉพาะที่อนุญาตให้คนทั่วไปดู
+      },
       select: {
         id: true,
         name: true,
         latitude: true,
         longitude: true,
-        rtspUrl: true, // RTSP URL จำเป็นต้องใช้ในการสตรีม
-        subStream: true,
+        thumbnailUrl: true,
         status: true,
+        // ❌ ไม่ส่ง rtspUrl, username, password ไปยัง Browser สาธารณะ
         groups: {
           select: { id: true, name: true }
         }

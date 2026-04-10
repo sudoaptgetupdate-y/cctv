@@ -62,6 +62,22 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
               </select>
             </div>
           </div>
+
+          {/* ✅ เพิ่มส่วน Public Visibility */}
+          <div className="pt-2">
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <div className="relative">
+                <input 
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={formData.isPublic}
+                  onChange={(e) => setFormData({...formData, isPublic: e.target.checked})}
+                />
+                <div className="w-10 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </div>
+              <span className="text-xs font-bold text-slate-700 group-hover:text-blue-600 transition-colors">แสดงผลในหน้า Public Dashboard (ไม่ต้อง Login)</span>
+            </label>
+          </div>
         </div>
 
         {/* พิกัดแผนที่ */}
