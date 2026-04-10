@@ -12,15 +12,14 @@ const streamService = {
     const streamId = `camera_${camera.id}`;
     const go2rtcUrl = process.env.GO2RTC_URL || 'http://host.docker.internal:1984';
 
-    console.log(`[Streaming] 🚀 SMART RELAY MODE FOR ${streamId}...`);
+    console.log(`[Streaming] ⚡️ PROMOTING RELAY MODE FOR ${streamId}...`);
 
     try {
-      // 1. ลบสตรีมเก่าออก
       try { await axios.delete(`${go2rtcUrl}/api/streams?name=${streamId}`); } catch (e) {}
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 300));
 
-      // 2. ⚡️ HIGH PERFORMANCE RELAY (0% CPU)
-      // เมื่อคุณเปลี่ยนกล้องเป็น H.264 แล้ว วิธีนี้จะลื่นที่สุดและไม่กิน CPU เลย
+      // 🚀 บังคับใช้ RELAY MODE (ส่ง URL ตรงๆ ให้ go2rtc)
+      // หากกล้องเป็น H.264 วิธีนี้จะใช้ CPU 0% อย่างแท้จริง
       const relaySrc = camera.rtspUrl;
       
       await axios.put(`${go2rtcUrl}/api/streams?name=${streamId}`, relaySrc, {
@@ -28,17 +27,18 @@ const streamService = {
         timeout: 5000
       });
 
-      console.log(`[Streaming] ✅ ${streamId} registered in RELAY Mode (Zero CPU)`);
+      console.log(`[Streaming] ✅ ${streamId} registered in PURE RELAY Mode (0% CPU)`);
     } catch (error) {
-      console.warn(`[Streaming] ⚠️ Relay failed, falling back to Transcode...`);
+      console.warn(`[Streaming] ⚠️ Pure Relay failed, falling back to FFmpeg-Copy...`);
       
-      // Fallback: ถ้ายังเป็น H.265 อยู่ ให้ใช้ FFmpeg ช่วยแปลง (โหมดประหยัด CPU)
+      // Fallback: หากแบบแรกมีปัญหา ให้ใช้ FFmpeg แต่สั่งแค่ COPY (ไม่ Re-encode)
       try {
-        const fallbackSrc = `ffmpeg:${camera.rtspUrl}#video=h264#audio=aac#input=-rtsp_transport tcp`;
-        const encodedSrc = encodeURIComponent(fallbackSrc);
+        const copySrc = `ffmpeg:${camera.rtspUrl}#video=copy#audio=aac#input=-rtsp_transport tcp`;
+        const encodedSrc = encodeURIComponent(copySrc);
         await axios.put(`${go2rtcUrl}/api/streams?name=${streamId}&src=${encodedSrc}`);
+        console.log(`[Streaming] 🔄 ${streamId} registered in COPY Mode (Low CPU)`);
       } catch (fError) {
-        console.error(`[Streaming] 🚨 Critical Error: ${fError.message}`);
+        console.error(`[Streaming] 🚨 All methods failed: ${fError.message}`);
       }
     }
 
