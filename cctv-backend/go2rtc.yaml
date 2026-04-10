@@ -18,6 +18,8 @@ streams:
   # 1. ลองแบบ Pure RTSP (ไม่ต้องใช้ FFmpeg) - เร็วและกินทรัพยากรน้อยกว่า
   camera_direct:
     - rtsp://admin:Lkfgxifde0905@192.168.10.219:554/cam/realmonitor?channel=1&subtype=0
+  camera_2:
+    - rtsp://admin:Lkfgxifde0905@192.168.10.219:554/cam/realmonitor?channel=1&subtype=0
 
   # 2. ลองแบบผ่าน FFmpeg (หากแบบแรกภาพไม่ขึ้น)
   camera_ffmpeg:
