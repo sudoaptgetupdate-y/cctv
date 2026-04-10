@@ -1,6 +1,5 @@
 api:
   listen: ":1984"
-  # ✅ อนุญาตทุก Origin เพื่อแก้ปัญหา 403 Forbidden เมื่อผ่าน Proxy
   origin: "*"
 
 rtsp:
@@ -19,6 +18,11 @@ ffmpeg:
   bin: "ffmpeg"
 
 streams:
-  # ✅ ลองเปลี่ยนเป็น RTSP Test Stream ที่ไม่ต้องใช้ HTTP Headers
+  # ✅ ใช้ Link กล้องจริงของคุณที่ Ping เจอ (ตัวอย่าง)
+  # เปลี่ยน admin:password และ IP เป็นของกล้องจริงๆ ของคุณครับ
+  real_camera:
+    - ffmpeg:rtsp://admin:Lkfgxifde0905@192.168.10.219:554/cam/realmonitor?channel=1&subtype=0#video=h264#audio=aac
+
+  # ✅ Link ทดสอบตัวใหม่ (แบบไม่มีรหัสผ่าน)
   test_camera:
-    - rtsp://rtspstream:72052c9225725f0e1f7495033783c162@zephyr.rtsp.stream/movie
+    - rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov
