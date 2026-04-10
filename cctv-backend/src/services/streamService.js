@@ -12,34 +12,31 @@ const streamService = {
     const streamId = `camera_${camera.id}`;
     const go2rtcUrl = process.env.GO2RTC_URL || 'http://host.docker.internal:1984';
 
-    console.log(`[Streaming] ⚡️ PROMOTING RELAY MODE FOR ${streamId}...`);
+    // 🚀 บังคับใช้ค่าที่คุณเพิ่งแก้ในหน้า Manage (rtspUrl)
+    const currentRtspUrl = camera.rtspUrl;
+
+    console.log(`[Streaming] 🛡️ RE-REGISTERING ${streamId}`);
+    console.log(`[Streaming] 🔗 Target URL: ${currentRtspUrl}`);
 
     try {
-      try { await axios.delete(`${go2rtcUrl}/api/streams?name=${streamId}`); } catch (e) {}
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      // 🚀 บังคับใช้ RELAY MODE (ส่ง URL ตรงๆ ให้ go2rtc)
-      // หากกล้องเป็น H.264 วิธีนี้จะใช้ CPU 0% อย่างแท้จริง
-      const relaySrc = camera.rtspUrl;
+      // 1. ลบสตรีมเก่าออกแบบถอนรากถอนโคน (Force Delete)
+      try { 
+        await axios.delete(`${go2rtcUrl}/api/streams?name=${streamId}`);
+        console.log(`[Streaming] 🗑️ Old stream deleted`);
+      } catch (e) {}
       
-      await axios.put(`${go2rtcUrl}/api/streams?name=${streamId}`, relaySrc, {
+      // 2. หน่วงเวลาให้ go2rtc เคลียร์ Consumer เก่าที่ค้างอยู่ใน Browser
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // 3. ลงทะเบียนใหม่ด้วยค่าล่าสุด (Relay Mode เพื่อ 0% CPU)
+      await axios.put(`${go2rtcUrl}/api/streams?name=${streamId}`, currentRtspUrl, {
         headers: { 'Content-Type': 'text/plain' },
         timeout: 5000
       });
 
-      console.log(`[Streaming] ✅ ${streamId} registered in PURE RELAY Mode (0% CPU)`);
+      console.log(`[Streaming] ✅ ${streamId} registered successfully with latest URL`);
     } catch (error) {
-      console.warn(`[Streaming] ⚠️ Pure Relay failed, falling back to FFmpeg-Copy...`);
-      
-      // Fallback: หากแบบแรกมีปัญหา ให้ใช้ FFmpeg แต่สั่งแค่ COPY (ไม่ Re-encode)
-      try {
-        const copySrc = `ffmpeg:${camera.rtspUrl}#video=copy#audio=aac#input=-rtsp_transport tcp`;
-        const encodedSrc = encodeURIComponent(copySrc);
-        await axios.put(`${go2rtcUrl}/api/streams?name=${streamId}&src=${encodedSrc}`);
-        console.log(`[Streaming] 🔄 ${streamId} registered in COPY Mode (Low CPU)`);
-      } catch (fError) {
-        console.error(`[Streaming] 🚨 All methods failed: ${fError.message}`);
-      }
+      console.error(`[Streaming] ❌ Error: ${error.message}`);
     }
 
     return { streamId, go2rtcUrl, cameraName: camera.name };
