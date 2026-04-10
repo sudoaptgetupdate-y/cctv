@@ -12,28 +12,34 @@ const streamService = {
     const streamId = `camera_${camera.id}`;
     const go2rtcUrl = process.env.GO2RTC_URL || 'http://host.docker.internal:1984';
 
-    // 🚀 กลยุทธ์ประหยัด CPU: ถ้ามี subStream (ซึ่งมักเป็น H.264) ให้ใช้ตัวนั้นก่อน
-    const rtspUrl = camera.subStream || camera.rtspUrl;
-
-    console.log(`[Streaming] 🛡️ EMERGENCY SAVING MODE FOR ${streamId}...`);
+    console.log(`[Streaming] 🚀 SMART RELAY MODE FOR ${streamId}...`);
 
     try {
+      // 1. ลบสตรีมเก่าออก
       try { await axios.delete(`${go2rtcUrl}/api/streams?name=${streamId}`); } catch (e) {}
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 200));
 
-      // 🏎️ ปรับจูน FFmpeg ขั้นสุดยอด:
-      // -threads 1: จำกัดการใช้ CPU เพียง 1 Core ต่อกล้อง (ป้องกัน CPU พุ่งทะลุ 200%)
-      // -c:v libx264 -preset ultrafast: เน้นประหยัดเวลาคำนวณที่สุด
-      // -crf 28: ยอมเสียความคมชัดเพื่อประหยัด CPU
-      const survivalSrc = `exec:ffmpeg -hide_banner -v error -rtsp_transport tcp -i "${rtspUrl}" -c:v libx264 -preset ultrafast -tune zerolatency -threads 1 -s 640x360 -b:v 400k -r 15 -g 30 -crf 28 -pix_fmt yuv420p -c:a copy -f rtsp {output}`;
+      // 2. ⚡️ HIGH PERFORMANCE RELAY (0% CPU)
+      // เมื่อคุณเปลี่ยนกล้องเป็น H.264 แล้ว วิธีนี้จะลื่นที่สุดและไม่กิน CPU เลย
+      const relaySrc = camera.rtspUrl;
       
-      const encodedSrc = encodeURIComponent(survivalSrc);
-      const registerUrl = `${go2rtcUrl}/api/streams?name=${streamId}&src=${encodedSrc}`;
-      
-      await axios.put(registerUrl, null, { timeout: 10000 });
-      console.log(`[Streaming] ✅ ${streamId} registered in SURVIVAL Mode (Low CPU)`);
+      await axios.put(`${go2rtcUrl}/api/streams?name=${streamId}`, relaySrc, {
+        headers: { 'Content-Type': 'text/plain' },
+        timeout: 5000
+      });
+
+      console.log(`[Streaming] ✅ ${streamId} registered in RELAY Mode (Zero CPU)`);
     } catch (error) {
-      console.error(`[Streaming] ❌ Error: ${error.message}`);
+      console.warn(`[Streaming] ⚠️ Relay failed, falling back to Transcode...`);
+      
+      // Fallback: ถ้ายังเป็น H.265 อยู่ ให้ใช้ FFmpeg ช่วยแปลง (โหมดประหยัด CPU)
+      try {
+        const fallbackSrc = `ffmpeg:${camera.rtspUrl}#video=h264#audio=aac#input=-rtsp_transport tcp`;
+        const encodedSrc = encodeURIComponent(fallbackSrc);
+        await axios.put(`${go2rtcUrl}/api/streams?name=${streamId}&src=${encodedSrc}`);
+      } catch (fError) {
+        console.error(`[Streaming] 🚨 Critical Error: ${fError.message}`);
+      }
     }
 
     return { streamId, go2rtcUrl, cameraName: camera.name };
