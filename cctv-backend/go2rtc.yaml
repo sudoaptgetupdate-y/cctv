@@ -18,9 +18,9 @@ webrtc:
     - host:8555
 
 
-# ✅ ตำแหน่ง FFmpeg
+# ✅ ตำแหน่ง FFmpeg สำหรับ Docker (Linux)
 ffmpeg:
-  bin: "D:\\1.Development\\dev-cctv\\cctv\\cctv-backend\\ffmpeg.exe"
+  bin: "ffmpeg"
 
 streams:
   test_manual:
