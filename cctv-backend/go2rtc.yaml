@@ -14,15 +14,11 @@ webrtc:
     - host:8555
     - stun:8555
 
-ffmpeg:
-  bin: "ffmpeg"
-
 streams:
-  # ✅ ใช้ Link กล้องจริงของคุณที่ Ping เจอ (ตัวอย่าง)
-  # เปลี่ยน admin:password และ IP เป็นของกล้องจริงๆ ของคุณครับ
-  real_camera:
-    - ffmpeg:rtsp://admin:Lkfgxifde0905@192.168.10.219:554/cam/realmonitor?channel=1&subtype=0#video=h264#audio=aac
+  # 1. ลองแบบ Pure RTSP (ไม่ต้องใช้ FFmpeg) - เร็วและกินทรัพยากรน้อยกว่า
+  camera_direct:
+    - rtsp://admin:Lkfgxifde0905@192.168.10.219:554/cam/realmonitor?channel=1&subtype=0
 
-  # ✅ Link ทดสอบตัวใหม่ (แบบไม่มีรหัสผ่าน)
-  test_camera:
-    - rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov
+  # 2. ลองแบบผ่าน FFmpeg (หากแบบแรกภาพไม่ขึ้น)
+  camera_ffmpeg:
+    - ffmpeg:rtsp://admin:Lkfgxifde0905@192.168.10.219:554/cam/realmonitor?channel=1&subtype=0#video=h264#audio=aac
