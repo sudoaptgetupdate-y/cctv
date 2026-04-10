@@ -6,6 +6,7 @@ import AdminDashboard from './pages/AdminDashboard/AdminDashboard';
 import PublicDashboard from './pages/PublicDashboard/PublicDashboard';
 import Cameras from './pages/Cameras/Cameras';
 import CameraGroups from './pages/CameraGroups/CameraGroups';
+import UserManagement from './pages/UserManagement/UserManagement';
 import Settings from './pages/Settings/Settings';
 import AuditLogs from './pages/AuditLogs/AuditLogs';
 
@@ -21,6 +22,7 @@ function App() {
             <Route path="/dashboard" element={<AdminDashboard />} />
             <Route path="/cameras" element={<Cameras />} />
             <Route path="/groups" element={<CameraGroups />} />
+            <Route path="/users" element={<UserManagement />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/logs" element={<AuditLogs />} />
           </Route>

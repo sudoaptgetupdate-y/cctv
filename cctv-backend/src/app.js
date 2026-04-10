@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
 const cameraRoutes = require('./routes/cameraRoutes');
 const groupRoutes = require('./routes/groupRoutes');
 const streamRoutes = require('./routes/streamRoutes');
@@ -23,6 +24,7 @@ app.get('/', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/cameras', cameraRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/streams', streamRoutes);

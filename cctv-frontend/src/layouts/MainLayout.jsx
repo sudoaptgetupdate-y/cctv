@@ -44,6 +44,7 @@ const MainLayout = () => {
     {
       title: t('sidebar.system', 'System'),
       items: [
+        { to: '/users', icon: Users, label: t('sidebar.users'), roles: ['SUPER_ADMIN', 'ADMIN'] },
         { to: '/logs', icon: ClipboardList, label: t('sidebar.logs'), roles: ['SUPER_ADMIN', 'ADMIN'] },
         { to: '/settings', icon: Settings, label: t('sidebar.settings'), roles: ['SUPER_ADMIN', 'ADMIN'] },
       ]

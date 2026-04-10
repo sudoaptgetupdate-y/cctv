@@ -32,8 +32,10 @@
 ---
 
 ## 🎯 เป้าหมายถัดไป (Next Tasks)
-1.  [ ] **Interactive Telegram Bot:** พัฒนา Webhook ให้ Bot สามารถตอบโต้และสรุปสถานะระบบด้วย AI เมื่อผู้ใช้สอบถาม
-2.  [ ] **Advanced Analytics:** ระบบสรุปสถิติรายสัปดาห์/รายเดือนผ่านหน้า Dashboard (Chart.js)
+1.  [ ] **UserManagement:** พัฒนาหน้าจัดการ User ใช้โปรเจ็คนี้เป็นแบบอย่าง D:\1.Devoleopment\dev-mkt\mikrotik-config
+2.  [ ] **CameraSetup:** ในหน้า Camera เลือกว่าจะแสดง main,sub stream
+3.  [ ] **Interactive Telegram Bot:** พัฒนา Webhook ให้ Bot สามารถตอบโต้และสรุปสถานะระบบด้วย AI เมื่อผู้ใช้สอบถาม
+4.  [ ] **Advanced Analytics:** ระบบสรุปสถิติรายสัปดาห์/รายเดือนผ่านหน้า Dashboard (Chart.js)
 
 ## 🤖 Gemini Execution Commands
 สำหรับการเรียกใช้งาน Gemini ในโปรเจ็คนี้ (ใช้ใน Terminal):
