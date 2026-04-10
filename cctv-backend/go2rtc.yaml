@@ -14,15 +14,5 @@ webrtc:
     - host:8555
     - stun:8555
 
-streams:
-  # 1. ลองแบบ Pure RTSP (ไม่ต้องใช้ FFmpeg) - เร็วและกินทรัพยากรน้อยกว่า
-  camera_direct:
-    - rtsp://admin:Lkfgxifde0905@192.168.10.219:554/cam/realmonitor?channel=1&subtype=0
-  camera_2:
-    - rtsp://admin:Lkfgxifde0905@192.168.10.219:554/cam/realmonitor?channel=1&subtype=0
-  camera_1:
-    - ffmpeg:rtsp://admin:Lkfgxifde0905@192.168.10.219:554/cam/realmonitor?channel=1&subtype=0#video=h264#audio=aac
-
-  # 2. ลองแบบผ่าน FFmpeg (หากแบบแรกภาพไม่ขึ้น)
-  camera_ffmpeg:
-    - ffmpeg:rtsp://admin:Lkfgxifde0905@192.168.10.219:554/cam/realmonitor?channel=1&subtype=0#video=h264#audio=aac
+# ปล่อยว่างไว้ เพื่อให้ Backend ของเราเป็นคนยิง API เข้ามาสร้างกล้อง (Dynamic Mapping)
+streams: {}
