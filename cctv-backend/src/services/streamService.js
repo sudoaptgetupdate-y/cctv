@@ -12,27 +12,30 @@ const streamService = {
     const streamId = `camera_${camera.id}`;
     const go2rtcUrl = process.env.GO2RTC_URL || 'http://host.docker.internal:1984';
 
-    console.log(`[Streaming] 🛡️ RE-REGISTERING ${streamId} WITH TCP & H264...`);
+    console.log(`[Streaming] 🛡️ FORCING H264 TRANSCODE FOR ${streamId}...`);
 
     try {
-      // 1. ลบสตรีมเก่าออกก่อนเพื่อให้แน่ใจว่าจะใช้ Config ใหม่
+      // 1. ลบสตรีมเก่าออกก่อน
       try { await axios.delete(`${go2rtcUrl}/api/streams?name=${streamId}`); } catch (e) {}
       
-      // 2. หน่วงเวลาเล็กน้อยให้ go2rtc เคลียร์สถานะ
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // 2. รอเสี้ยววินาที
+      await new Promise(resolve => setTimeout(resolve, 200));
 
-      // 3. ใช้ FFmpeg พร้อมบังคับ TCP และเพิ่ม Timeout (แก้ปัญหา i/o timeout)
-      // -rtsp_transport tcp: บังคับใช้ TCP
-      // -stimeout 5000000: รอข้อมูลได้นานถึง 5 วินาที
-      const transcodeSrc = `ffmpeg:${camera.rtspUrl}#video=h264#audio=aac#input=-rtsp_transport tcp -stimeout 5000000`;
+      // 3. สร้างคำสั่ง FFmpeg ที่สมบูรณ์
+      // -rtsp_transport tcp: เพื่อความเสถียรข้ามวง LAN
+      // #video=h264: บังคับแปลงเป็น H.264
+      // #audio=aac#audio=opus: เพิ่มทางเลือกเสียงสำหรับ WebRTC
+      const transcodeSrc = `ffmpeg:${camera.rtspUrl}#video=h264#audio=aac#audio=opus#input=-rtsp_transport tcp`;
       
-      const encodedSrc = encodeURIComponent(transcodeSrc);
-      const registerUrl = `${go2rtcUrl}/api/streams?name=${streamId}&src=${encodedSrc}`;
-      
-      await axios.put(registerUrl, null, { timeout: 10000 });
-      console.log(`[Streaming] ✅ ${streamId} registered successfully with TCP Transcoding`);
+      // 🚀 ส่งข้อมูลผ่าน BODY (Plain Text) แทน URL เพื่อป้องกันอักขระพิเศษ (&, #) เพี้ยน
+      await axios.put(`${go2rtcUrl}/api/streams?name=${streamId}`, transcodeSrc, {
+        headers: { 'Content-Type': 'text/plain' },
+        timeout: 5000
+      });
+
+      console.log(`[Streaming] ✅ ${streamId} registered with FORCE TRANSCODE (Body Mode)`);
     } catch (error) {
-      console.error(`[Streaming] ❌ Registration Error: ${error.message}`);
+      console.error(`[Streaming] ❌ Error: ${error.message}`);
     }
 
     return { streamId, go2rtcUrl, cameraName: camera.name };
