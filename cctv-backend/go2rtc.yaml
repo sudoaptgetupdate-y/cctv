@@ -1,5 +1,6 @@
 api:
   listen: ":1984"
+  # ✅ อนุญาตทุก Origin เพื่อแก้ปัญหา 403 Forbidden เมื่อผ่าน Proxy
   origin: "*"
 
 rtsp:
@@ -10,16 +11,14 @@ webrtc:
   ice_servers:
     - urls: [ "stun:stun.l.google.com:19302" ]
   candidates:
-    # ✅ ใส่ IP ของเครื่อง Server เพื่อให้ Browser ในวง LAN เชื่อมต่อได้โดยตรง
     - 192.168.123.123:8555
     - host:8555
     - stun:8555
 
-# ✅ ใช้ FFmpeg ของระบบใน Container
 ffmpeg:
   bin: "ffmpeg"
 
 streams:
-  # กล้องทดสอบ (ใช้สำหรับเช็คว่าระบบ Streaming ทำงานไหม)
+  # ✅ ลองเปลี่ยนเป็น RTSP Test Stream ที่ไม่ต้องใช้ HTTP Headers
   test_camera:
-    - http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4
+    - rtsp://rtspstream:72052c9225725f0e1f7495033783c162@zephyr.rtsp.stream/movie
