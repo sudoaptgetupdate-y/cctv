@@ -1,13 +1,13 @@
 # 🐳 Docker Setup Guide for Ubuntu 22.04 / 24.04 (The Hybrid Way)
 
-คู่มือนี้สำหรับใช้ในการ Deploy ระบบ **CCTV Monitoring System** บนเซิร์ฟเวอร์จริง โดยใช้ Docker ตามกลยุทธ์ "The Hybrid Way" ซึ่งเน้นความปลอดภัยด้วยการแยก Environment Variables ออกจากโค้ดหลัก
+คู่มือนี้สำหรับใช้ในการ Deploy ระบบ **CCTV Monitoring System** บนเซิร์ฟเวอร์จริง โดยใช้ Docker ตามกลยุทธ์ "The Hybrid Way" (พัฒนาบน Local แต่รันแบบ Container บน Production)
 
 ---
 
 ## 1. เตรียมความพร้อมบน Ubuntu
 
 ```bash
-# อัปเดตและติดตั้ง Docker (รันครั้งเดียว)
+# อัปเดตและติดตั้ง Docker
 sudo apt update && sudo apt upgrade -y
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
@@ -17,15 +17,14 @@ sudo usermod -aG docker $USER
 
 ---
 
-## 2. โครงสร้างไฟล์และความลับของระบบ (.env)
+## 2. การจัดการความลับของระบบ (.env)
 
-ระบบจะใช้ไฟล์ `.env` ใน Root Directory เพื่อเก็บรหัสผ่านทั้งหมด **ไฟล์นี้จะไม่ถูกส่งขึ้น Git (มีใน .gitignore)** เพื่อป้องกันรหัสผ่านรั่วไหล และป้องกันการโดนเขียนทับ (Overwrite) เมื่อสั่ง Pull
+สร้างไฟล์ `.env` ใน Root Directory (`~/projects/cctv`) เพื่อเก็บรหัสผ่าน (ไฟล์นี้จะไม่ถูกส่งขึ้น Git):
 
-### 📄 สร้างไฟล์ `.env` บน Server (รันใน ~/projects/cctv)
 ```bash
 nano .env
 ```
-**คัดลอกและใส่ข้อมูลจริงของคุณลงไป:**
+**ตัวอย่างข้อมูล:**
 ```text
 # Database Settings
 DB_ROOT_PASSWORD=your_secure_root_password
@@ -39,76 +38,107 @@ JWT_SECRET=your_jwt_secret_key
 
 ---
 
-## 3. ขั้นตอนการ Deploy & Update (Safe Workflow)
+## 3. รายละเอียด Config ที่ผ่านการรีไฟน์แล้ว (Verified)
 
-### 🚀 กรณี Deploy ครั้งแรก (Initial Setup)
+### 📄 `docker-compose.yml`
+จุดสำคัญคือ `extra_hosts` ทั้งใน Backend และ Frontend เพื่อให้คุยกับ `go2rtc` ได้:
+```yaml
+services:
+  # ... (proxy & db) ...
+
+  go2rtc:
+    image: alexxit/go2rtc
+    restart: always
+    network_mode: host # สำคัญมากสำหรับ WebRTC
+    volumes:
+      - ./cctv-backend/go2rtc.yaml:/config/go2rtc.yaml
+
+  backend:
+    # ...
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - cctv-network
+
+  frontend:
+    # ...
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # เพื่อให้ Nginx Proxy ไปหา go2rtc ได้
+    networks:
+      - cctv-network
+```
+
+### 📄 `cctv-frontend/nginx.conf`
+การตั้งค่า Proxy ที่ถูกต้องเพื่อให้ทั้งหน้าเว็บ, API และ Video Stream วิ่งผ่าน Domain เดียวกัน:
+```nginx
+server {
+    listen 80;
+    server_name localhost;
+
+    location / {
+        root /usr/share/nginx/html;
+        index index.html index.htm;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Proxy สำหรับ Video Streaming (go2rtc)
+    location /api/streams/ {
+        proxy_pass http://host.docker.internal:1984/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+    }
+
+    # Proxy สำหรับ API Backend
+    location /api/ {
+        proxy_pass http://backend:5000/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+    }
+}
+```
+
+---
+
+## 4. ขั้นตอนการ Deploy & Update
+
+### 🚀 กรณี Deploy ครั้งแรก
 ```bash
-# 1. Clone โปรเจ็ค
 git clone <your-repo-url>
 cd cctv
-
-# 2. สร้างไฟล์ .env (ตามขั้นตอนที่ 2)
-
-# 3. รันระบบทั้งหมด
+# สร้างไฟล์ .env (ตามข้อ 2)
 docker compose up -d --build
-
-# 4. ตั้งค่า Database (เฉพาะครั้งแรก)
 docker compose exec backend npx prisma migrate deploy
 docker compose exec backend node prisma/seed.js
 ```
 
-### 🔄 กรณีอัปเดตระบบ (Future Updates)
-เมื่อคุณพัฒนาโค้ดบน Local เสร็จและ Push ขึ้น Git แล้ว ให้ทำดังนี้บน Server:
+### 🔄 กรณีอัปเดตระบบ (หลัง Push โค้ดใหม่)
 ```bash
-# 1. ดึงโค้ดล่าสุด
 git pull origin main
-
-# 2. สั่ง Re-build และ Re-start เพื่อเปลี่ยนเวอร์ชัน
 docker compose up -d --build
-
-# 3. หากมีการแก้ Database Schema (ถ้ามี)
+# หากมีการแก้ Database Schema
 docker compose exec backend npx prisma migrate deploy
 ```
 
 ---
 
-## 4. รายละเอียด Config ที่สำคัญ
+## 5. การตั้งค่า Nginx Proxy Manager (NPM)
 
-*   **docker-compose.yml:** ตั้งค่าให้ดึงค่าจาก `.env` โดยอัตโนมัติ (เช่น `${DB_USER}`)
-*   **go2rtc.yaml:** แก้พาธ FFmpeg เป็น Linux (`bin: "ffmpeg"`)
-*   **prisma/schema.prisma:** เพิ่ม `binaryTargets = ["native", "debian-openssl-3.0.x"]`
-
----
-
-## 5. การตั้งค่า Reverse Proxy (Nginx Proxy Manager)
-
-เมื่อรันระบบสำเร็จแล้ว ให้ทำตามขั้นตอนนี้เพื่อเชื่อมต่อ Domain ของคุณเข้ากับระบบ:
-
-### 1. เข้าสู่ระบบ Admin UI
-*   **URL:** `http://your-server-ip:81`
-*   **Default Login:** `admin@example.com` / `changeme`
-
-### 2. ตั้งค่าสำหรับ Frontend (หน้าเว็บหลัก)
-1.  ไปที่ **Hosts > Proxy Hosts** แล้วกด **Add Proxy Host**
-2.  **Tab: Details**
-    *   **Domain Names:** ใส่โดเมนของคุณ (เช่น `cctv.yourdomain.com`)
-    *   **Forward Hostname / IP:** `frontend`
+1.  เข้า `http://your-server-ip:81` (Admin: `admin@example.com` / `changeme`)
+2.  **Add Proxy Host:**
+    *   **Domain:** `cctv.yourdomain.com`
+    *   **Forward Hostname:** `frontend`
     *   **Forward Port:** `80`
-    *   **Websockets Support:** ✅ **ON** (จำเป็นสำหรับการ Streaming)
-3.  **Tab: SSL**
-    *   เลือก `Request a new SSL Certificate` และเปิด `Force SSL`
-
-### 3. ตั้งค่าสำหรับ Backend API
-*   **Domain Names:** `api.yourdomain.com`
-*   **Forward Hostname / IP:** `backend`
-*   **Forward Port:** `5000`
-*   **Websockets Support:** ✅ **ON**
+    *   **Websockets Support:** ✅ **ON** (ต้องเปิดเพื่อรองรับวิดีโอ)
+3.  **SSL:** เลือก `Request a new SSL Certificate` และเปิด `Force SSL`
 
 ---
 
-## 6. การตรวจสอบและบำรุงรักษา
+## 6. การตรวจสอบและแก้ไขปัญหา
 
-*   **ดูสถานะ:** `docker compose ps`
-*   **ดู Log:** `docker compose logs -f --tail 50 backend`
-*   **Backup ข้อมูล:** สำรองโฟลเดอร์ `mysql_data/` และไฟล์ `.env` ไว้สม่ำเสมอ
-*   **Firewall:** ต้องเปิด Port 80, 443 (Web), 81 (Proxy UI), 1984, 8554, 8555 (Streaming)
+*   **วิดีโอไม่ขึ้น?**: ตรวจสอบว่าเปิด Port `1984, 8555 (TCP/UDP)` ที่ Firewall ของ Ubuntu แล้วหรือยัง
+*   **Log Backend**: `docker compose logs -f backend`
+*   **Log Frontend**: `docker compose logs -f frontend`

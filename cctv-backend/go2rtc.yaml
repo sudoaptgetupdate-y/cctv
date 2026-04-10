@@ -7,25 +7,19 @@ rtsp:
 
 webrtc:
   listen: ":8555"
-  # ✅ คืนค่า STUN เพราะ Browser รุ่นใหม่มักต้องการเพื่อเริ่มกระบวนการเชื่อมต่อ
   ice_servers:
     - urls: [ "stun:stun.l.google.com:19302" ]
-  # ✅ ระบุ Candidate ให้ชัดเจนที่สุด ทั้ง localhost และ IP ในวงแลน
   candidates:
-    - 127.0.0.1:8555
-    - 10.0.0.100:8555
-    - 172.17.17.135:8555
+    # ✅ ใส่ IP ของเครื่อง Server เพื่อให้ Browser ในวง LAN เชื่อมต่อได้โดยตรง
+    - 192.168.123.123:8555
     - host:8555
+    - stun:8555
 
-
-# ✅ ตำแหน่ง FFmpeg สำหรับ Docker (Linux)
+# ✅ ใช้ FFmpeg ของระบบใน Container
 ffmpeg:
   bin: "ffmpeg"
 
 streams:
-  test_manual:
-    - ffmpeg:rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov
-  camera_2:
-    - ffmpeg:rtsp://admin:Lkfgxifde0905@192.168.10.219:554/cam/realmonitor?channel=1&subtype=0#video=h264#audio=aac
+  # กล้องทดสอบ (ใช้สำหรับเช็คว่าระบบ Streaming ทำงานไหม)
   test_camera:
     - http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4
