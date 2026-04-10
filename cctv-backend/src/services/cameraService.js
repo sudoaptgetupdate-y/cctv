@@ -65,13 +65,18 @@ const cameraService = {
   // แก้ไขข้อมูลกล้อง
   async updateCamera(id, data) {
     const { groupId, ...cameraData } = data;
+    console.log(`[CameraService] Updating camera ${id} with:`, cameraData);
     
+    // บังคับแปลงค่าพิกัดให้เป็น Float เพื่อความชัวร์ (ถ้ามีส่งมา)
+    if (cameraData.latitude) cameraData.latitude = parseFloat(cameraData.latitude);
+    if (cameraData.longitude) cameraData.longitude = parseFloat(cameraData.longitude);
+
     return await prisma.camera.update({
       where: { id: parseInt(id) },
       data: {
         ...cameraData,
         groups: groupId ? {
-          set: [{ id: parseInt(groupId) }] // อัปเดตกลุ่มใหม่ (ลบอันเก่าออกถ้ามี)
+          set: [{ id: parseInt(groupId) }]
         } : undefined
       }
     });
