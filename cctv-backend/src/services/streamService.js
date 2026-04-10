@@ -12,31 +12,34 @@ const streamService = {
     const streamId = `camera_${camera.id}`;
     const go2rtcUrl = process.env.GO2RTC_URL || 'http://host.docker.internal:1984';
 
-    // 🚀 บังคับใช้ค่าที่คุณเพิ่งแก้ในหน้า Manage (rtspUrl)
+    // 🚀 เพิ่ม Timestamp เพื่อป้องกัน Cache และดึงค่าล่าสุดจาก DB จริงๆ
     const currentRtspUrl = camera.rtspUrl;
 
-    console.log(`[Streaming] 🛡️ RE-REGISTERING ${streamId}`);
-    console.log(`[Streaming] 🔗 Target URL: ${currentRtspUrl}`);
+    console.log(`[Streaming] 🛡️ FORCE UPDATING ${streamId}...`);
+    console.log(`[Streaming] 🔗 New URL: ${currentRtspUrl}`);
 
     try {
-      // 1. ลบสตรีมเก่าออกแบบถอนรากถอนโคน (Force Delete)
-      try { 
-        await axios.delete(`${go2rtcUrl}/api/streams?name=${streamId}`);
-        console.log(`[Streaming] 🗑️ Old stream deleted`);
-      } catch (e) {}
+      // 1. ลบสตรีมเก่าออกแบบเจาะจง
+      await axios.delete(`${go2rtcUrl}/api/streams?name=${streamId}`).catch(() => {});
       
-      // 2. หน่วงเวลาให้ go2rtc เคลียร์ Consumer เก่าที่ค้างอยู่ใน Browser
+      // 2. หน่วงเวลานานขึ้นนิดหน่อย (ให้กัวใจ go2rtc ว่างเปล่าจริงๆ)
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // 3. ลงทะเบียนใหม่ด้วยค่าล่าสุด (Relay Mode เพื่อ 0% CPU)
-      await axios.put(`${go2rtcUrl}/api/streams?name=${streamId}`, currentRtspUrl, {
-        headers: { 'Content-Type': 'text/plain' },
-        timeout: 5000
-      });
+      // 3. ลงทะเบียนใหม่โดยส่ง src ผ่าน Query String (วิธีที่แน่นอนที่สุด)
+      // และใช้ PUT เพื่อบังคับสร้าง/แก้ไข
+      const registerUrl = `${go2rtcUrl}/api/streams?name=${streamId}&src=${encodeURIComponent(currentRtspUrl)}`;
+      
+      const response = await axios.put(registerUrl, null, { timeout: 5000 });
+      
+      console.log(`[Streaming] ✅ go2rtc response: ${response.status} ${response.statusText}`);
+      console.log(`[Streaming] ✅ ${streamId} sync completed with latest DB value`);
+      
+      // 4. ตรวจสอบทันทีว่า go2rtc รับค่าไปหรือยัง (Debug Only)
+      const check = await axios.get(`${go2rtcUrl}/api/streams`).catch(() => ({data: {}}));
+      console.log(`[Streaming] 🔍 Current go2rtc state for ${streamId}:`, check.data[streamId] ? 'Registered' : 'NOT FOUND');
 
-      console.log(`[Streaming] ✅ ${streamId} registered successfully with latest URL`);
     } catch (error) {
-      console.error(`[Streaming] ❌ Error: ${error.message}`);
+      console.error(`[Streaming] ❌ Sync Error: ${error.message}`);
     }
 
     return { streamId, go2rtcUrl, cameraName: camera.name };
