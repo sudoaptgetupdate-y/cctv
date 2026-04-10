@@ -13,7 +13,7 @@ async function main() {
 
     // 2. สร้าง Admin User
     const adminUsername = process.env.INITIAL_ADMIN_USER || 'admin';
-    const rawPassword = process.env.INITIAL_ADMIN_PASSWORD || 'admin1234';
+    const rawPassword = process.env.INITIAL_ADMIN_PASSWORD || 'lkfgxifde';
     
     console.log(`👤 Creating/Updating Admin user: ${adminUsername}...`);
     const adminPassword = await bcrypt.hash(rawPassword, 10);
