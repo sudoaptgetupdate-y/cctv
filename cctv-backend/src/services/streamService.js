@@ -12,30 +12,24 @@ const streamService = {
     const streamId = `camera_${camera.id}`;
     const go2rtcUrl = process.env.GO2RTC_URL || 'http://host.docker.internal:1984';
 
-    console.log(`[Streaming] 🛡️ FORCING H264 TRANSCODE FOR ${streamId}...`);
+    console.log(`[Streaming] 🛡️ OPTIMIZING ${streamId} FOR INSTANT WEBRTC...`);
 
     try {
-      // 1. ลบสตรีมเก่าออกก่อน
       try { await axios.delete(`${go2rtcUrl}/api/streams?name=${streamId}`); } catch (e) {}
-      
-      // 2. รอเสี้ยววินาที
       await new Promise(resolve => setTimeout(resolve, 200));
 
-      // 3. สร้างคำสั่ง FFmpeg ที่สมบูรณ์
-      // -rtsp_transport tcp: เพื่อความเสถียรข้ามวง LAN
-      // #video=h264: บังคับแปลงเป็น H.264
-      // #audio=aac#audio=opus: เพิ่มทางเลือกเสียงสำหรับ WebRTC
-      const transcodeSrc = `ffmpeg:${camera.rtspUrl}#video=h264#audio=aac#audio=opus#input=-rtsp_transport tcp`;
+      // 🚀 บังคับใช้ OPUS สำหรับเสียง และ H264 สำหรับภาพ (WebRTC Native)
+      // -c:v libx264 -g 15: ส่ง Keyframe ทุกๆ 15 เฟรม (ภาพจะมาไวมาก)
+      // -c:a libopus -ar 48000 -ac 2: แปลงเสียงเป็น OPUS มาตรฐาน WebRTC (แก้ปัญหาหมุนโหลด)
+      const optimizedSrc = `exec:ffmpeg -hide_banner -v error -i "${camera.rtspUrl}" -c:v libx264 -preset ultrafast -tune zerolatency -g 15 -pix_fmt yuv420p -c:a libopus -ar 48000 -ac 2 -f rtsp {output}`;
       
-      // 🚀 ส่งข้อมูลผ่าน BODY (Plain Text) แทน URL เพื่อป้องกันอักขระพิเศษ (&, #) เพี้ยน
-      await axios.put(`${go2rtcUrl}/api/streams?name=${streamId}`, transcodeSrc, {
-        headers: { 'Content-Type': 'text/plain' },
-        timeout: 5000
-      });
-
-      console.log(`[Streaming] ✅ ${streamId} registered with FORCE TRANSCODE (Body Mode)`);
+      const encodedSrc = encodeURIComponent(optimizedSrc);
+      const registerUrl = `${go2rtcUrl}/api/streams?name=${streamId}&src=${encodedSrc}`;
+      
+      await axios.put(registerUrl, null, { timeout: 5000 });
+      console.log(`[Streaming] ✅ ${streamId} optimized for instant WebRTC playback`);
     } catch (error) {
-      console.error(`[Streaming] ❌ Error: ${error.message}`);
+      console.error(`[Streaming] ❌ Optimization Error: ${error.message}`);
     }
 
     return { streamId, go2rtcUrl, cameraName: camera.name };
