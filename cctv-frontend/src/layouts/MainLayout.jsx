@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Menu, X, LayoutDashboard, Users, LogOut, User, Settings, 
-  Camera, ClipboardList, ChevronLeft, ChevronRight, Globe
+  Camera, ClipboardList, ChevronLeft, ChevronRight, Globe, Activity
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext'; 
@@ -29,37 +29,42 @@ const MainLayout = () => {
 
   const menuCategories = [
     {
-      title: t('sidebar.main'),
+      title: t('sidebar.main', 'Main'),
       items: [
-        { to: '/dashboard', icon: LayoutDashboard, label: t('sidebar.dashboard') },
+        { to: '/dashboard', icon: LayoutDashboard, label: t('sidebar.dashboard'), roles: ['SUPER_ADMIN', 'ADMIN', 'EMPLOYEE'] },
       ]
     },
     {
-      title: t('sidebar.monitoring'),
+      title: t('sidebar.monitoring', 'Monitoring'),
       items: [
-        { to: '/cameras', icon: Camera, label: t('sidebar.cameras') },
-        { to: '/groups', icon: Users, label: t('sidebar.groups') },
+        { to: '/cameras', icon: Camera, label: t('sidebar.cameras'), roles: ['SUPER_ADMIN', 'ADMIN', 'EMPLOYEE'] },
+        { to: '/groups', icon: Users, label: t('sidebar.groups'), roles: ['SUPER_ADMIN', 'ADMIN'] },
       ]
     },
     {
-      title: t('sidebar.system'),
+      title: t('sidebar.system', 'System'),
       items: [
-        { to: '/logs', icon: ClipboardList, label: t('sidebar.logs') },
-        { to: '/settings', icon: Settings, label: t('sidebar.settings') },
+        { to: '/logs', icon: ClipboardList, label: t('sidebar.logs'), roles: ['SUPER_ADMIN', 'ADMIN'] },
+        { to: '/settings', icon: Settings, label: t('sidebar.settings'), roles: ['SUPER_ADMIN', 'ADMIN'] },
       ]
     }
   ];
 
-  const currentPathName = () => {
-    for (const cat of menuCategories) {
-      const item = cat.items.find(i => i.to === location.pathname);
-      if (item) return item.label;
-    }
-    return 'CCTV System';
+  // กรองเมนูตาม Role ของผู้ใช้
+  const filterMenuItems = (items) => {
+    return items.filter(item => item.roles.includes(user?.role));
   };
 
+  // กรองหมวดหมู่ที่มีรายการที่เข้าถึงได้
+  const filteredCategories = menuCategories
+    .map(category => ({
+      ...category,
+      items: filterMenuItems(category.items)
+    }))
+    .filter(category => category.items.length > 0);
+
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden text-slate-900">
+    <div className="flex h-screen bg-slate-50 overflow-hidden text-slate-900 font-['IBM_Plex_Sans_Thai',_sans-serif]">
       
       {/* 📱 Mobile Menu Button */}
       <div className="md:hidden fixed top-4 right-4 z-50">
@@ -80,7 +85,7 @@ const MainLayout = () => {
       )}
 
       {/* 🖥️ Sidebar */}
-      <aside className={`
+      <div className={`
         fixed md:static inset-y-0 left-0 z-40 
         w-72 ${isSidebarCollapsed ? 'md:w-20' : 'md:w-72'} 
         bg-slate-950 text-slate-300 transform transition-all duration-300 ease-in-out flex flex-col shadow-2xl md:shadow-none 
@@ -119,7 +124,7 @@ const MainLayout = () => {
 
         {/* Sidebar Navigation */}
         <div className="flex-1 overflow-y-auto py-6 px-3 space-y-8 custom-scrollbar scroll-smooth">
-          {menuCategories.map((category, idx) => (
+          {filteredCategories.map((category, idx) => (
             <div key={idx}>
               <h3 className={`px-4 text-[11px] font-black text-slate-500 uppercase tracking-widest mb-3 transition-all duration-300 ${isSidebarCollapsed ? 'md:hidden opacity-0' : 'opacity-100'}`}>
                 {category.title}
@@ -210,25 +215,11 @@ const MainLayout = () => {
             </button>
           </div>
         </div>
-      </aside>
+      </div>
 
       {/* 💻 Content Area */}
       <main className="flex-1 overflow-y-auto relative w-full min-w-0 flex flex-col bg-slate-50/50">
         
-        {/* Header (Desktop only or optional) */}
-        <header className="h-16 hidden md:flex items-center justify-between px-8 bg-white border-b border-slate-200 shrink-0">
-          <h2 className="text-lg font-bold text-slate-800">{currentPathName()}</h2>
-          <div className="flex items-center gap-4">
-             <div className="text-right">
-                <p className="text-sm font-bold text-slate-700 leading-tight">{user?.firstName} {user?.lastName}</p>
-                <p className="text-[10px] uppercase font-black text-slate-400 tracking-tighter">Administrator</p>
-             </div>
-             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-200">
-                {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
-             </div>
-          </div>
-        </header>
-
         {/* 1. Main Content Area */}
         <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
           <Outlet /> 

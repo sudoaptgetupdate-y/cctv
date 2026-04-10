@@ -1,5 +1,9 @@
 # 🎥 CCTV Monitoring System - Development State
 
+##สำคัญ ฉันพัฒนา 2 server ควบคู่กันไปครับ 
+- local pc dev ฉันใช้ nodemon run dev และเชื่อมต่อ db 10.0.0.16
+- virtual production ใช้งาน ubuntu และ docker [text](DOCKER_SETUP.md)
+
 ## 📍 สถานะปัจจุบัน (Current Progress)
 - [x] **Backend Foundation:** Express + Prisma + MariaDB เชื่อมต่อสำเร็จ
 - [x] **Authentication:** ระบบ Login (JWT) และ Middleware (verifyToken) ทำงานได้จริง
@@ -14,6 +18,10 @@
 - [x] **Enhanced UI:** ปรับปรุงแผนที่แบบ Full-screen (Fixed 100% height issue), เพิ่ม Tooltip แสดงข้อมูลขณะ Hover และหน้าต่าง Preview แบบลอย (Draggable Floating Window) ที่รองรับการขยายเต็มจอ
 - [x] **Responsive Support:** ปรับจูน UI สำหรับมือถือ (Sidebar Backdrop, Bottom-docked Video Preview, Auto-close menu)
 - [x] **AI Telegram Integration:** เชื่อมต่อ Gemini AI เพื่อวิเคราะห์เหตุการณ์กล้อง Offline และให้คำแนะนำทางเทคนิคผ่าน Telegram Bot อัตโนมัติ (รองรับ Dynamic Prompt ตามกลุ่ม)
+- [x] **MainLayout Redesign:** ปรับโฉมหน้า Admin ทั้งหมดให้เป็นสไตล์เดียวกับโปรเจ็ค `dev-mkt` (Sidebar แบบ Div, ระบบ Role-based Menu, และลบ Header ส่วนบนออกเพื่อเพิ่มพื้นที่แสดงผล)
+- [x] **Page Header Branding:** ใช้ระบบ "Island Card" สำหรับหัวข้อหน้า (Page Header) ทุกหน้า พร้อมระบบ Greeting Banner ในหน้า Dashboard ที่แสดงสถานะระบบแบบ Real-time
+- [x] **Role-Based Navigation:** ระบบเมนูที่ปรับเปลี่ยนตามสิทธิ์ของผู้ใช้งาน (SUPER_ADMIN, ADMIN, EMPLOYEE)
+- [x] **Acknowledge System:** เพิ่มฟีเจอร์ "รับทราบเหตุการณ์" ใน Camera Event History เพื่อติดตามการแก้ไขปัญหา (ย้ายมาไว้ในสถานะปัจจุบันเนื่องจากทำไปพร้อมกับการปรับ UI)
 
 ## 🛠️ Tech Stack & Ports
 - Frontend: Vite + React (Port 3000)
@@ -21,36 +29,11 @@
 - Database: MariaDB (Prisma ORM)
 - Streaming: go2rtc (Port 1984, 8554, 8555)
 - AI: Google Gemini AI (gemini-1.5-flash)
-
-## 🚨 Urgent Troubleshooting: Prisma Shadow DB Access (Error P3014)
-พบบรรหาเมื่อรัน `npx prisma migrate dev` บน Docker/Ubuntu เนื่องจาก Database User ไม่มีสิทธิ์สร้างฐานข้อมูลใหม่ (Shadow DB)
-
-### ✅ วิธีแก้ไข (รันบน Ubuntu Server):
-1. **เข้าไปยัง MariaDB ใน Container ด้วย Root:**
-```bash
-docker compose exec db mariadb -u root -p
-# ใส่รหัสผ่าน Root (MARIADB_ROOT_PASSWORD ใน .env)
-```
-
-2. **รันคำสั่ง SQL เพื่อให้สิทธิ์ User สร้าง DB ได้:**
-```sql
--- เปลี่ยน 'cctv_user' เป็นชื่อ user ที่คุณใช้ใน .env
-GRANT ALL PRIVILEGES ON *.* TO 'cctv_user'@'%';
-FLUSH PRIVILEGES;
-EXIT;
-```
-
-3. **รัน Migration ใหม่อีกครั้ง:**
-```bash
-docker compose exec backend npx prisma migrate dev --name add_is_public
-```
-
 ---
 
 ## 🎯 เป้าหมายถัดไป (Next Tasks)
-1.  [ ] **MainLayout Redesign:** ปรับโฉมหน้า Admin ให้เหมือนกับโปรเจ็ค `dev-mkt` (กำลังจะทำใน Session ถัดไป)
-2.  [ ] **Acknowledge System:** เพิ่มฟีเจอร์ "รับทราบเหตุการณ์" ใน Camera Event History เพื่อติดตามการแก้ไขปัญหา
-3.  [ ] **Interactive Telegram Bot:** พัฒนา Webhook ให้ Bot สามารถตอบโต้และสรุปสถานะระบบด้วย AI เมื่อผู้ใช้สอบถาม
+1.  [ ] **Interactive Telegram Bot:** พัฒนา Webhook ให้ Bot สามารถตอบโต้และสรุปสถานะระบบด้วย AI เมื่อผู้ใช้สอบถาม
+2.  [ ] **Advanced Analytics:** ระบบสรุปสถิติรายสัปดาห์/รายเดือนผ่านหน้า Dashboard (Chart.js)
 
 ## 🤖 Gemini Execution Commands
 สำหรับการเรียกใช้งาน Gemini ในโปรเจ็คนี้ (ใช้ใน Terminal):
