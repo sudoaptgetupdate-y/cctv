@@ -22,6 +22,31 @@
 - Streaming: go2rtc (Port 1984, 8554, 8555)
 - AI: Google Gemini AI (gemini-1.5-flash)
 
+## 🚨 Urgent Troubleshooting: Prisma Shadow DB Access (Error P3014)
+พบบรรหาเมื่อรัน `npx prisma migrate dev` บน Docker/Ubuntu เนื่องจาก Database User ไม่มีสิทธิ์สร้างฐานข้อมูลใหม่ (Shadow DB)
+
+### ✅ วิธีแก้ไข (รันบน Ubuntu Server):
+1. **เข้าไปยัง MariaDB ใน Container ด้วย Root:**
+```bash
+docker compose exec db mariadb -u root -p
+# ใส่รหัสผ่าน Root (MARIADB_ROOT_PASSWORD ใน .env)
+```
+
+2. **รันคำสั่ง SQL เพื่อให้สิทธิ์ User สร้าง DB ได้:**
+```sql
+-- เปลี่ยน 'cctv_user' เป็นชื่อ user ที่คุณใช้ใน .env
+GRANT ALL PRIVILEGES ON *.* TO 'cctv_user'@'%';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+3. **รัน Migration ใหม่อีกครั้ง:**
+```bash
+docker compose exec backend npx prisma migrate dev --name add_is_public
+```
+
+---
+
 ## 🎯 เป้าหมายถัดไป (Next Tasks)
 1.  [ ] **MainLayout Redesign:** ปรับโฉมหน้า Admin ให้เหมือนกับโปรเจ็ค `dev-mkt` (กำลังจะทำใน Session ถัดไป)
 2.  [ ] **Acknowledge System:** เพิ่มฟีเจอร์ "รับทราบเหตุการณ์" ใน Camera Event History เพื่อติดตามการแก้ไขปัญหา
