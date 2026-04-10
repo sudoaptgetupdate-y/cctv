@@ -12,31 +12,23 @@ const streamService = {
     const streamId = `camera_${camera.id}`;
     const go2rtcUrl = process.env.GO2RTC_URL || 'http://host.docker.internal:1984';
 
-    console.log(`[Streaming] Registering ${streamId} with Ultra-Low Latency Transcoding...`);
+    console.log(`[Streaming] FORCING H.264 Transcoding for ${streamId}...`);
 
     try {
-      // 🚀 บังคับใช้ FFmpeg พร้อม Flag สำหรับความเร็วสูงสุด (Zero Latency)
-      // -probesize 32 & -analyzeduration 0: ลดเวลาเริ่มทำงาน (Cold Start)
-      // -fflags nobuffer & -flags low_delay: ปิด Buffer เพื่อความสดของภาพ
-      // -tune zerolatency: ปรับปรุงเพื่อการส่งภาพสดโดยเฉพาะ
-      const transcodeSrc = `ffmpeg:${camera.rtspUrl}#video=h264#audio=aac#raw=-probesize 32 -analyzeduration 0 -fflags nobuffer -flags low_delay -preset ultrafast -tune zerolatency`;
+      // 🚀 บังคับใช้ ffmpeg: นำหน้าเพื่อแปลง H.265 เป็น H.264
+      // ปรับปรุงคำสั่ง ffmpeg ให้กระชับและรองรับกล้อง H.265 ได้ชัวร์ที่สุด
+      const ffmpegSrc = `ffmpeg:${camera.rtspUrl}#video=h264#audio=aac#raw=-probesize 32 -analyzeduration 0 -fflags nobuffer -flags low_delay -preset ultrafast -tune zerolatency`;
       
-      const encodedSrc = encodeURIComponent(transcodeSrc);
+      const encodedSrc = encodeURIComponent(ffmpegSrc);
       const registerUrl = `${go2rtcUrl}/api/streams?name=${streamId}&src=${encodedSrc}`;
       
+      // ลบสตรีมเก่าออกก่อนเพื่อให้ go2rtc รับค่าใหม่ (Force Refresh)
+      try { await axios.delete(`${go2rtcUrl}/api/streams?name=${streamId}`); } catch (e) {}
+
       await axios.put(registerUrl, null, { timeout: 5000 });
-      
-      console.log(`[Streaming] ✅ ${streamId} registered successfully (Ultra-Low Latency Mode)`);
+      console.log(`[Streaming] ✅ ${streamId} re-registered with FFmpeg Transcoding`);
     } catch (error) {
-      console.error(`[Streaming] ❌ Failed to register ${streamId}: ${error.message}`);
-      
-      try {
-        const directSrc = encodeURIComponent(camera.rtspUrl);
-        await axios.put(`${go2rtcUrl}/api/streams?name=${streamId}&src=${directSrc}`);
-        console.log(`[Streaming] 🔄 ${streamId} registered via Direct Fallback`);
-      } catch (fError) {
-        console.error(`[Streaming] 🚨 All registration methods failed: ${fError.message}`);
-      }
+      console.error(`[Streaming] ❌ Error: ${error.message}`);
     }
 
     return { streamId, go2rtcUrl, cameraName: camera.name };
