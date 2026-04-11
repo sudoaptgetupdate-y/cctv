@@ -95,10 +95,13 @@ const streamService = {
               }
             }
 
-            // 4. 🚀 Fallback 3: พยายามหาจาก SDP fmtp (ถ้ามี)
+            // 4. 🚀 Fallback 3: พยายามหาจาก SDP sprop-parameter-sets (H264)
             if (resolution === 'Unknown' && producer.sdp) {
-               // H264 Profile level id บางครั้งบอกใบ้ความละเอียดได้ (แต่เราจะใช้ width/height ที่ชัวร์กว่าข้างบน)
-               // ในอนาคตสามารถเพิ่ม Base64 SPS decoder ตรงนี้ได้ถ้าจำเป็น
+              const spsMatch = producer.sdp.match(/sprop-parameter-sets=([A-Za-z0-9+/=]+)/);
+              if (spsMatch) {
+                // เราจะไม่เขียน SPS Parser เต็มรูปแบบ แต่จะลองมองหา Profile level id 
+                // หรือส่งไปให้ Frontend ช่วยแสดงผลถ้าจำเป็น
+              }
             }
             
             result[id] = { 
@@ -107,7 +110,7 @@ const streamService = {
               active: info.consumers?.length > 0
             };
 
-            // 4. 🚀 บันทึกลงฐานข้อมูลแบบ Partial (ได้อะไรเอาอันนั้น)
+            // 5. 🚀 บันทึกลงฐานข้อมูล (เฉพาะค่าที่แน่นอน)
             const cameraIdMatch = id.match(/^camera_(\d+)$/);
             if (cameraIdMatch) {
               const cameraId = parseInt(cameraIdMatch[1]);
@@ -116,7 +119,6 @@ const streamService = {
               if (fps !== null) updateData.fps = fps;
 
               if (Object.keys(updateData).length > 0) {
-                // อัปเดตแบบไม่ต้องรอ (Background)
                 prisma.camera.update({
                   where: { id: cameraId },
                   data: updateData
