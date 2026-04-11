@@ -3,6 +3,9 @@ const router = express.Router();
 const streamController = require('../controllers/streamController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 
+// ดึงสถานะรวม (ย้ายมาไว้บนสุดเพื่อความแน่นอน)
+router.get('/statuses', verifyToken, streamController.getStatuses);
+
 // Route สำหรับทดสอบ (ไม่ต้องใช้ Token)
 router.get('/test/direct', async (req, res) => {
   const axios = require('axios');
