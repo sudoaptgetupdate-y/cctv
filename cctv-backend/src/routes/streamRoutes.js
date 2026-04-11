@@ -3,6 +3,9 @@ const router = express.Router();
 const streamController = require('../controllers/streamController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 
+// 🔍 Debug Route (เรียกผ่านเบราว์เซอร์ตรงๆ: https://your-domain.com/api/streams/ping)
+router.get('/ping', (req, res) => res.json({ message: 'pong', timestamp: new Date() }));
+
 // ดึงสถานะรวม (ย้ายมาไว้บนสุดเพื่อความแน่นอน)
 router.get('/statuses', verifyToken, streamController.getStatuses);
 
