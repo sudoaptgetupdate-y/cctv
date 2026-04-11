@@ -76,12 +76,29 @@ const streamService = {
               if (fpsMatch) fps = Math.round(parseFloat(fpsMatch[1]));
             }
 
-            // 3. 🚀 Fallback 2: ดึง Resolution จาก Receivers (ถ้ามีคนดูอยู่ go2rtc จะรู้ค่านี้)
-            if (resolution === 'Unknown' && producer.receivers) {
-              const videoReceiver = producer.receivers.find(r => r.codec && r.codec.codec_type === 'video' && r.codec.width);
+            // 3. 🚀 Fallback 2: ดึง Resolution จาก Receivers หรือ Senders
+            if (resolution === 'Unknown') {
+              // เช็คใน receivers (วิดีโอขาเข้า)
+              const videoReceiver = producer.receivers?.find(r => r.codec && r.codec.codec_type === 'video' && r.codec.width);
               if (videoReceiver) {
                 resolution = `${videoReceiver.codec.width}x${videoReceiver.codec.height}`;
+              } 
+              // เช็คใน consumers/senders (วิดีโอขาออกที่มีคนดูอยู่)
+              else if (info.consumers) {
+                for (const consumer of info.consumers) {
+                  const videoSender = consumer.senders?.find(s => s.codec && s.codec.width);
+                  if (videoSender) {
+                    resolution = `${videoSender.codec.width}x${videoSender.codec.height}`;
+                    break;
+                  }
+                }
               }
+            }
+
+            // 4. 🚀 Fallback 3: พยายามหาจาก SDP fmtp (ถ้ามี)
+            if (resolution === 'Unknown' && producer.sdp) {
+               // H264 Profile level id บางครั้งบอกใบ้ความละเอียดได้ (แต่เราจะใช้ width/height ที่ชัวร์กว่าข้างบน)
+               // ในอนาคตสามารถเพิ่ม Base64 SPS decoder ตรงนี้ได้ถ้าจำเป็น
             }
             
             result[id] = { 
