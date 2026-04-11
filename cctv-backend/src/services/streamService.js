@@ -1,7 +1,47 @@
 const prisma = require('../config/prisma');
 const axios = require('axios');
+const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
 
 const streamService = {
+  // 🔍 ฟังก์ชันเสริม: ใช้ ffprobe หาความละเอียดและ FPS (กรณี go2rtc ไม่รู้)
+  async probeMetadata(cameraId, rtspUrl) {
+    try {
+      console.log(`[Probe] 🔍 Probing metadata for camera ${cameraId}...`);
+      // ใช้ ffprobe ดึงข้อมูลแบบ JSON (ใช้เวลาประมาณ 2-4 วินาที)
+      const { stdout } = await execPromise(
+        `ffprobe -v error -select_streams v:0 -show_entries stream=width,height,r_frame_rate -of json "${rtspUrl}"`,
+        { timeout: 10000 }
+      );
+      
+      const data = JSON.parse(stdout);
+      if (data.streams && data.streams[0]) {
+        const s = data.streams[0];
+        const resolution = s.width && s.height ? `${s.width}x${s.height}` : null;
+        
+        // คำนวณ FPS (เช่น "25/1" -> 25)
+        let fps = null;
+        if (s.r_frame_rate) {
+          const [num, den] = s.r_frame_rate.split('/');
+          if (den !== '0') fps = Math.round(parseInt(num) / parseInt(den));
+        }
+
+        if (resolution || fps) {
+          await prisma.camera.update({
+            where: { id: parseInt(cameraId) },
+            data: { resolution, fps }
+          });
+          console.log(`[Probe] ✅ Updated Camera ${cameraId}: ${resolution}, ${fps} FPS`);
+          return { resolution, fps };
+        }
+      }
+    } catch (error) {
+      console.error(`[Probe] ❌ Failed for camera ${cameraId}: ${error.message}`);
+    }
+    return null;
+  },
+
   async getStreamConfig(cameraId) {
     const camera = await prisma.camera.findUnique({
       where: { id: parseInt(cameraId) }
@@ -12,6 +52,11 @@ const streamService = {
     const streamId = `camera_${camera.id}`;
     const go2rtcUrl = process.env.GO2RTC_URL || 'http://127.0.0.1:1984';
 
+    // 🚀 ถ้ายังไม่มีข้อมูลใน DB ให้รัน Probe ใน Background
+    if (!camera.resolution || !camera.fps) {
+      this.probeMetadata(camera.id, camera.rtspUrl).catch(() => {});
+    }
+
     // 🚀 เลือกสตรีมตามที่ผู้ใช้ตั้งค่าไว้ (MAIN หรือ SUB)
     let currentRtspUrl = camera.rtspUrl;
     if (camera.streamType === 'SUB' && camera.subStream) {
@@ -19,7 +64,7 @@ const streamService = {
     }
 
     try {
-      // 🚀 ส่งข้อมูลแบบ Object เพื่อให้ go2rtc จัดการได้ง่ายที่สุด (ลดปัญหา YAML Error)
+      // 🚀 ส่งข้อมูลแบบ Object เพื่อให้ go2rtc จัดการได้ง่ายที่สุด
       await axios.put(`${go2rtcUrl}/api/streams`, {
         name: streamId,
         src: currentRtspUrl
