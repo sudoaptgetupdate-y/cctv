@@ -149,7 +149,11 @@ const StreamModal = ({ camera, onClose, initialPosition }) => {
             </div>
           ) : (
             <div className="w-full h-full">
-               <WebRTCPlayer streamId={streamConfig.streamId} go2rtcUrl={streamConfig.go2rtcUrl} />
+               <WebRTCPlayer 
+                 streamId={streamConfig.streamId} 
+                 go2rtcUrl={streamConfig.go2rtcUrl} 
+                 isAudioEnabled={streamConfig.isAudioEnabled}
+               />
             </div>
           )}
 

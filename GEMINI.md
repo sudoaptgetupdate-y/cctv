@@ -21,7 +21,8 @@
 - [x] **MainLayout Redesign:** ปรับโฉมหน้า Admin ทั้งหมดให้เป็นสไตล์เดียวกับโปรเจ็ค `dev-mkt` (Sidebar แบบ Div, ระบบ Role-based Menu, และลบ Header ส่วนบนออกเพื่อเพิ่มพื้นที่แสดงผล)
 - [x] **Page Header Branding:** ใช้ระบบ "Island Card" สำหรับหัวข้อหน้า (Page Header) ทุกหน้า พร้อมระบบ Greeting Banner ในหน้า Dashboard ที่แสดงสถานะระบบแบบ Real-time
 - [x] **Role-Based Navigation:** ระบบเมนูที่ปรับเปลี่ยนตามสิทธิ์ของผู้ใช้งาน (SUPER_ADMIN, ADMIN, EMPLOYEE)
-- [x] **Acknowledge System:** เพิ่มฟีเจอร์ "รับทราบเหตุการณ์" ใน Camera Event History เพื่อติดตามการแก้ไขปัญหา (ย้ายมาไว้ในสถานะปัจจุบันเนื่องจากทำไปพร้อมกับการปรับ UI)
+- [x] **Acknowledge System:** เพิ่มฟีเจอร์ "รับทราบเหตุการณ์" ใน Camera Event History เพื่อติดตามการแก้ไขปัญหา
+- [x] **User Management (Advanced):** พัฒนาระบบจัดการผู้ใช้เต็มรูปแบบตามต้นแบบ `dev-mkt` (CRUD, Role-based, Active/Inactive Tabs) พร้อมระบบ **Zod Validation** และ **Activity Log** บันทึกทุกการกระทำของผู้ใช้ในระบบ
 
 ## 🛠️ Tech Stack & Ports
 - Frontend: Vite + React (Port 3000)
@@ -32,10 +33,9 @@
 ---
 
 ## 🎯 เป้าหมายถัดไป (Next Tasks)
-1.  [ ] **UserManagement:** พัฒนาหน้าจัดการ User ใช้โปรเจ็คนี้เป็นแบบอย่าง D:\1.Devoleopment\dev-mkt\mikrotik-config
-2.  [ ] **CameraSetup:** ในหน้า Camera เลือกว่าจะแสดง main,sub stream
-3.  [ ] **Interactive Telegram Bot:** พัฒนา Webhook ให้ Bot สามารถตอบโต้และสรุปสถานะระบบด้วย AI เมื่อผู้ใช้สอบถาม
-4.  [ ] **Advanced Analytics:** ระบบสรุปสถิติรายสัปดาห์/รายเดือนผ่านหน้า Dashboard (Chart.js)
+1.  [ ] **CameraSetup:** ในหน้า Camera เลือกว่าจะแสดง main,sub stream - ต้องการให้เลือก เปิด-ปิด เสียงกล้องได้
+2.  [ ] **Interactive Telegram Bot:** พัฒนา Webhook ให้ Bot สามารถตอบโต้และสรุปสถานะระบบด้วย AI เมื่อผู้ใช้สอบถาม
+3.  [ ] **Advanced Analytics:** ระบบสรุปสถิติรายสัปดาห์/รายเดือนผ่านหน้า Dashboard (Chart.js)
 
 ## 🤖 Gemini Execution Commands
 สำหรับการเรียกใช้งาน Gemini ในโปรเจ็คนี้ (ใช้ใน Terminal):
@@ -55,4 +55,5 @@ gemini "objective" --path D:\1.Development\dev-cctv\cctv --path D:\1.Development
 - **Refactoring Note:** โครงสร้างโฟลเดอร์ใน `src/pages` แบ่งตามฟีเจอร์ชัดเจน และ Shared Components อยู่ใน `src/components`
 - **Public Dashboard Strategy:** เน้นความง่ายสำหรับประชาชน (Mobile First) และความเร็วในการแสดงผล (WebRTC)
 - **UI Logic:** หน้าต่าง Preview วิดีโอจะคำนวณตำแหน่งเริ่มต้นจากพิกัดที่คลิกบนแผนที่ทันที เพื่อไม่ให้เกิดอาการกระตุก (Top-left jump)
+- **Security Note:** ระบบ User มีการตรวจสอบความแข็งแรงของรหัสผ่าน (Password Strength) และป้องกันอีเมลซ้ำทั้ง Frontend และ Backend
 - ทุกครั้งที่เริ่มงานใหม่ ให้รัน `codebase_investigator` เพื่อซิงค์ความเข้าใจโครงสร้างไฟล์ล่าสุด

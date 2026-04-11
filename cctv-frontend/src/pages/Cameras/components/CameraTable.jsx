@@ -15,7 +15,8 @@ const CameraTable = ({
   setItemsPerPage,
   from,
   to,
-  total
+  total,
+  streamStatuses
 }) => {
   if (loading && cameras.length === 0) {
     return (
@@ -63,6 +64,7 @@ const CameraTable = ({
                 onDelete={onDelete}
                 onAcknowledge={onAcknowledge}
                 onViewHistory={onViewHistory}
+                streamStatus={streamStatuses?.[`camera_${camera.id}`]}
               />
             ))}
           </tbody>

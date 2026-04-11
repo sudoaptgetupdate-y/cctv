@@ -1,12 +1,13 @@
 import React from 'react';
 import { 
   PlayCircle, Edit2, Trash2, MapPin, Link as LinkIcon, 
-  CheckCircle2, AlertTriangle, MonitorOff, Clock, ShieldCheck 
+  CheckCircle2, AlertTriangle, MonitorOff, Clock, ShieldCheck,
+  Activity, Loader2
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { th } from 'date-fns/locale';
 
-const CameraTableRow = ({ camera, onPreview, onEdit, onDelete, onAcknowledge, onViewHistory }) => {
+const CameraTableRow = ({ camera, onPreview, onEdit, onDelete, onAcknowledge, onViewHistory, streamStatus }) => {
   const getStatusBadge = () => {
     // กรณีที่ Offline และยังไม่ได้รับทราบเหตุการณ์ (isAcknowledged === false)
     if (camera.status === 'ERROR' && !camera.isAcknowledged) {
@@ -98,11 +99,30 @@ const CameraTableRow = ({ camera, onPreview, onEdit, onDelete, onAcknowledge, on
 
       {/* 4. Health/Last Seen Column */}
       <td className="p-4">
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
            <div className="flex items-center gap-2 text-[11px] font-bold text-slate-600">
               <Clock size={12} className="text-blue-500" />
               <span>เห็นล่าสุด: {lastSeenText}</span>
            </div>
+           
+           {/* ✅ ส่วนที่เพิ่มใหม่: ข้อมูล Resolution & FPS (ดึงจาก Real-time หรือ Cache) */}
+           {streamStatus || (camera.resolution && camera.fps) ? (
+              <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-500">
+                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-black uppercase tracking-tighter shadow-sm transition-all ${streamStatus?.active ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-slate-50 text-slate-500 border-slate-200 opacity-80'}`}>
+                   <Activity size={12} className={streamStatus?.active ? "animate-pulse" : ""} />
+                   <span>{streamStatus?.resolution || camera.resolution}</span>
+                </div>
+                <div className={`px-2 py-1 rounded-lg border text-[10px] font-black uppercase tracking-tighter shadow-sm ${streamStatus?.active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-500 border-slate-200 opacity-80'}`}>
+                   {streamStatus?.fps || camera.fps} FPS
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 text-slate-400 border border-slate-100 rounded-lg text-[9px] font-bold italic w-max animate-pulse">
+                <Loader2 size={10} className="animate-spin" />
+                กำลังตรวจสอบสตรีม...
+              </div>
+            )}
+
            {camera.isAcknowledged && camera.acknowledgeReason && (
              <p className="text-[9px] text-slate-400 italic bg-amber-50 px-2 py-0.5 rounded border border-amber-100/50 w-fit">
                Ack: {camera.acknowledgeReason}

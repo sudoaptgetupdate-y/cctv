@@ -142,6 +142,53 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
             </div>
           </div>
         </div>
+
+        {/* ✅ เพิ่มส่วน Playback Settings */}
+        <div className="col-span-1 md:col-span-2 space-y-4 pt-4 border-t border-slate-50">
+          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+            <div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
+            Playback Options
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-slate-600 ml-1">สตรีมเริ่มต้นสำหรับแสดงผล (Preferred Stream)</label>
+              <div className="flex gap-4">
+                <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border-2 transition-all cursor-pointer ${formData.streamType === 'MAIN' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'}`}>
+                  <input 
+                    type="radio" name="streamType" value="MAIN" className="hidden"
+                    checked={formData.streamType === 'MAIN'}
+                    onChange={() => setFormData({...formData, streamType: 'MAIN'})}
+                  />
+                  <span className="text-xs font-bold">Main Stream</span>
+                </label>
+                <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border-2 transition-all cursor-pointer ${formData.streamType === 'SUB' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'}`}>
+                  <input 
+                    type="radio" name="streamType" value="SUB" className="hidden"
+                    checked={formData.streamType === 'SUB'}
+                    onChange={() => setFormData({...formData, streamType: 'SUB'})}
+                  />
+                  <span className="text-xs font-bold">Sub Stream</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-slate-600 ml-1">การจัดการเสียง (Audio Support)</label>
+              <div 
+                onClick={() => setFormData({...formData, isAudioEnabled: !formData.isAudioEnabled})}
+                className={`flex items-center justify-between p-3 rounded-2xl border-2 transition-all cursor-pointer ${formData.isAudioEnabled ? 'border-emerald-500 bg-emerald-50' : 'border-slate-100 bg-slate-50'}`}
+              >
+                <span className={`text-xs font-bold ${formData.isAudioEnabled ? 'text-emerald-700' : 'text-slate-500'}`}>
+                  {formData.isAudioEnabled ? 'เปิดใช้งานเสียง (Enable Audio)' : 'ปิดเสียง (Mute Audio)'}
+                </span>
+                <div className={`w-10 h-6 flex items-center rounded-full p-1 transition-all ${formData.isAudioEnabled ? 'bg-emerald-500' : 'bg-slate-300'}`}>
+                  <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-all ${formData.isAudioEnabled ? 'translate-x-4' : ''}`}></div>
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-400 font-medium px-1 italic">* กล้องต้องรองรับและเปิดใช้ Audio ในตัวเครื่อง</p>
+            </div>
+          </div>
+        </div>
       </form>
     </Modal>
   );

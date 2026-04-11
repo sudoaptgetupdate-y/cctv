@@ -10,9 +10,8 @@ webrtc:
   ice_servers:
     - urls: [ "stun:stun.l.google.com:19302" ]
   candidates:
-    - 192.168.123.123:8555
-    - host:8555
-    - stun:8555
+    - 127.0.0.1:8555
+    - localhost:8555
 
-# ปล่อยว่างไว้ เพื่อให้ Backend ของเราเป็นคนยิง API เข้ามาสร้างกล้อง (Dynamic Mapping)
-streams: {}
+# ปล่อยว่างไว้เพื่อให้ Backend ยิง API เข้ามาจัดการแบบ Dynamic
+streams:

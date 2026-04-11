@@ -11,6 +11,18 @@ const streamController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  async getStatuses(req, res, next) {
+    try {
+      const statuses = await streamService.getAllStreamStatuses();
+      res.json({
+        success: true,
+        data: statuses
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 };
 

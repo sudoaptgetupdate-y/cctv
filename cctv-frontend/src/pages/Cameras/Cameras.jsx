@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Camera as CameraIcon, Activity, RefreshCw } from 'lucide-react';
 import cameraService from '../../services/cameraService';
 import groupService from '../../services/groupService';
+import streamService from '../../services/streamService';
 import StreamModal from '../../components/StreamModal';
 import Pagination from '../../components/Pagination';
 
@@ -16,6 +17,7 @@ const PAGE_SIZES = [5, 10, 20, 50];
 const Cameras = () => {
   const [cameras, setCameras] = useState([]);
   const [groups, setGroups] = useState([]);
+  const [streamStatuses, setStreamStatuses] = useState({}); // ✅ สำหรับเก็บ Resolution/FPS
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -40,11 +42,16 @@ const Cameras = () => {
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', groupId: '', isPublic: false
+    name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', groupId: '', isPublic: false, streamType: 'MAIN', isAudioEnabled: false
   });
 
   useEffect(() => {
     fetchData();
+    
+    // ✅ ดึงสถานะสตรีมครั้งแรก และตั้งเวลาดึงทุก 15 วินาที
+    fetchStreamStatuses();
+    const interval = setInterval(fetchStreamStatuses, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchData = async () => {
@@ -60,6 +67,15 @@ const Cameras = () => {
       console.error('Failed to fetch data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStreamStatuses = async () => {
+    try {
+      const statuses = await streamService.getStreamStatuses();
+      setStreamStatuses(statuses || {});
+    } catch (error) {
+      console.error('Failed to fetch stream statuses');
     }
   };
 
@@ -103,12 +119,14 @@ const Cameras = () => {
         username: camera.username || '',
         password: camera.password || '',
         groupId: camera.groups?.[0]?.id || '',
-        isPublic: camera.isPublic || false
+        isPublic: camera.isPublic || false,
+        streamType: camera.streamType || 'MAIN',
+        isAudioEnabled: camera.isAudioEnabled || false
       });
     } else {
       setEditingCamera(null);
       setFormData({
-        name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', groupId: '', isPublic: false
+        name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', groupId: '', isPublic: false, streamType: 'MAIN', isAudioEnabled: false
       });
     }
     setShowFormModal(true);
@@ -230,6 +248,7 @@ const Cameras = () => {
         from={fromItem}
         to={toItem}
         total={filteredCameras.length}
+        streamStatuses={streamStatuses}
       />
 
       {/* 4. Pagination */}

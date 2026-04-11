@@ -10,39 +10,111 @@ const streamService = {
     if (!camera) throw new Error('Camera not found');
 
     const streamId = `camera_${camera.id}`;
-    const go2rtcUrl = process.env.GO2RTC_URL || 'http://host.docker.internal:1984';
+    const go2rtcUrl = process.env.GO2RTC_URL || 'http://127.0.0.1:1984';
 
-    // 🚀 เพิ่ม Timestamp เพื่อป้องกัน Cache และดึงค่าล่าสุดจาก DB จริงๆ
-    const currentRtspUrl = camera.rtspUrl;
-
-    console.log(`[Streaming] 🛡️ FORCE UPDATING ${streamId}...`);
-    console.log(`[Streaming] 🔗 New URL: ${currentRtspUrl}`);
-
-    try {
-      // 1. ลบสตรีมเก่าออกแบบเจาะจง
-      await axios.delete(`${go2rtcUrl}/api/streams?name=${streamId}`).catch(() => {});
-      
-      // 2. หน่วงเวลานานขึ้นนิดหน่อย (ให้กัวใจ go2rtc ว่างเปล่าจริงๆ)
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // 3. ลงทะเบียนใหม่โดยส่ง src ผ่าน Query String (วิธีที่แน่นอนที่สุด)
-      // และใช้ PUT เพื่อบังคับสร้าง/แก้ไข
-      const registerUrl = `${go2rtcUrl}/api/streams?name=${streamId}&src=${encodeURIComponent(currentRtspUrl)}`;
-      
-      const response = await axios.put(registerUrl, null, { timeout: 5000 });
-      
-      console.log(`[Streaming] ✅ go2rtc response: ${response.status} ${response.statusText}`);
-      console.log(`[Streaming] ✅ ${streamId} sync completed with latest DB value`);
-      
-      // 4. ตรวจสอบทันทีว่า go2rtc รับค่าไปหรือยัง (Debug Only)
-      const check = await axios.get(`${go2rtcUrl}/api/streams`).catch(() => ({data: {}}));
-      console.log(`[Streaming] 🔍 Current go2rtc state for ${streamId}:`, check.data[streamId] ? 'Registered' : 'NOT FOUND');
-
-    } catch (error) {
-      console.error(`[Streaming] ❌ Sync Error: ${error.message}`);
+    // 🚀 เลือกสตรีมตามที่ผู้ใช้ตั้งค่าไว้ (MAIN หรือ SUB)
+    let currentRtspUrl = camera.rtspUrl;
+    if (camera.streamType === 'SUB' && camera.subStream) {
+      currentRtspUrl = camera.subStream;
     }
 
-    return { streamId, go2rtcUrl, cameraName: camera.name };
+    try {
+      // 🚀 ส่งข้อมูลแบบ Object เพื่อให้ go2rtc จัดการได้ง่ายที่สุด (ลดปัญหา YAML Error)
+      await axios.put(`${go2rtcUrl}/api/streams`, {
+        name: streamId,
+        src: currentRtspUrl
+      }, { timeout: 5000 });
+      
+      console.log(`[Streaming] ✅ ${streamId} sync completed (${camera.streamType})`);
+    } catch (error) {
+      // ถ้า Error 400 หรือ YAML Error ให้ลองแบบ Fallback URL
+      try {
+        const fallbackUrl = `${go2rtcUrl}/api/streams?name=${streamId}&src=${encodeURIComponent(currentRtspUrl)}`;
+        await axios.put(fallbackUrl, null, { timeout: 5000 });
+        console.log(`[Streaming] ♻️ ${streamId} recovered via URL sync`);
+      } catch (retryError) {
+        const errorDetail = retryError.response ? JSON.stringify(retryError.response.data) : retryError.message;
+        console.error(`[Streaming] ❌ Sync Fatal Error for ${camera.name}: ${errorDetail}`);
+      }
+    }
+
+    return { 
+      streamId, 
+      go2rtcUrl, 
+      cameraName: camera.name,
+      isAudioEnabled: camera.isAudioEnabled,
+      streamType: camera.streamType
+    };
+  },
+
+  async getAllStreamStatuses() {
+    const go2rtcUrl = process.env.GO2RTC_URL || 'http://127.0.0.1:1984';
+    try {
+      // 🚀 ตั้ง Timeout ไว้สั้นๆ เพื่อไม่ให้ API ค้างถ้า go2rtc ไม่ตอบสนอง
+      const response = await axios.get(`${go2rtcUrl}/api/streams`, { timeout: 2000 });
+      const streams = response.data;
+      const result = {};
+
+      if (!streams) return {};
+
+      for (const [id, info] of Object.entries(streams)) {
+        if (info && info.producers && info.producers.length > 0) {
+          // ค้นหาข้อมูล Video จาก Producers
+          const producer = info.producers[0];
+          const videoMedia = producer.medias?.find(m => m && m.toLowerCase().includes('video'));
+          
+          if (videoMedia) {
+            // 1. พยายามดึงจาก medias string (มาตรฐาน go2rtc)
+            const parts = videoMedia.split(', ');
+            let resolution = parts.find(p => p && p.includes('x')) || 'Unknown';
+            let fpsPart = parts.find(p => p && p.includes('fps='));
+            let fps = fpsPart ? Math.round(parseFloat(fpsPart.split('=')[1])) : null;
+
+            // 2. 🚀 Fallback 1: ดึง FPS จาก SDP
+            if (fps === null && producer.sdp) {
+              const fpsMatch = producer.sdp.match(/a=framerate:(\d+(\.\d+)?)/);
+              if (fpsMatch) fps = Math.round(parseFloat(fpsMatch[1]));
+            }
+
+            // 3. 🚀 Fallback 2: ดึง Resolution จาก Receivers (ถ้ามีคนดูอยู่ go2rtc จะรู้ค่านี้)
+            if (resolution === 'Unknown' && producer.receivers) {
+              const videoReceiver = producer.receivers.find(r => r.codec && r.codec.codec_type === 'video' && r.codec.width);
+              if (videoReceiver) {
+                resolution = `${videoReceiver.codec.width}x${videoReceiver.codec.height}`;
+              }
+            }
+            
+            result[id] = { 
+              resolution, 
+              fps: fps || '??',
+              active: info.consumers?.length > 0
+            };
+
+            // 4. 🚀 บันทึกลงฐานข้อมูลแบบ Partial (ได้อะไรเอาอันนั้น)
+            const cameraIdMatch = id.match(/^camera_(\d+)$/);
+            if (cameraIdMatch) {
+              const cameraId = parseInt(cameraIdMatch[1]);
+              const updateData = {};
+              if (resolution !== 'Unknown') updateData.resolution = resolution;
+              if (fps !== null) updateData.fps = fps;
+
+              if (Object.keys(updateData).length > 0) {
+                // อัปเดตแบบไม่ต้องรอ (Background)
+                prisma.camera.update({
+                  where: { id: cameraId },
+                  data: updateData
+                }).catch(() => {});
+              }
+            }
+          }
+        }
+      }
+      return result;
+    } catch (error) {
+      // 🔇 เงียบไว้เมื่อติดต่อไม่ได้ เพื่อไม่ให้หน้าจัดการกล้อง Error
+      console.warn(`[Streaming] Could not reach go2rtc at ${go2rtcUrl}: ${error.message}`);
+      return {};
+    }
   }
 };
 

@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2, AlertCircle } from 'lucide-react';
 
-const WebRTCPlayer = ({ streamId }) => {
+const WebRTCPlayer = ({ streamId, isAudioEnabled = false }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 🚀 ใช้ WebRTC เป็นหลัก (Ultra-Low Latency) และ MSE เป็นตัวสำรอง
-  // - webrtc: ภาพสดทันใจ ไม่หมุนค้าง (ถ้าเน็ตช้าภาพจะกระตุกแทนการหมุนโหลด)
-  // - mse: เสถียรกว่าในแง่คุณภาพของภาพ แต่มีโอกาสหมุนโหลด (Buffering)
-  const playerUrl = `/go2rtc-ui/stream.html?src=${streamId}&mode=webrtc,mse&autoplay=1&mute=1&controls=1`;
+  // 🚀 ใช้ WebRTC เป็นหลัก และจัดการเรื่องเสียง (Mute/Unmute)
+  const playerUrl = `/go2rtc-ui/stream.html?src=${streamId}&mode=webrtc,mse&autoplay=1&mute=${isAudioEnabled ? '0' : '1'}&controls=1`;
 
   useEffect(() => {
     setLoading(true);

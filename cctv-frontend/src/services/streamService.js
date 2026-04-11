@@ -5,6 +5,12 @@ const streamService = {
   async getStreamInfo(cameraId) {
     const res = await apiClient.get(`/streams/${cameraId}`);
     return res.data.data;
+  },
+
+  // ดึงสถานะความละเอียดและ FPS ของทุกสตรีม
+  async getStreamStatuses() {
+    const res = await apiClient.get('/streams/statuses');
+    return res.data.data;
   }
 };
 

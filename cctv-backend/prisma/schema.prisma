@@ -46,6 +46,12 @@ model Camera {
   acknowledgeReason String?   @db.Text
   acknowledgedAt    DateTime?
   
+  // ✅ Stream Settings
+  streamType        StreamType @default(MAIN)
+  isAudioEnabled    Boolean    @default(false)
+  resolution        String?    @db.VarChar(50) // เก็บความละเอียดล่าสุด (เช่น 1920x1080)
+  fps               Int?       // เก็บ FPS ล่าสุด (เช่น 25)
+  
   userId      Int
   user        User     @relation("ManagedBy", fields: [userId], references: [id])
   
@@ -57,6 +63,11 @@ model Camera {
   updatedAt   DateTime @updatedAt
 
   @@index([userId])
+}
+
+enum StreamType {
+  MAIN
+  SUB
 }
 
 model CameraGroup {
