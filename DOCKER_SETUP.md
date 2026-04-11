@@ -13,6 +13,19 @@ curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 sudo usermod -aG docker $USER
 # **ต้อง Log out และ Login ใหม่เพื่อให้มีผล**
+
+### 🛡️ ตั้งค่า Firewall (สำคัญมากสำหรับ WebRTC)
+เพื่อให้วิดีโอแสดงผลได้รวดเร็ว (WebRTC) ต้องเปิด Port เหล่านี้บน Ubuntu:
+```bash
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw allow 1984/tcp
+sudo ufw allow 8554/tcp
+sudo ufw allow 8555/tcp
+sudo ufw allow 8555/udp
+sudo ufw enable
+```
+
 ```
 
 ---
@@ -85,3 +98,13 @@ location /go2rtc-ui/ {
 *   **Log ตรวจสอบ**: 
     *   `docker compose logs -f backend` (ดูการลงทะเบียนกล้อง)
     *   `docker compose logs -f go2rtc` (ดูการดึงสัญญาณภาพ)
+
+### 🧩 การแก้ไขปัญหา WebRTC (ICE failed)
+หากพบ Error ใน Console ว่า `WebRTC: ICE failed`:
+1.  **สาเหตุ:** เบราว์เซอร์ไม่สามารถสร้างช่องทางเชื่อมต่อตรง (P2P) กับ Server ได้ มักเกิดจากการปิดกั้นของ Firewall หรือ NAT
+2.  **ผลกระทบ:** ระบบจะสลับไปใช้โหมด **MSE (Media Source Extensions)** แทนอัตโนมัติ ซึ่งวิดีโอจะยังดูได้ปกติ แต่อาจมีความหน่วง (Latency) เพิ่มขึ้นประมาณ 0.5-1.5 วินาที
+3.  **วิธีแก้ไขบน Production:**
+    *   ตรวจสอบว่าเปิด Port **8555/UDP** และ **8555/tcp** ที่ Firewall ของ Ubuntu แล้ว
+    *   ตรวจสอบว่าใน `go2rtc.yaml` มีการระบุโดเมนจริงในส่วนของ `candidates` (เช่น `- cctv.yourdomain.com:8555`)
+    *   หากใช้งานผ่าน HTTPS ระบบ WebRTC จะทำงานได้เสถียรขึ้นมาก
+

@@ -105,21 +105,28 @@ const CameraTableRow = ({ camera, onPreview, onEdit, onDelete, onAcknowledge, on
               <span>เห็นล่าสุด: {lastSeenText}</span>
            </div>
            
-           {/* ✅ ส่วนที่เพิ่มใหม่: ข้อมูล Resolution & FPS (ดึงจาก Real-time หรือ Cache) */}
-           {(streamStatus && streamStatus.resolution !== 'Unknown') || camera.resolution ? (
+           {/* ✅ การแสดงผลข้อมูล Metadata ตามโหมดสตรีม */}
+           {camera.isTranscodeEnabled ? (
               <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-500">
-                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-black uppercase tracking-tighter shadow-sm transition-all ${streamStatus?.active ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-slate-50 text-slate-500 border-slate-200 opacity-80'}`}>
+                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-black uppercase tracking-tighter shadow-sm transition-all ${streamStatus?.active ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-500 border-slate-200 opacity-80'}`}>
                    <Activity size={12} className={streamStatus?.active ? "animate-pulse" : ""} />
-                   <span>{(streamStatus && streamStatus.resolution !== 'Unknown') ? streamStatus.resolution : camera.resolution}</span>
+                   <span>{(streamStatus && streamStatus.resolution !== 'Unknown') ? streamStatus.resolution : (camera.resolution || 'Auto')}</span>
                 </div>
-                <div className={`px-2 py-1 rounded-lg border text-[10px] font-black uppercase tracking-tighter shadow-sm ${streamStatus?.active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-500 border-slate-200 opacity-80'}`}>
+                <div className={`px-2 py-1 rounded-lg border text-[10px] font-black uppercase tracking-tighter shadow-sm ${streamStatus?.active ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-500 border-slate-200 opacity-80'}`}>
                    {(streamStatus && streamStatus.fps !== '??') ? streamStatus.fps : (camera.fps || '??')} FPS
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 text-slate-400 border border-slate-100 rounded-lg text-[9px] font-bold italic w-max animate-pulse">
-                <Loader2 size={10} className="animate-spin" />
-                กำลังตรวจสอบสตรีม...
+              <div className="flex items-center gap-2 opacity-70">
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 text-slate-500 border border-slate-200 text-[10px] font-black uppercase tracking-tighter shadow-sm">
+                   <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
+                   <span>Original Feed</span>
+                </div>
+                {streamStatus?.active && streamStatus?.resolution !== 'Unknown' && (
+                  <span className="text-[9px] font-bold text-slate-400 italic">
+                    ({streamStatus.resolution})
+                  </span>
+                )}
               </div>
             )}
 

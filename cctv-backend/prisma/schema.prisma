@@ -49,6 +49,7 @@ model Camera {
   // ✅ Stream Settings
   streamType        StreamType @default(MAIN)
   isAudioEnabled    Boolean    @default(false)
+  isTranscodeEnabled Boolean   @default(false) // ✅ Toggle สำหรับระบบ Transcoding (อนาคต)
   resolution        String?    @db.VarChar(50) // เก็บความละเอียดล่าสุด (เช่น 1920x1080)
   fps               Int?       // เก็บ FPS ล่าสุด (เช่น 25)
   

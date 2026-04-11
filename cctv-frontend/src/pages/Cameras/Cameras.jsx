@@ -42,7 +42,7 @@ const Cameras = () => {
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', groupId: '', isPublic: false, streamType: 'MAIN', isAudioEnabled: false
+    name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', groupId: '', isPublic: false, streamType: 'MAIN', isAudioEnabled: false, resolution: '', fps: '', isTranscodeEnabled: false
   });
 
   useEffect(() => {
@@ -121,12 +121,15 @@ const Cameras = () => {
         groupId: camera.groups?.[0]?.id || '',
         isPublic: camera.isPublic || false,
         streamType: camera.streamType || 'MAIN',
-        isAudioEnabled: camera.isAudioEnabled || false
+        isAudioEnabled: camera.isAudioEnabled || false,
+        resolution: camera.resolution || '',
+        fps: camera.fps ? camera.fps.toString() : '',
+        isTranscodeEnabled: camera.isTranscodeEnabled || false
       });
     } else {
       setEditingCamera(null);
       setFormData({
-        name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', groupId: '', isPublic: false, streamType: 'MAIN', isAudioEnabled: false
+        name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', groupId: '', isPublic: false, streamType: 'MAIN', isAudioEnabled: false, resolution: '', fps: '', isTranscodeEnabled: false
       });
     }
     setShowFormModal(true);
@@ -168,7 +171,12 @@ const Cameras = () => {
 
   const handleSubmitForm = async (e) => {
     e.preventDefault();
-    const data = { ...formData, latitude: parseFloat(formData.latitude), longitude: parseFloat(formData.longitude) };
+    const data = { 
+      ...formData, 
+      latitude: parseFloat(formData.latitude), 
+      longitude: parseFloat(formData.longitude),
+      fps: formData.fps ? parseInt(formData.fps) : null
+    };
     try {
       if (editingCamera) await cameraService.update(editingCamera.id, data);
       else await cameraService.create(data);

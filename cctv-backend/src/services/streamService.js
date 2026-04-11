@@ -1,85 +1,73 @@
 const prisma = require('../config/prisma');
 const axios = require('axios');
-const { exec } = require('child_process');
-const util = require('util');
-const execPromise = util.promisify(exec);
 
 const streamService = {
-  // 🔍 ฟังก์ชันเสริม: ใช้ ffprobe หาความละเอียดและ FPS (กรณี go2rtc ไม่รู้)
-  async probeMetadata(cameraId, rtspUrl) {
-    try {
-      console.log(`[Probe] 🔍 Probing metadata for camera ${cameraId}...`);
-      // ใช้ ffprobe ดึงข้อมูลแบบ JSON (ใช้เวลาประมาณ 2-4 วินาที)
-      const { stdout } = await execPromise(
-        `ffprobe -v error -select_streams v:0 -show_entries stream=width,height,r_frame_rate -of json "${rtspUrl}"`,
-        { timeout: 10000 }
-      );
-      
-      const data = JSON.parse(stdout);
-      if (data.streams && data.streams[0]) {
-        const s = data.streams[0];
-        const resolution = s.width && s.height ? `${s.width}x${s.height}` : null;
-        
-        // คำนวณ FPS (เช่น "25/1" -> 25)
-        let fps = null;
-        if (s.r_frame_rate) {
-          const [num, den] = s.r_frame_rate.split('/');
-          if (den !== '0') fps = Math.round(parseInt(num) / parseInt(den));
-        }
-
-        if (resolution || fps) {
-          await prisma.camera.update({
-            where: { id: parseInt(cameraId) },
-            data: { resolution, fps }
-          });
-          console.log(`[Probe] ✅ Updated Camera ${cameraId}: ${resolution}, ${fps} FPS`);
-          return { resolution, fps };
-        }
-      }
-    } catch (error) {
-      console.error(`[Probe] ❌ Failed for camera ${cameraId}: ${error.message}`);
-    }
-    return null;
-  },
-
-  async getStreamConfig(cameraId) {
+  async getStreamConfig(cameraId, requestedType = null) {
     const camera = await prisma.camera.findUnique({
       where: { id: parseInt(cameraId) }
     });
 
     if (!camera) throw new Error('Camera not found');
 
-    const streamId = `camera_${camera.id}`;
+    // ✅ ใช้ประเภทที่ขอมา หรือถ้าไม่มีให้ใช้ตามที่ตั้งค่าไว้ใน DB
+    const effectiveType = (requestedType && ['MAIN', 'SUB'].includes(requestedType.toUpperCase())) 
+      ? requestedType.toUpperCase() 
+      : camera.streamType;
+
+    const streamId = `camera_${camera.id}_${effectiveType.toLowerCase()}`;
     const go2rtcUrl = process.env.GO2RTC_URL || 'http://127.0.0.1:1984';
 
-    // 🚀 ถ้ายังไม่มีข้อมูลใน DB ให้รัน Probe ใน Background
-    if (!camera.resolution || !camera.fps) {
-      this.probeMetadata(camera.id, camera.rtspUrl).catch(() => {});
-    }
-
-    // 🚀 เลือกสตรีมตามที่ผู้ใช้ตั้งค่าไว้ (MAIN หรือ SUB)
+    // 1. เลือก URL ต้นทางตามประเภทสตรีมที่คำนวณได้
     let currentRtspUrl = camera.rtspUrl;
-    if (camera.streamType === 'SUB' && camera.subStream) {
+    if (effectiveType === 'SUB' && camera.subStream) {
       currentRtspUrl = camera.subStream;
     }
 
+    // 🛡️ Validation: ถ้าไม่มี URL เลยให้หยุดทำงาน
+    if (!currentRtspUrl || currentRtspUrl.trim() === "") {
+      await axios.delete(`${go2rtcUrl}/api/streams`, { params: { name: streamId } }).catch(() => {});
+      throw new Error('BAD_REQUEST: No RTSP URL provided for this camera stream type');
+    }
+
+    // 2. จัดเตรียม Source สำหรับ go2rtc (Hybrid Mode)
+    let finalSrc = currentRtspUrl;
+    if (camera.isTranscodeEnabled) {
+      const resolution = camera.resolution || '1280x720';
+      const fps = camera.fps || 15;
+      finalSrc = `ffmpeg:${currentRtspUrl}#video=h264#size=${resolution}#fps=${fps}`;
+    }
+
+    console.log(`[Streaming] 🔄 Syncing ${streamId}:`);
+    console.log(`            - Requested Type: ${requestedType || 'DEFAULT'}`);
+    console.log(`            - Effective Type: ${effectiveType}`);
+    console.log(`            - Mode: ${camera.isTranscodeEnabled ? 'TRANSCODE' : 'PASS-THROUGH'}`);
+    console.log(`            - Source: ${finalSrc}`);
+
     try {
-      // 🚀 ส่งข้อมูลแบบ Object เพื่อให้ go2rtc จัดการได้ง่ายที่สุด
-      await axios.put(`${go2rtcUrl}/api/streams`, {
-        name: streamId,
-        src: currentRtspUrl
-      }, { timeout: 5000 });
+      // 3. 🔥 บังคับลบและสร้างใหม่ (Force Sync)
+      // ลบสตรีมเดิมออกให้หมดจดก่อน
+      await axios.delete(`${go2rtcUrl}/api/streams?name=${streamId}`).catch(() => {});
+      await axios.delete(`${go2rtcUrl}/api/streams`, { params: { name: streamId } }).catch(() => {});
       
-      console.log(`[Streaming] ✅ ${streamId} sync completed (${camera.streamType})`);
+      // หน่วงเวลาให้ go2rtc เคลียร์ Socket เก่า (สำคัญมากสำหรับ RTSP)
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // 4. บันทึกเข้า go2rtc โดยใช้รูปแบบ URL Parameters (เสถียรที่สุด)
+      const registerUrl = `${go2rtcUrl}/api/streams?name=${streamId}&src=${encodeURIComponent(finalSrc)}`;
+      await axios.put(registerUrl, null, { timeout: 5000 });
+      
+      console.log(`[Streaming] ✅ ${streamId} sync success (${effectiveType})`);
     } catch (error) {
-      // ถ้า Error 400 หรือ YAML Error ให้ลองแบบ Fallback URL
+      // Fallback: ถ้าวิธีปกติพลาด ให้ลองส่งแบบ Body อีกครั้งเป็นทางเลือกสุดท้าย
       try {
-        const fallbackUrl = `${go2rtcUrl}/api/streams?name=${streamId}&src=${encodeURIComponent(currentRtspUrl)}`;
-        await axios.put(fallbackUrl, null, { timeout: 5000 });
-        console.log(`[Streaming] ♻️ ${streamId} recovered via URL sync`);
+        await new Promise(resolve => setTimeout(resolve, 200));
+        await axios.put(`${go2rtcUrl}/api/streams`, {
+          name: streamId,
+          src: finalSrc
+        }, { timeout: 5000 });
+        console.log(`[Streaming] ♻️ ${streamId} synced via body fallback`);
       } catch (retryError) {
-        const errorDetail = retryError.response ? JSON.stringify(retryError.response.data) : retryError.message;
-        console.error(`[Streaming] ❌ Sync Fatal Error for ${camera.name}: ${errorDetail}`);
+        console.error(`[Streaming] ❌ Fatal Error: ${retryError.message}`);
       }
     }
 
@@ -88,7 +76,9 @@ const streamService = {
       go2rtcUrl, 
       cameraName: camera.name,
       isAudioEnabled: camera.isAudioEnabled,
-      streamType: camera.streamType
+      streamType: effectiveType,
+      hasSubStream: !!camera.subStream,
+      isTranscoded: camera.isTranscodeEnabled
     };
   },
 
@@ -122,10 +112,11 @@ const streamService = {
             }
 
             // 3. 🚀 Fallback 2: ดึง Resolution จาก Receivers หรือ Senders
+            const videoReceiver = producer.receivers?.find(r => r.codec && r.codec.codec_type === 'video');
+            
             if (resolution === 'Unknown') {
               // เช็คใน receivers (วิดีโอขาเข้า)
-              const videoReceiver = producer.receivers?.find(r => r.codec && r.codec.codec_type === 'video' && r.codec.width);
-              if (videoReceiver) {
+              if (videoReceiver && videoReceiver.codec.width) {
                 resolution = `${videoReceiver.codec.width}x${videoReceiver.codec.height}`;
               } 
               // เช็คใน consumers/senders (วิดีโอขาออกที่มีคนดูอยู่)
@@ -142,21 +133,29 @@ const streamService = {
 
             // 4. 🚀 Fallback 3: พยายามหาจาก SDP sprop-parameter-sets (H264)
             if (resolution === 'Unknown' && producer.sdp) {
-              const spsMatch = producer.sdp.match(/sprop-parameter-sets=([A-Za-z0-9+/=]+)/);
-              if (spsMatch) {
-                // เราจะไม่เขียน SPS Parser เต็มรูปแบบ แต่จะลองมองหา Profile level id 
-                // หรือส่งไปให้ Frontend ช่วยแสดงผลถ้าจำเป็น
-              }
+              // ... (Logic เดิม)
             }
             
+            // 🆕 เพิ่มการตรวจจับ Codec และ Mode
+            const codec = videoReceiver?.codec?.codec_name?.toUpperCase() || 
+                         producer.medias?.find(m => m.includes('video'))?.split(', ').pop()?.toUpperCase() || 
+                         'H264';
+            
+            const mode = info.consumers?.find(c => c.format_name)?.format_name?.split('/')[0]?.toUpperCase() || 'MSE';
+            const isTranscoded = (producer.source && producer.source.includes('ffmpeg')) || false;
+
             result[id] = { 
               resolution, 
               fps: fps || '??',
-              active: info.consumers?.length > 0
+              active: info.consumers?.length > 0,
+              viewerCount: info.consumers?.length || 0,
+              codec,
+              mode,
+              isTranscoded
             };
 
             // 5. 🚀 บันทึกลงฐานข้อมูล (เฉพาะค่าที่แน่นอน)
-            const cameraIdMatch = id.match(/^camera_(\d+)$/);
+            const cameraIdMatch = id.match(/^camera_(\d+)(?:_(?:main|sub))?$/);
             if (cameraIdMatch) {
               const cameraId = parseInt(cameraIdMatch[1]);
               const updateData = {};

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, Save } from 'lucide-react';
+import { Camera, Save, Activity } from 'lucide-react';
 import Modal from '../../../components/Modal';
 
 const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, editingCamera, groups }) => {
@@ -188,6 +188,73 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
               <p className="text-[10px] text-slate-400 font-medium px-1 italic">* กล้องต้องรองรับและเปิดใช้ Audio ในตัวเครื่อง</p>
             </div>
           </div>
+        </div>
+
+        {/* ✅ ระบบ Transcoding Toggle (Hybrid System) */}
+        <div className="col-span-1 md:col-span-2 space-y-4 pt-4 border-t border-slate-50">
+          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+            <div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>
+            Advanced Performance Mode
+          </h4>
+          
+          <label className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer group ${formData.isTranscodeEnabled ? 'bg-amber-50/50 border-amber-200' : 'bg-slate-50/50 border-slate-100 hover:border-slate-200 border-dashed'}`}>
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-xl transition-colors ${formData.isTranscodeEnabled ? 'bg-amber-100 text-amber-600' : 'bg-slate-200 text-slate-500'}`}>
+                <Activity size={20} />
+              </div>
+              <div>
+                <span className={`text-xs font-black uppercase tracking-tight ${formData.isTranscodeEnabled ? 'text-amber-700' : 'text-slate-500'}`}>
+                  เปิดใช้งานการแปลงรหัส (Enable Transcoding)
+                </span>
+                <p className="text-[10px] text-slate-400 font-medium">ประมวลผลวิดีโอใหม่เพื่อบังคับความละเอียด/เฟรมเรต (กิน CPU สูง)</p>
+              </div>
+            </div>
+            <div className="relative">
+              <input 
+                type="checkbox"
+                className="sr-only peer"
+                checked={formData.isTranscodeEnabled}
+                onChange={(e) => setFormData({...formData, isTranscodeEnabled: e.target.checked})}
+              />
+              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+            </div>
+          </label>
+
+          {/* 🚀 แสดงช่องตั้งค่าเฉพาะเมื่อเปิดใช้งาน Transcoding เท่านั้น */}
+          {formData.isTranscodeEnabled && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="space-y-3">
+                <label className="text-xs font-bold text-slate-600 ml-1">ความละเอียดวิดีโอที่ต้องการ (Target Resolution)</label>
+                <select 
+                  className="w-full px-4 py-3 rounded-2xl border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all bg-white text-sm font-medium"
+                  value={formData.resolution}
+                  onChange={(e) => setFormData({...formData, resolution: e.target.value})}
+                >
+                  <option value="">-- อิงตามต้นฉบับ --</option>
+                  <option value="3840x2160">4K (3840x2160)</option>
+                  <option value="2560x1440">2K (2560x1440)</option>
+                  <option value="1920x1080">Full HD (1920x1080)</option>
+                  <option value="1280x720">HD (1280x720)</option>
+                  <option value="704x576">D1 (704x576)</option>
+                  <option value="640x480">VGA (640x480)</option>
+                </select>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-xs font-bold text-slate-600 ml-1">เฟรมเรตที่ต้องการ (Target FPS)</label>
+                <div className="relative">
+                  <input 
+                    type="number"
+                    className="w-full px-4 py-3 rounded-2xl border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all bg-white text-sm font-medium"
+                    placeholder="เช่น 10, 15, 20"
+                    value={formData.fps}
+                    onChange={(e) => setFormData({...formData, fps: e.target.value})}
+                  />
+                  <span className="absolute right-4 top-3 text-[10px] font-black text-amber-400 uppercase h-full flex items-center">FPS</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </form>
     </Modal>

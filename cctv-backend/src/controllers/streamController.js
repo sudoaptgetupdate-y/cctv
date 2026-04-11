@@ -3,7 +3,8 @@ const streamService = require('../services/streamService');
 const streamController = {
   async getStreamInfo(req, res, next) {
     try {
-      const info = await streamService.getStreamConfig(req.params.cameraId);
+      const { type } = req.query; // MAIN or SUB
+      const info = await streamService.getStreamConfig(req.params.cameraId, type);
       res.json({
         success: true,
         data: info

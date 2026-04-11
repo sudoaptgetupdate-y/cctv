@@ -274,6 +274,7 @@ const PublicDashboard = () => {
           camera={selectedCamera} 
           initialPosition={initialPosition}
           onClose={() => setSelectedCamera(null)} 
+          isPublic={true}
         />
       )}
     </div>

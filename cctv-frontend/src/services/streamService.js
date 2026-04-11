@@ -2,8 +2,9 @@ import apiClient from '../utils/apiClient';
 
 const streamService = {
   // ดึงคอนฟิกสตรีมมิ่งของกล้อง
-  async getStreamInfo(cameraId) {
-    const res = await apiClient.get(`/streams/${cameraId}`);
+  async getStreamInfo(cameraId, type = null) {
+    const params = type ? { type } : {};
+    const res = await apiClient.get(`/streams/${cameraId}`, { params });
     return res.data.data;
   },
 

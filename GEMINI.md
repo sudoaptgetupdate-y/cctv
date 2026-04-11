@@ -13,6 +13,9 @@
 - [x] **Frontend Shell:** React + Vite + Tailwind CSS + MainLayout (Sidebar/Header)
 - [x] **Interactive Map:** Leaflet พล็อตจุด Marker ตามพิกัดจริงและสลับสีตามสถานะ Online/Offline
 - [x] **Streaming Integration:** ระบบ WebRTC Player (Frontend) และ Stream Info API (Backend) พร้อมเชื่อมต่อ go2rtc
+- [x] **Hybrid Stream Strategy:** ระบบสลับโหมด Pass-through (Low CPU) และ Transcoding (High Quality) รายกล้อง พร้อมคำสั่ง Force Sync ล้าง Cache ทันทีที่เปลี่ยน URL
+- [x] **Camera Settings Evolution:** รองรับการเลือก Main/Sub Stream, เปิด-ปิดเสียง และกำหนดค่า Resolution/FPS แบบ Manual ที่มีผลต่อการ Transcode จริง
+- [x] **UI/UX Optimization:** ระบบแสดงป้ายกำกับ "Original Feed" สำหรับโหมดประหยัด และ Smart Reveal ฟิลด์ตั้งค่าประสิทธิภาพเมื่อเปิดโหมด Transcoding
 - [x] **Codebase Refactoring:** จัดโครงสร้างไฟล์ใหม่เป็น `pages/PageName/components/` และเปลี่ยนชื่อเป็น `AdminDashboard` และ `CameraGroups`
 - [x] **Public Dashboard:** พัฒนาหน้าแสดงผลสาธารณะ (Root Path) พร้อมระบบ Accordion Grouping, Horizontal Category Pills และระบบค้นหา
 - [x] **Enhanced UI:** ปรับปรุงแผนที่แบบ Full-screen (Fixed 100% height issue), เพิ่ม Tooltip แสดงข้อมูลขณะ Hover และหน้าต่าง Preview แบบลอย (Draggable Floating Window) ที่รองรับการขยายเต็มจอ
@@ -33,7 +36,7 @@
 ---
 
 ## 🎯 เป้าหมายถัดไป (Next Tasks)
-1.  [ ] **CameraSetup:** ในหน้า Camera เลือกว่าจะแสดง main,sub stream - ต้องการให้เลือก เปิด-ปิด เสียงกล้องได้
+1.  [ ] **Dynamic Stream Switching:** ในหน้าต่าง Preview (Streaming Player) เพิ่มปุ่มให้ผู้ใช้สามารถสลับระหว่าง Main และ Sub Stream ได้ทันทีโดยไม่ต้องกลับไปแก้ในหน้าตั้งค่า
 2.  [ ] **Interactive Telegram Bot:** พัฒนา Webhook ให้ Bot สามารถตอบโต้และสรุปสถานะระบบด้วย AI เมื่อผู้ใช้สอบถาม
 3.  [ ] **Advanced Analytics:** ระบบสรุปสถิติรายสัปดาห์/รายเดือนผ่านหน้า Dashboard (Chart.js)
 
@@ -54,6 +57,6 @@ gemini "objective" --path D:\1.Development\dev-cctv\cctv --path D:\1.Development
 ## 📝 บันทึกถึง Gemini
 - **Refactoring Note:** โครงสร้างโฟลเดอร์ใน `src/pages` แบ่งตามฟีเจอร์ชัดเจน และ Shared Components อยู่ใน `src/components`
 - **Public Dashboard Strategy:** เน้นความง่ายสำหรับประชาชน (Mobile First) และความเร็วในการแสดงผล (WebRTC)
-- **UI Logic:** หน้าต่าง Preview วิดีโอจะคำนวณตำแหน่งเริ่มต้นจากพิกัดที่คลิกบนแผนที่ทันที เพื่อไม่ให้เกิดอาการกระตุก (Top-left jump)
-- **Security Note:** ระบบ User มีการตรวจสอบความแข็งแรงของรหัสผ่าน (Password Strength) และป้องกันอีเมลซ้ำทั้ง Frontend และ Backend
+- **Hybrid Strategy:** การใช้ `ffmpeg:` ใน go2rtc จะกิน CPU สูง ควรใช้เฉพาะเมื่อจำเป็น (เช่น แปลง H.265 เป็น H.264)
+- **Deployment Note:** บน Production ต้องเปิด Port 8555 (UDP/TCP) สำหรับ WebRTC และระบุโดเมนจริงใน candidates ของ go2rtc
 - ทุกครั้งที่เริ่มงานใหม่ ให้รัน `codebase_investigator` เพื่อซิงค์ความเข้าใจโครงสร้างไฟล์ล่าสุด
