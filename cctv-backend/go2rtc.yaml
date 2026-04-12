@@ -25,7 +25,7 @@ streams:
   camera_1:
     - ffmpeg:rtsp://admin:Lkfgxifde0905@192.168.123.124:554/cam/realmonitor?channel=1&subtype=1#video=h264#size=704x576#fps=25
   camera_2_main:
-    - ffmpeg:camera_2_main_src#video=h264#size=1280x720#fps=10#vprofile=main#audio=copy
+    - ffmpeg:camera_2_main_src#video=h264#size=1280x720#fps=10#vprofile=main#audio=opus
   camera_2_sub:
     - ffmpeg:camera_2_sub_src#video=h264#size=320x240#fps=10#vprofile=main
   camera_1_main:

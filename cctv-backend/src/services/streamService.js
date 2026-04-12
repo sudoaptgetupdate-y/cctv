@@ -21,7 +21,6 @@ const streamService = {
       currentRtspUrl = camera.subStream;
     }
 
-    // 🔐 ฉีด Username/Password
     if (camera.username && camera.password && currentRtspUrl && !currentRtspUrl.includes('@')) {
       try {
         const cleanUrl = currentRtspUrl.replace('rtsp://', '');
@@ -30,11 +29,9 @@ const streamService = {
     }
 
     try {
-      // 🚀 1. ล้าง Config เก่าทิ้งก่อน
       await axios.delete(`${go2rtcUrl}/api/streams`, { params: { name: streamId } }).catch(() => {});
       
       if (camera.isTranscodeEnabled) {
-        // 🛡️ เทคนิค Source-Target Mapping
         const sourceId = `${streamId}_src`;
         await axios.delete(`${go2rtcUrl}/api/streams`, { params: { name: sourceId } }).catch(() => {});
         await axios.put(`${go2rtcUrl}/api/streams`, null, { params: { name: sourceId, src: currentRtspUrl } });
@@ -42,9 +39,11 @@ const streamService = {
         const res = (effectiveType === 'SUB' ? camera.subResolution : camera.resolution) || (effectiveType === 'SUB' ? '640x360' : '1280x720');
         const fps = (effectiveType === 'SUB' ? camera.subFps : camera.fps) || (effectiveType === 'SUB' ? 10 : 15);
 
-        // 🚀 2. แก้ไข: เพิ่ม #audio=copy เพื่อให้เสียงตามมาด้วยเมื่อทำ Transcoding
-        // และเพิ่ม #video=h264 เพื่อระบุว่าต้องการแปลงเฉพาะวิดีโอ
-        const finalSrc = `ffmpeg:${sourceId}#video=h264#size=${res}#fps=${fps}#vprofile=main#audio=copy`;
+        // 🚀 ทางแก้ปัญหาเสียง: เปลี่ยนจาก copy เป็น opus (WebRTC Native)
+        // หากเปิดเสียงใน Config ให้ทำการแปลงเป็น opus ทันที
+        // หากปิดเสียง ให้ใช้ #audio=no
+        const audioParam = camera.isAudioEnabled ? '#audio=opus' : '#audio=no';
+        const finalSrc = `ffmpeg:${sourceId}#video=h264#size=${res}#fps=${fps}#vprofile=main${audioParam}`;
         
         await axios.put(`${go2rtcUrl}/api/streams`, null, { params: { name: streamId, src: finalSrc } });
       } else {
@@ -90,7 +89,6 @@ const streamService = {
         if (producer.source) {
           const resMatch = producer.source.match(/size=(\d+x\d+)/) || producer.source.match(/-s\s+(\d+x\d+)/);
           if (resMatch) status.resolution = resMatch[1];
-
           const fpsMatch = producer.source.match(/fps=(\d+)/) || producer.source.match(/-r\s+(\d+)/);
           if (fpsMatch) status.fps = parseInt(fpsMatch[1]);
         }
