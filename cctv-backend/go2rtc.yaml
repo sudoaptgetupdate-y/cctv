@@ -25,10 +25,12 @@ streams:
   camera_1:
     - ffmpeg:rtsp://admin:Lkfgxifde0905@192.168.123.124:554/cam/realmonitor?channel=1&subtype=1#video=h264#size=704x576#fps=25
   camera_2_main:
-    - ffmpeg:rtsp://admin:Lkfgxifde0905@192.168.10.219:554/cam/realmonitor?channel=1&subtype=0#video=h264#size=1920x1080#fps=25
+    - ffmpeg:camera_2_main_src#video=h264#size=1280x720#fps=10#vprofile=main
   camera_2_sub:
     - ffmpeg:rtsp://admin:Lkfgxifde0905@192.168.10.219:554/cam/realmonitor?channel=1&subtype=0#video=h264#size=320x240#fps=25
   camera_1_main:
     - rtsp://admin:Lkfgxifde0905@192.168.123.124:554/cam/realmonitor?channel=1&subtype=0
   camera_1_sub:
     - rtsp://admin:Lkfgxifde0905@192.168.123.124:554/cam/realmonitor?channel=1&subtype=1
+  camera_2_main_src:
+    - rtsp://admin:Lkfgxifde0905@192.168.10.219:554/cam/realmonitor?channel=1&subtype=0

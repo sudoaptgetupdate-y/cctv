@@ -21,51 +21,31 @@ const streamService = {
       currentRtspUrl = camera.subStream;
     }
 
-    // 🔐 ฉีด Username/Password เฉพาะเมื่อ URL เดิมไม่มี @ และมีข้อมูลครบ
+    // 🔐 ฉีด Username/Password
     if (camera.username && camera.password && currentRtspUrl && !currentRtspUrl.includes('@')) {
       try {
         const cleanUrl = currentRtspUrl.replace('rtsp://', '');
         currentRtspUrl = `rtsp://${camera.username}:${camera.password}@${cleanUrl}`;
-      } catch (e) {
-        console.warn('[Streaming] Credential injection failed');
-      }
+      } catch (e) { }
     }
-
-    if (!currentRtspUrl || currentRtspUrl.trim() === "") {
-      throw new Error('BAD_REQUEST: No RTSP URL provided');
-    }
-
-    let finalSrc = currentRtspUrl;
-    if (camera.isTranscodeEnabled) {
-      const resolution = (effectiveType === 'SUB' ? camera.subResolution : camera.resolution) || (effectiveType === 'SUB' ? '640x360' : '1280x720');
-      const fps = (effectiveType === 'SUB' ? camera.subFps : camera.fps) || (effectiveType === 'SUB' ? 10 : 15);
-      finalSrc = `ffmpeg:${currentRtspUrl}#video=h264#size=${resolution}#fps=${fps}`;
-    }
-
-    console.log(`[Streaming] 🔍 StreamID: ${streamId}`);
-    console.log(`[Streaming] 🔗 Final Source: ${finalSrc.replace(camera.password || '---', '****')}`); // ซ่อน pass ใน log
 
     try {
-      // 🚀 1. เช็คสตรีมใน go2rtc
-      const existing = await axios.get(`${go2rtcUrl}/api/streams?name=${streamId}`).catch(() => ({ data: {} }));
-      const currentConfig = existing.data[streamId];
+      await axios.delete(`${go2rtcUrl}/api/streams`, { params: { name: streamId } }).catch(() => {});
       
-      // เช็คว่ามี Config นี้อยู่แล้วและ URL ตรงกันหรือไม่
-      const isAlreadyDefined = currentConfig && 
-                               currentConfig.producers && 
-                               currentConfig.producers.some(p => p.url === currentRtspUrl || p.source === finalSrc);
+      if (camera.isTranscodeEnabled) {
+        const sourceId = `${streamId}_src`;
+        await axios.delete(`${go2rtcUrl}/api/streams`, { params: { name: sourceId } }).catch(() => {});
+        await axios.put(`${go2rtcUrl}/api/streams`, null, { params: { name: sourceId, src: currentRtspUrl } });
 
-      if (!isAlreadyDefined) {
-        // 🚀 2. ลงทะเบียนหรืออัปเดตใหม่ (PUT ของ go2rtc จะเขียนทับให้อัตโนมัติโดยไม่ต้อง DELETE)
-        console.log(`[Streaming] 🔄 Registering/Updating ${streamId}`);
-        const registerUrl = `${go2rtcUrl}/api/streams?name=${streamId}&src=${encodeURIComponent(finalSrc)}`;
-        await axios.put(registerUrl, null, { timeout: 5000 });
+        const res = (effectiveType === 'SUB' ? camera.subResolution : camera.resolution) || (effectiveType === 'SUB' ? '640x360' : '1280x720');
+        const fps = (effectiveType === 'SUB' ? camera.subFps : camera.fps) || (effectiveType === 'SUB' ? 10 : 15);
+
+        const finalSrc = `ffmpeg:${sourceId}#video=h264#size=${res}#fps=${fps}#vprofile=main`;
+        await axios.put(`${go2rtcUrl}/api/streams`, null, { params: { name: streamId, src: finalSrc } });
       } else {
-        console.log(`[Streaming] ⚡ ${streamId} is already defined. Skipping.`);
+        await axios.put(`${go2rtcUrl}/api/streams`, null, { params: { name: streamId, src: currentRtspUrl } });
       }
-    } catch (error) {
-      console.error(`[Streaming] Sync error: ${error.message}`);
-    }
+    } catch (error) { }
 
     return { 
       streamId, 
@@ -81,13 +61,10 @@ const streamService = {
   async getStreamStatus(streamId) {
     const go2rtcUrl = process.env.GO2RTC_URL || 'http://127.0.0.1:1984';
     try {
-      const response = await axios.get(`${go2rtcUrl}/api/streams?name=${streamId}`, { timeout: 2000 });
+      const response = await axios.get(`${go2rtcUrl}/api/streams`, { params: { name: streamId }, timeout: 2000 });
       const info = response.data && response.data[streamId];
-
-      // 👥 ดึง Viewer Count จริงจาก DB (Session Heartbeat)
       const viewerCount = await this.getViewerCount(streamId);
 
-      // ✅ แก้ไข: ห้ามส่ง null กลับไปเด็ดขาด ให้ส่งสถานะพื้นฐานเพื่อให้ Frontend ดึงต่อได้
       const status = {
         active: false,
         viewerCount,
@@ -98,47 +75,35 @@ const streamService = {
         isTranscoded: false
       };
 
-      if (!info) {
-        return status; // ยังไม่เจอใน go2rtc แต่ส่ง WAIT กลับไปก่อน
-      }
-
-      status.active = info.consumers?.length > 0;
-      // status.viewerCount = info.consumers?.length || 0; // ❌ ลบออกเพื่อให้ใช้ค่าจาก DB Heartbeat
+      if (!info) return status;
+      status.active = (info.consumers && info.consumers.length > 0);
 
       if (info.producers && info.producers.length > 0) {
         const producer = info.producers[0];
-        status.isTranscoded = (producer.source && producer.source.includes('ffmpeg')) || false;
+        status.isTranscoded = (producer.source && producer.source.includes('ffmpeg'));
 
-        const videoMedia = producer.medias?.find(m => m && m.toLowerCase().includes('video'));
-        const videoReceiver = producer.receivers?.find(r => r.codec && r.codec.codec_type === 'video');
+        if (producer.source) {
+          const resMatch = producer.source.match(/size=(\d+x\d+)/) || producer.source.match(/-s\s+(\d+x\d+)/);
+          if (resMatch) status.resolution = resMatch[1];
 
-        if (videoMedia) {
-          const parts = videoMedia.split(', ');
-          const resPart = parts.find(p => p && p.includes('x') && !p.includes('video'));
-          const fpsPart = parts.find(p => p && p.includes('fps='));
-          
-          if (resPart) status.resolution = resPart;
-          if (fpsPart) status.fps = Math.round(parseFloat(fpsPart.split('=')[1]));
-          
-          status.codec = videoReceiver?.codec?.codec_name?.toUpperCase() || 
-                         videoMedia.split(', ').pop()?.toUpperCase() || 'H264';
+          const fpsMatch = producer.source.match(/fps=(\d+)/) || producer.source.match(/-r\s+(\d+)/);
+          if (fpsMatch) status.fps = parseInt(fpsMatch[1]);
         }
 
-        if (status.resolution === 'Unknown' && videoReceiver?.codec?.width) {
-          status.resolution = `${videoReceiver.codec.width}x${videoReceiver.codec.height}`;
-        }
-
-        if ((status.fps === '??' || !status.fps) && producer.sdp) {
-          const fpsMatch = producer.sdp.match(/a=framerate:(\d+(\.\d+)?)/);
-          if (fpsMatch) status.fps = Math.round(parseFloat(fpsMatch[1]));
+        if (producer.receivers) {
+          const vR = producer.receivers.find(r => r.codec && r.codec.codec_type === 'video');
+          if (vR && vR.codec) {
+            if (vR.codec.width && vR.codec.height && status.resolution === 'Unknown') {
+              status.resolution = `${vR.codec.width}x${vR.codec.height}`;
+            }
+            if (vR.codec.codec_name) status.codec = vR.codec.codec_name.toUpperCase();
+          }
         }
       }
 
-      if (info.consumers && info.consumers.length > 0) {
-        const activeConsumer = info.consumers.find(c => c.format_name);
-        if (activeConsumer) {
-          status.mode = activeConsumer.format_name.split('/')[0].toUpperCase();
-        }
+      if (info.consumers?.length > 0) {
+        const consumer = info.consumers.find(c => c.format_name);
+        if (consumer) status.mode = consumer.format_name.split('/')[0].toUpperCase();
       }
 
       return status;
@@ -146,111 +111,51 @@ const streamService = {
       return { active: false, viewerCount: 0, resolution: 'Unknown', fps: '??', codec: 'OFFLINE', mode: '---', isTranscoded: false };
     }
   },
+
   async getAllStreamStatuses() {
     const go2rtcUrl = process.env.GO2RTC_URL || 'http://127.0.0.1:1984';
     try {
       const response = await axios.get(`${go2rtcUrl}/api/streams`, { timeout: 2000 });
-      const liveStreams = response.data || {};
       const result = {};
-
-      // 🔍 DEBUG: พิมพ์รายชื่อสตรีมทั้งหมดที่ go2rtc เห็นในตอนนี้
-      console.log(`[Debug] go2rtc streams found: ${Object.keys(liveStreams).join(', ') || 'NONE'}`);
-
-      for (const [id, info] of Object.entries(liveStreams)) {
-        if (!id.startsWith('camera_')) continue;
-
-        const dbViewerCount = await this.getViewerCount(id);
-
-        // สร้าง Object สถานะตั้งต้น (สถานะกำลังเชื่อมต่อ)
-        const status = {
-          active: info.consumers?.length > 0,
-          viewerCount: dbViewerCount,
-          resolution: 'Unknown',
-          fps: '??',
-          codec: 'WAIT', // 🚀 บ่งบอกว่าเจอสตรีมแล้ว แต่กำลังรอข้อมูลวิดีโอ
-          mode: '---',
-          isTranscoded: false
-        };
-
-        // 3. ถ้า go2rtc เริ่มรับสัญญาณจากกล้องได้แล้ว (มี Producers) ให้ดึงข้อมูลจริงมาใส่
-        if (info.producers && info.producers.length > 0) {
-          const producer = info.producers[0];
-          status.isTranscoded = producer.source?.includes('ffmpeg') || false;
-
-          const videoMedia = producer.medias?.find(m => m && m.toLowerCase().includes('video'));
-          if (videoMedia) {
-            const parts = videoMedia.split(', ');
-            const res = parts.find(p => p && p.includes('x'));
-            const fpsPart = parts.find(p => p && p.includes('fps='));
-            
-            if (res) status.resolution = res;
-            if (fpsPart) status.fps = Math.round(parseFloat(fpsPart.split('=')[1]));
-
-            // ตรวจจับ Codec จริง
-            const videoReceiver = producer.receivers?.find(r => r.codec && r.codec.codec_type === 'video');
-            status.codec = videoReceiver?.codec?.codec_name?.toUpperCase() || 
-                         videoMedia.split(', ').pop()?.toUpperCase() || 'H264';
-            
-            // ตรวจจับโหมดการส่งข้อมูล (WebRTC/MSE) จาก Consumer แรก
-            if (info.consumers && info.consumers.length > 0) {
-              status.mode = info.consumers[0].format_name?.split('/')[0]?.toUpperCase() || '---';
-            }
-          }
+      for (const id of Object.keys(response.data || {})) {
+        if (id.startsWith('camera_') && !id.endsWith('_src')) {
+          result[id] = await this.getStreamStatus(id);
         }
-
-        result[id] = status;
       }
-
       return result;
-    } catch (error) {
-      console.warn(`[Streaming] Cannot reach go2rtc: ${error.message}`);
-      return {};
-    }
+    } catch (error) { return {}; }
   },
 
-  // 👥 Viewing Session Management
   async heartbeat(streamId, sessionId, userId = null) {
     const now = new Date();
-    return await prisma.viewingSession.upsert({
-      where: {
-        streamId_sessionId: { streamId, sessionId }
-      },
-      update: {
-        lastSeen: now,
-        userId: userId ? parseInt(userId) : null
-      },
-      create: {
-        streamId,
-        sessionId,
-        lastSeen: now, // 🚀 ใช้เวลาเดียวกันกับ update เพื่อป้องกัน Clock Drift กับ DB
-        userId: userId ? parseInt(userId) : null
-      }
-    });
+    const userIdInt = userId ? parseInt(userId) : null;
+    try {
+      await prisma.$executeRaw`
+        INSERT INTO ViewingSession (streamId, sessionId, lastSeen, userId, createdAt)
+        VALUES (${streamId}, ${sessionId}, ${now}, ${userIdInt}, ${now})
+        ON DUPLICATE KEY UPDATE lastSeen = ${now}, userId = ${userIdInt}
+      `;
+      return { success: true };
+    } catch (e) {
+      return { success: false };
+    }
   },
 
   async getViewerCount(streamId) {
-    // 🚀 สกัดเอา Prefix รายกล้อง (เช่น camera_1_main -> camera_1_)
     const cameraPrefix = streamId.split('_').slice(0, 2).join('_') + '_';
-    
-    const threshold = new Date(Date.now() - 60000); // 🚀 ขยายเป็น 60 วินาที เพื่อความนิ่ง
-    return await prisma.viewingSession.count({
-      where: {
-        streamId: { startsWith: cameraPrefix },
-        lastSeen: { gte: threshold }
-      }
-    });
+    const threshold = new Date(Date.now() - 60000);
+    try {
+      return await prisma.viewingSession.count({
+        where: { streamId: { startsWith: cameraPrefix }, lastSeen: { gte: threshold } }
+      });
+    } catch (e) { return 0; }
   },
 
   async cleanupSessions() {
-    const threshold = new Date(Date.now() - 120000); // 🚀 ล้างที่เก่ากว่า 2 นาที
-    const deleted = await prisma.viewingSession.deleteMany({
-      where: {
-        lastSeen: { lt: threshold }
-      }
-    });
-    if (deleted.count > 0) {
-      console.log(`🧹 [Stream] Cleaned up ${deleted.count} expired viewing sessions.`);
-    }
+    const threshold = new Date(Date.now() - 120000);
+    try {
+      await prisma.viewingSession.deleteMany({ where: { lastSeen: { lt: threshold } } });
+    } catch (e) { }
   }
 };
 
