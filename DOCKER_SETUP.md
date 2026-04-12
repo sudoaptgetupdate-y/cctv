@@ -86,20 +86,52 @@ docker compose restart go2rtc
 *   คุณจะเห็นสตรีมชื่อ `camera_ID` (สตรีมที่ถูกแปลงเป็น FPS/Resolution ตามสั่ง)
 *   **เช็ค Log:** `docker compose logs -f backend` (ต้องเห็นข้อความ `🔥 FORCING TRANSCODE`)
 
-### 👥 ตรวจสอบจำนวนคนดู (Heartbeat)
-ระบบจะนับคนดูจริงผ่านตาราง `ViewingSession` ใน DB แบบ Real-time:
-*   **เช็ค Log:** `docker compose logs -f backend`
-*   หากไม่มี Error `Unique constraint failed` (เพราะใช้ Raw SQL UPSERT แล้ว) แสดงว่าระบบทำงานปกติ
+---
 
-### 🧹 การดูแลรักษา
-*   **ล้างข้อมูล Session เก่า:** ระบบมี Cron Job ล้างให้อัตโนมัติทุก 2 นาที (Cleanup Job)
-*   **ดู CPU Usage:** ใช้คำสั่ง `docker stats`
-    *   หากใช้ Pass-through (ปกติ): CPU ควรอยู่ใกล้ 0%
-    *   หากเปิด Transcode: CPU จะสูงขึ้นตามจำนวนกล้อง (เฉลี่ย 5-10% ต่อกล้องบน CPU Host mode)
+## 5. 🛠️ คำสั่งที่ใช้บ่อย (Essential Commands)
+
+### 🔄 การอัปเดตและ Build ใหม่
+```bash
+# อัปเดตโค้ดและ Build เฉพาะ Backend (กรณีแก้ไฟล์ .js หรือ seed.js)
+docker compose up -d --build backend
+
+# อัปเดตโค้ดและ Build เฉพาะ Frontend (กรณีแก้ UI)
+docker compose up -d --build frontend
+
+# บังคับรันคำสั่ง Seed ใหม่ (เพื่ออัปเดต User/Settings)
+docker compose exec backend npx prisma db seed
+```
+
+### 📋 การดู Log (Troubleshooting)
+```bash
+# ดู Log ของทุก Service แบบ Real-time
+docker compose logs -f
+
+# ดู Log เฉพาะ Backend (เพื่อเช็ค Error API หรือการเชื่อมต่อกล้อง)
+docker compose logs -f backend
+
+# ดู Log เฉพาะ go2rtc (เพื่อเช็คสถานะการดึงสัญญาณภาพจากกล้อง)
+docker compose logs -f go2rtc
+```
+
+### ⚙️ การจัดการ Container
+```bash
+# ตรวจสอบสถานะการทำงานของทุก Container (Status ต้องเป็น Up)
+docker compose ps
+
+# รีสตาร์ทระบบทั้งหมด
+docker compose restart
+
+# รีสตาร์ทเฉพาะ Engine สตรีมมิ่ง (เพื่อเคลียร์อาการค้าง)
+docker compose restart go2rtc
+
+# หยุดการทำงานและลบ Container ทั้งหมด (ข้อมูลใน DB ไม่หายเพราะใช้ Volume)
+docker compose down
+```
 
 ---
 
-## 5. บันทึกทางเทคนิค (Technical Notes)
+## 6. บันทึกทางเทคนิค (Technical Notes)
 *   **15fps Fix:** ระบบแก้ปัญหาด้วยการบังคับลบสตรีมเก่าและใช้พารามิเตอร์ `#fps=...` ผ่าน Internal Source เพื่อเอาชนะปัญหา Cache บน go2rtc/Windows
 *   **Resolution Fix:** ระบบดึงค่าจากคำสั่ง FFmpeg (Source) โดยตรง ทำให้ UI แสดงผลได้ทันทีโดยไม่ต้องรอการ Probe ข้อมูลจาก Engine นานเกินไป
 *   **Heartbeat Stability:** เปลี่ยนจากการใช้ Prisma Upsert มาเป็น Raw SQL `ON DUPLICATE KEY UPDATE` เพื่อป้องกันปัญหา Concurrency บน MariaDB 100%
