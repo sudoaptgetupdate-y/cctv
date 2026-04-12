@@ -8,9 +8,24 @@ const StreamModal = ({ camera, onClose, initialPosition, isPublic = false }) => 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+  // 🚀 คำนวณพิกัดเริ่มต้นทันทีเพื่อไม่ให้วิ่งจาก 0,0
+  const [position, setPosition] = useState(() => {
+    if (isMobile) return { x: 16, y: window.innerHeight - 280 };
+    
+    if (initialPosition) {
+      return { 
+        x: Math.min(window.innerWidth - 460, Math.max(20, initialPosition.x + 20)), 
+        y: Math.min(window.innerHeight - 320, Math.max(20, initialPosition.y - 150))
+      };
+    }
+    return { x: window.innerWidth - 470, y: window.innerHeight - 300 };
+  });
   
   // Dragging State
-  const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const modalRef = useRef(null);
@@ -18,31 +33,20 @@ const StreamModal = ({ camera, onClose, initialPosition, isPublic = false }) => 
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
+    setIsMounted(true);
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const lastLoadedRef = useRef(null);
 
   useEffect(() => {
-    if (camera) {
+    const cameraKey = camera ? `${camera.id}_${camera.updatedAt || ''}` : null;
+    if (cameraKey && cameraKey !== lastLoadedRef.current) {
       loadStreamInfo();
-      
-      if (isMobile) {
-        // บนมือถือ ให้เด้งจากด้านล่าง (Bottom Sheet Style)
-        setPosition({ x: 16, y: window.innerHeight - 280 });
-      } else if (initialPosition) {
-        // บน Desktop ตามตำแหน่งกล้อง
-        setPosition({ 
-          x: Math.min(window.innerWidth - 460, Math.max(20, initialPosition.x + 20)), 
-          y: Math.min(window.innerHeight - 320, Math.max(20, initialPosition.y - 150))
-        });
-      } else {
-        // มุมขวาล่างปกติ
-        setPosition({ x: window.innerWidth - 470, y: window.innerHeight - 300 });
-      }
+      lastLoadedRef.current = cameraKey;
     }
-  }, [camera, initialPosition, isMobile]);
+  }, [camera?.id]);
 
   const loadStreamInfo = async (type = null) => {
     try {
@@ -50,6 +54,9 @@ const StreamModal = ({ camera, onClose, initialPosition, isPublic = false }) => 
       setError(null);
       const info = await streamService.getStreamInfo(camera.id, type);
       
+      // 🚀 ใช้ ref เพื่อจำว่าโหลดล่าสุดคืออะไร (รวมถึงตอนสลับ MAIN/SUB)
+      lastLoadedRef.current = `${camera.id}_${type || info.streamType}`;
+
       // 🚀 หน่วงเวลาเพิ่ม 300ms เพื่อให้ go2rtc เคลียร์สตรีมเก่าและสร้างใหม่เสร็จสมบูรณ์
       setTimeout(() => {
         setStreamConfig(info);
@@ -108,13 +115,13 @@ const StreamModal = ({ camera, onClose, initialPosition, isPublic = false }) => 
     : `fixed z-[3000] ${isMobile ? 'left-4 right-4' : 'w-[350px] md:w-[450px]'} transition-all duration-300 ease-out`;
 
   const contentClasses = isFullscreen
-    ? "relative bg-white w-full h-full md:max-w-6xl md:h-auto md:aspect-video rounded-none md:rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden animate-zoomIn flex flex-col"
-    : `relative bg-white w-full rounded-3xl shadow-2xl border-2 border-indigo-100 overflow-hidden ${isMobile ? 'animate-slideUp' : 'animate-slideIn'} flex flex-col group select-none`;
+    ? `relative bg-white w-full h-full md:max-w-6xl md:h-auto md:aspect-video rounded-none md:rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden flex flex-col transition-all duration-500 ${isMounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`
+    : `relative bg-white w-full rounded-3xl shadow-2xl border-2 border-indigo-100 overflow-hidden flex flex-col group select-none transition-all duration-500 ${isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`;
 
   return (
     <div 
       className={containerClasses} 
-      style={(!isFullscreen && !isMobile) ? { left: `${position.x}px`, top: `${position.y}px`, transition: isDragging ? 'none' : 'all 0.2s ease-out' } : (!isFullscreen && isMobile ? { bottom: '24px', top: 'auto' } : {})}
+      style={(!isFullscreen && !isMobile) ? { left: `${position.x}px`, top: `${position.y}px`, transition: isDragging ? 'none' : 'left 0.3s ease-out, top 0.3s ease-out' } : (!isFullscreen && isMobile ? { bottom: '24px', top: 'auto' } : {})}
     >
       {isFullscreen && (
         <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setIsFullscreen(false)}></div>
@@ -171,6 +178,7 @@ const StreamModal = ({ camera, onClose, initialPosition, isPublic = false }) => 
           ) : (
             <div className="w-full h-full">
                <WebRTCPlayer 
+                 key={streamConfig.streamId} // 🚀 บังคับ Reset ทั้ง Component เมื่อเปลี่ยนสตรีม
                  streamId={streamConfig.streamId} 
                  go2rtcUrl={streamConfig.go2rtcUrl} 
                  isAudioEnabled={streamConfig.isAudioEnabled}

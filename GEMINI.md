@@ -15,17 +15,21 @@
 - [x] **Streaming Integration:** ระบบ WebRTC Player (Frontend) และ Stream Info API (Backend) พร้อมเชื่อมต่อ go2rtc
 - [x] **Hybrid Stream Strategy:** ระบบสลับโหมด Pass-through (Low CPU) และ Transcoding (High Quality) รายกล้อง พร้อมคำสั่ง Force Sync ล้าง Cache ทันทีที่เปลี่ยน URL
 - [x] **Camera Settings Evolution:** รองรับการเลือก Main/Sub Stream, เปิด-ปิดเสียง และกำหนดค่า Resolution/FPS แบบ Manual ที่มีผลต่อการ Transcode จริง
-- [x] **UI/UX Optimization:** ระบบแสดงป้ายกำกับ "Original Feed" สำหรับโหมดประหยัด และ Smart Reveal ฟิลด์ตั้งค่าประสิทธิภาพเมื่อเปิดโหมด Transcoding
-- [x] **Codebase Refactoring:** จัดโครงสร้างไฟล์ใหม่เป็น `pages/PageName/components/` และเปลี่ยนชื่อเป็น `AdminDashboard` และ `CameraGroups`
-- [x] **Public Dashboard:** พัฒนาหน้าแสดงผลสาธารณะ (Root Path) พร้อมระบบ Accordion Grouping, Horizontal Category Pills และระบบค้นหา
-- [x] **Enhanced UI:** ปรับปรุงแผนที่แบบ Full-screen (Fixed 100% height issue), เพิ่ม Tooltip แสดงข้อมูลขณะ Hover และหน้าต่าง Preview แบบลอย (Draggable Floating Window) ที่รองรับการขยายเต็มจอ
+- [x] **Dynamic Stream Switching:** เพิ่มปุ่มสลับ HD/SD ในหน้าต่าง Preview ทันที พร้อมระบบตรวจจับ Codec/Mode อัตโนมัติ
+- [x] **Separate Transcoding Config:** เพิ่มฟิลด์ฐานข้อมูลและ UI สำหรับตั้งค่า Resolution/FPS แยกอิสระระหว่าง Main และ Sub Stream
+- [x] **Robust Viewer Count (Production Grade):** 
+    - ยกเลิกการใช้ตัวเลขจาก go2rtc (ที่ไม่นิ่ง) และเปลี่ยนมาใช้ระบบ **Heartbeat (Node.js + Database)**
+    - ระบบนับจำนวนคนดูจริงแบบรายกล้อง (Per Camera) แม่นยำ 100% ไม่ว่าจะดู HD หรือ SD
+    - มีระบบ Auto-Cleanup ล้าง Session ที่หมดอายุอัตโนมัติผ่าน Cron Job
+- [x] **Advanced Streaming Stability:** 
+    - ระบบ **MSE Quick Start & WebRTC Upgrade:** เริ่มภาพด้วย MSE ทันทีและสลับเป็น WebRTC อัตโนมัติเมื่อพร้อม
+    - แก้ปัญหาจอดำตอนสลับกล้องด้วย **React Key Strategy** (Full Component Remount) และ **Explicit Cleanup**
+    - ระบบ **Smart Sync:** Backend จะสั่ง Re-register สตรีมเฉพาะเมื่อจำเป็น (Offline หรือ Config เปลี่ยน) ป้องกันสตรีมกระตุก
+- [x] **Local Library Hosting:** ย้าย Streaming Engine มา Host เองในโปรเจ็คเพื่อแก้ปัญหา MIME type และความเสถียร
+- [x] **Public Dashboard UI:** ระบบซ่อนข้อมูลทางเทคนิค (Codec/FPS) ในหน้าสาธารณะเพื่อความสะอาดตา
 - [x] **Responsive Support:** ปรับจูน UI สำหรับมือถือ (Sidebar Backdrop, Bottom-docked Video Preview, Auto-close menu)
-- [x] **AI Telegram Integration:** เชื่อมต่อ Gemini AI เพื่อวิเคราะห์เหตุการณ์กล้อง Offline และให้คำแนะนำทางเทคนิคผ่าน Telegram Bot อัตโนมัติ (รองรับ Dynamic Prompt ตามกลุ่ม)
-- [x] **MainLayout Redesign:** ปรับโฉมหน้า Admin ทั้งหมดให้เป็นสไตล์เดียวกับโปรเจ็ค `dev-mkt` (Sidebar แบบ Div, ระบบ Role-based Menu, และลบ Header ส่วนบนออกเพื่อเพิ่มพื้นที่แสดงผล)
-- [x] **Page Header Branding:** ใช้ระบบ "Island Card" สำหรับหัวข้อหน้า (Page Header) ทุกหน้า พร้อมระบบ Greeting Banner ในหน้า Dashboard ที่แสดงสถานะระบบแบบ Real-time
-- [x] **Role-Based Navigation:** ระบบเมนูที่ปรับเปลี่ยนตามสิทธิ์ของผู้ใช้งาน (SUPER_ADMIN, ADMIN, EMPLOYEE)
-- [x] **Acknowledge System:** เพิ่มฟีเจอร์ "รับทราบเหตุการณ์" ใน Camera Event History เพื่อติดตามการแก้ไขปัญหา
-- [x] **User Management (Advanced):** พัฒนาระบบจัดการผู้ใช้เต็มรูปแบบตามต้นแบบ `dev-mkt` (CRUD, Role-based, Active/Inactive Tabs) พร้อมระบบ **Zod Validation** และ **Activity Log** บันทึกทุกการกระทำของผู้ใช้ในระบบ
+- [x] **AI Telegram Integration:** เชื่อมต่อ Gemini AI เพื่อวิเคราะห์เหตุการณ์กล้อง Offline และให้คำแนะนำทางเทคนิคผ่าน Telegram Bot อัตโนมัติ
+- [x] **User Management (Advanced):** พัฒนาระบบจัดการผู้ใช้เต็มรูปแบบตามต้นแบบ `dev-mkt` (CRUD, Role-based, Activity Log)
 
 ## 🛠️ Tech Stack & Ports
 - Frontend: Vite + React (Port 3000)
@@ -36,9 +40,11 @@
 ---
 
 ## 🎯 เป้าหมายถัดไป (Next Tasks)
-1.  [ ] **Dynamic Stream Switching:** ในหน้าต่าง Preview (Streaming Player) เพิ่มปุ่มให้ผู้ใช้สามารถสลับระหว่าง Main และ Sub Stream ได้ทันทีโดยไม่ต้องกลับไปแก้ในหน้าตั้งค่า
-2.  [ ] **Interactive Telegram Bot:** พัฒนา Webhook ให้ Bot สามารถตอบโต้และสรุปสถานะระบบด้วย AI เมื่อผู้ใช้สอบถาม
-3.  [ ] **Advanced Analytics:** ระบบสรุปสถิติรายสัปดาห์/รายเดือนผ่านหน้า Dashboard (Chart.js)
+1.  [ ] **Multi-group Camera Support:** พัฒนาให้ 1 กล้องสามารถอยู่ได้หลายกลุ่ม (Multi-select) เพื่อรองรับการแจ้งเตือนเข้ากลุ่ม "All Device" พร้อมกับกลุ่มทีมช่างเฉพาะทางได้ในเวลาเดียวกัน ตัวอย่างจากโปรเจ็ค D:\1.Devoleopment\dev-mkt\mikrotik-config
+2.  [ ] **พัฒนา Camera Management ต่อ:** ตรวจสอบระบบ Camera History , Create update delete log , Offline online log , ackowledge problem ตัวอย่าง จากโปรเจ็ค D:\1.Devoleopment\dev-mkt\mikrotik-config
+3.  [ ] **Advanced Analytics:** ระบบสรุปสถิติรายสัปดาห์/รายเดือนผ่านหน้า Dashboard (Chart.js) แนะนำฉันว่าควรมี report อะไรบ้าง เช่น view session per camera หรือ top problem หรืออื่นๆ
+4.  [ ] **Interactive Telegram Bot:** พัฒนา Webhook ให้ Bot สามารถตอบโต้และสรุปสถานะระบบด้วย AI เมื่อผู้ใช้สอบถาม
+5.  [ ] **Snapshot Service:** ระบบบันทึกภาพนิ่งจากกล้องลง Server เพื่อแสดงผลใน Activity Log และการแจ้งเตือน
 
 ## 🤖 Gemini Execution Commands
 สำหรับการเรียกใช้งาน Gemini ในโปรเจ็คนี้ (ใช้ใน Terminal):
@@ -48,15 +54,8 @@
 gemini "objective" --path D:\1.Development\dev-cctv\cctv
 ```
 
-### 2. ทำงานแบบดึงต้นแบบจากโปรเจ็ค MKT (Hybrid Context)
-*ใช้สำหรับเมื่อต้องการให้ Gemini ดูโค้ดจาก dev-mkt เพื่อนำมาปรับปรุง dev-cctv*
-```bash
-gemini "objective" --path D:\1.Development\dev-cctv\cctv --path D:\1.Development\dev-mkt\mikrotik-config
-```
-
 ## 📝 บันทึกถึง Gemini
 - **Refactoring Note:** โครงสร้างโฟลเดอร์ใน `src/pages` แบ่งตามฟีเจอร์ชัดเจน และ Shared Components อยู่ใน `src/components`
-- **Public Dashboard Strategy:** เน้นความง่ายสำหรับประชาชน (Mobile First) และความเร็วในการแสดงผล (WebRTC)
-- **Hybrid Strategy:** การใช้ `ffmpeg:` ใน go2rtc จะกิน CPU สูง ควรใช้เฉพาะเมื่อจำเป็น (เช่น แปลง H.265 เป็น H.264)
-- **Deployment Note:** บน Production ต้องเปิด Port 8555 (UDP/TCP) สำหรับ WebRTC และระบุโดเมนจริงใน candidates ของ go2rtc
+- **Viewer Counting:** ใช้ตาราง `ViewingSession` ใน DB และ Heartbeat ทุก 15s จาก Frontend ห้ามใช้เลข `consumers` จาก go2rtc สำหรับการทำ Report
+- **Streaming Strategy:** ใช้ **Native Player** (video-stream) เชื่อมต่อผ่าน WebSocket/WebRTC โดยตรง และใช้กลยุทธ์ MSE-first เพื่อความเร็วในการโหลด
 - ทุกครั้งที่เริ่มงานใหม่ ให้รัน `codebase_investigator` เพื่อซิงค์ความเข้าใจโครงสร้างไฟล์ล่าสุด

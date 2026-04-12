@@ -29,6 +29,7 @@ const Cameras = () => {
   // Modal States
   const [showFormModal, setShowFormModal] = useState(false);
   const [selectedCamera, setSelectedCamera] = useState(null); // สำหรับสตรีมมิ่ง
+  const [modalPosition, setModalPosition] = useState(null);
   const [editingCamera, setEditingCamera] = useState(null);
   
   const [isAckModalOpen, setIsAckModalOpen] = useState(false);
@@ -42,7 +43,7 @@ const Cameras = () => {
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', groupId: '', isPublic: false, streamType: 'MAIN', isAudioEnabled: false, resolution: '', fps: '', isTranscodeEnabled: false
+    name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', groupId: '', isPublic: false, streamType: 'MAIN', isAudioEnabled: false, resolution: '', fps: '', subResolution: '', subFps: '', isTranscodeEnabled: false
   });
 
   useEffect(() => {
@@ -124,12 +125,14 @@ const Cameras = () => {
         isAudioEnabled: camera.isAudioEnabled || false,
         resolution: camera.resolution || '',
         fps: camera.fps ? camera.fps.toString() : '',
+        subResolution: camera.subResolution || '',
+        subFps: camera.subFps ? camera.subFps.toString() : '',
         isTranscodeEnabled: camera.isTranscodeEnabled || false
       });
     } else {
       setEditingCamera(null);
       setFormData({
-        name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', groupId: '', isPublic: false, streamType: 'MAIN', isAudioEnabled: false, resolution: '', fps: '', isTranscodeEnabled: false
+        name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', groupId: '', isPublic: false, streamType: 'MAIN', isAudioEnabled: false, resolution: '', fps: '', subResolution: '', subFps: '', isTranscodeEnabled: false
       });
     }
     setShowFormModal(true);
@@ -175,7 +178,8 @@ const Cameras = () => {
       ...formData, 
       latitude: parseFloat(formData.latitude), 
       longitude: parseFloat(formData.longitude),
-      fps: formData.fps ? parseInt(formData.fps) : null
+      fps: formData.fps ? parseInt(formData.fps) : null,
+      subFps: formData.subFps ? parseInt(formData.subFps) : null
     };
     try {
       if (editingCamera) await cameraService.update(editingCamera.id, data);
@@ -196,6 +200,15 @@ const Cameras = () => {
         alert('ลบข้อมูลไม่สำเร็จ');
       }
     }
+  };
+
+  const handlePreview = (camera) => {
+    // 🚀 คำนวณหาจุดกึ่งกลางหน้าจอเพื่อให้ Modal แสดงผลชัดเจน
+    const centerX = (window.innerWidth / 2) - 225; // กึ่งกลางความกว้าง
+    const centerY = (window.innerHeight / 2) - 180; // กึ่งกลางความสูง
+    
+    setModalPosition({ x: centerX, y: centerY });
+    setSelectedCamera(camera);
   };
 
   return (
@@ -247,7 +260,7 @@ const Cameras = () => {
         cameras={paginatedCameras}
         onEdit={handleOpenForm}
         onDelete={handleDelete}
-        onPreview={setSelectedCamera}
+        onPreview={handlePreview}
         onAcknowledge={handleAcknowledgeClick}
         onViewHistory={handleViewHistory}
         pageSizes={PAGE_SIZES}
@@ -268,7 +281,11 @@ const Cameras = () => {
 
       {/* Modals */}
       {selectedCamera && (
-        <StreamModal camera={selectedCamera} onClose={() => setSelectedCamera(null)} />
+        <StreamModal 
+          camera={selectedCamera} 
+          initialPosition={modalPosition}
+          onClose={() => setSelectedCamera(null)} 
+        />
       )}
       <CameraFormModal 
         isOpen={showFormModal} onClose={() => setShowFormModal(false)} 

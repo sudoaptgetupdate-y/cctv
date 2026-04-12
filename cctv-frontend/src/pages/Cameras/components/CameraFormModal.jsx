@@ -222,37 +222,85 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
 
           {/* 🚀 แสดงช่องตั้งค่าเฉพาะเมื่อเปิดใช้งาน Transcoding เท่านั้น */}
           {formData.isTranscodeEnabled && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="space-y-3">
-                <label className="text-xs font-bold text-slate-600 ml-1">ความละเอียดวิดีโอที่ต้องการ (Target Resolution)</label>
-                <select 
-                  className="w-full px-4 py-3 rounded-2xl border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all bg-white text-sm font-medium"
-                  value={formData.resolution}
-                  onChange={(e) => setFormData({...formData, resolution: e.target.value})}
-                >
-                  <option value="">-- อิงตามต้นฉบับ --</option>
-                  <option value="3840x2160">4K (3840x2160)</option>
-                  <option value="2560x1440">2K (2560x1440)</option>
-                  <option value="1920x1080">Full HD (1920x1080)</option>
-                  <option value="1280x720">HD (1280x720)</option>
-                  <option value="704x576">D1 (704x576)</option>
-                  <option value="640x480">VGA (640x480)</option>
-                </select>
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-xs font-bold text-slate-600 ml-1">เฟรมเรตที่ต้องการ (Target FPS)</label>
-                <div className="relative">
-                  <input 
-                    type="number"
-                    className="w-full px-4 py-3 rounded-2xl border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all bg-white text-sm font-medium"
-                    placeholder="เช่น 10, 15, 20"
-                    value={formData.fps}
-                    onChange={(e) => setFormData({...formData, fps: e.target.value})}
-                  />
-                  <span className="absolute right-4 top-3 text-[10px] font-black text-amber-400 uppercase h-full flex items-center">FPS</span>
+            <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300 bg-amber-50/30 p-6 rounded-2xl border border-amber-100/50">
+              
+              {/* Main Stream Settings */}
+              <div className="space-y-4">
+                <h5 className="text-[9px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
+                  <div className="w-1 h-1 bg-amber-500 rounded-full"></div>
+                  Main Stream (HD) Configuration
+                </h5>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-600 ml-1">HD Resolution</label>
+                    <select 
+                      className="w-full px-4 py-2.5 rounded-xl border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all bg-white text-sm font-medium"
+                      value={formData.resolution}
+                      onChange={(e) => setFormData({...formData, resolution: e.target.value})}
+                    >
+                      <option value="">-- Original --</option>
+                      <option value="3840x2160">4K (3840x2160)</option>
+                      <option value="2560x1440">2K (2560x1440)</option>
+                      <option value="1920x1080">Full HD (1920x1080)</option>
+                      <option value="1280x720">HD (1280x720)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-600 ml-1">HD Frame Rate (FPS)</label>
+                    <div className="relative">
+                      <input 
+                        type="number"
+                        className="w-full px-4 py-2.5 rounded-xl border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all bg-white text-sm font-medium"
+                        placeholder="Default: 15"
+                        value={formData.fps}
+                        onChange={(e) => setFormData({...formData, fps: e.target.value})}
+                      />
+                      <span className="absolute right-4 top-2.5 text-[9px] font-black text-amber-400 uppercase h-full flex items-center">FPS</span>
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              <div className="h-[1px] bg-amber-100/50"></div>
+
+              {/* Sub Stream Settings */}
+              <div className="space-y-4">
+                <h5 className="text-[9px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
+                  <div className="w-1 h-1 bg-amber-500 rounded-full"></div>
+                  Sub Stream (SD) Configuration
+                </h5>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-600 ml-1">SD Resolution</label>
+                    <select 
+                      className="w-full px-4 py-2.5 rounded-xl border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all bg-white text-sm font-medium"
+                      value={formData.subResolution}
+                      onChange={(e) => setFormData({...formData, subResolution: e.target.value})}
+                    >
+                      <option value="">-- Original --</option>
+                      <option value="1280x720">HD (1280x720)</option>
+                      <option value="704x576">D1 (704x576)</option>
+                      <option value="640x480">VGA (640x480)</option>
+                      <option value="640x360">Low (640x360)</option>
+                      <option value="320x240">QVGA (320x240)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-600 ml-1">SD Frame Rate (FPS)</label>
+                    <div className="relative">
+                      <input 
+                        type="number"
+                        className="w-full px-4 py-2.5 rounded-xl border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all bg-white text-sm font-medium"
+                        placeholder="Default: 10"
+                        value={formData.subFps}
+                        onChange={(e) => setFormData({...formData, subFps: e.target.value})}
+                      />
+                      <span className="absolute right-4 top-2.5 text-[9px] font-black text-amber-400 uppercase h-full flex items-center">FPS</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           )}
         </div>

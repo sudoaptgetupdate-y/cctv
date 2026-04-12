@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const streamController = require('../controllers/streamController');
-const { verifyToken } = require('../middlewares/authMiddleware');
+const { verifyToken, tryVerifyToken } = require('../middlewares/authMiddleware');
 
 // 🔍 Debug Route (https://cctv.ntnakhon.com/api/streams/ping)
 router.get('/ping', (req, res) => {
@@ -15,6 +15,12 @@ router.get('/ping', (req, res) => {
 
 // ดึงสถานะรวมของทุกสตรีม
 router.get('/statuses', verifyToken, streamController.getStatuses);
+
+// ดึงสถานะเจาะจงเฉพาะสตรีม (Real-time Full Info)
+router.get('/:streamId/status', streamController.getSingleStatus);
+
+// 👥 Heartbeat สำหรับนับคนดูจริง (Viewing Session)
+router.post('/:streamId/heartbeat', tryVerifyToken, streamController.heartbeat);
 
 // Proxy สำหรับ WebRTC (แก้ปัญหา CORS)
 router.post('/webrtc/:streamId', express.text({ type: 'text/plain', limit: '1mb' }), async (req, res) => {

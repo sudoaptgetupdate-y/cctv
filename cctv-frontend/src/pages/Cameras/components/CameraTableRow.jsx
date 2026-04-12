@@ -107,13 +107,26 @@ const CameraTableRow = ({ camera, onPreview, onEdit, onDelete, onAcknowledge, on
            
            {/* ✅ การแสดงผลข้อมูล Metadata ตามโหมดสตรีม */}
            {camera.isTranscodeEnabled ? (
-              <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-500">
-                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-black uppercase tracking-tighter shadow-sm transition-all ${streamStatus?.active ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-500 border-slate-200 opacity-80'}`}>
-                   <Activity size={12} className={streamStatus?.active ? "animate-pulse" : ""} />
-                   <span>{(streamStatus && streamStatus.resolution !== 'Unknown') ? streamStatus.resolution : (camera.resolution || 'Auto')}</span>
+              <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-left-2 duration-500">
+                {/* Main Config */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[8px] font-black px-1 py-0.5 rounded bg-amber-500 text-white uppercase">HD</span>
+                  <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded border text-[10px] font-black uppercase tracking-tighter shadow-sm transition-all ${streamStatus?.active ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-500 border-slate-200 opacity-80'}`}>
+                    <span>{camera.resolution || 'Auto'}</span>
+                  </div>
+                  <div className={`px-2 py-0.5 rounded border text-[10px] font-black uppercase tracking-tighter shadow-sm ${streamStatus?.active ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-500 border-slate-200 opacity-80'}`}>
+                    {camera.fps || '??'} FPS
+                  </div>
                 </div>
-                <div className={`px-2 py-1 rounded-lg border text-[10px] font-black uppercase tracking-tighter shadow-sm ${streamStatus?.active ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-500 border-slate-200 opacity-80'}`}>
-                   {(streamStatus && streamStatus.fps !== '??') ? streamStatus.fps : (camera.fps || '??')} FPS
+                {/* Sub Config */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[8px] font-black px-1 py-0.5 rounded bg-slate-400 text-white uppercase">SD</span>
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded border border-slate-200 bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-tighter opacity-80">
+                    <span>{camera.subResolution || 'Auto'}</span>
+                  </div>
+                  <div className="px-2 py-0.5 rounded border border-slate-200 bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-tighter opacity-80">
+                    {camera.subFps || '??'} FPS
+                  </div>
                 </div>
               </div>
             ) : (

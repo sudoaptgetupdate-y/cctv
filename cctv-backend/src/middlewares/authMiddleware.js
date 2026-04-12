@@ -37,6 +37,31 @@ exports.verifyToken = async (req, res, next) => {
   }
 };
 
+// 🛡️ ฟังก์ชันพยายามตรวจ Token (ถ้ามีก็ใส่ req.user ถ้าไม่มีก็ปล่อยผ่าน - สำหรับหน้า Public)
+exports.tryVerifyToken = async (req, res, next) => {
+  let token = null;
+  const authHeader = req.headers.authorization;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else if (req.query && req.query.token) {
+    token = req.query.token;
+  }
+
+  if (!token) return next();
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+    if (user && user.isActive) {
+      req.user = user;
+    }
+  } catch (error) {
+    // ไม่บล็อก แต่ไม่ใส่ req.user
+  }
+  next();
+};
+
 // 🔑 ฟังก์ชันตรวจสิทธิ์ (Role-Based Access Control)
 exports.requireRole = (roles) => {
   return (req, res, next) => {

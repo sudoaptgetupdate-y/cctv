@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
@@ -9,116 +9,93 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  firstName String
-  lastName  String
-  email     String   @unique
-  username  String   @unique
-  password  String
-  role      UserRole @default(EMPLOYEE)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  logs              ActivityLog[]
-  managedCameras    Camera[]           @relation("ManagedBy")
-  maintenanceTasks  MaintenanceRecord[] @relation("Technician")
+  id               Int                 @id @default(autoincrement())
+  firstName        String
+  lastName         String
+  email            String              @unique
+  username         String              @unique
+  password         String
+  role             UserRole            @default(EMPLOYEE)
+  isActive         Boolean             @default(true)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  logs             ActivityLog[]
+  managedCameras   Camera[]            @relation("ManagedBy")
+  maintenanceTasks MaintenanceRecord[] @relation("Technician")
 }
 
 model Camera {
-  id          Int      @id @default(autoincrement())
-  name        String
-  latitude    Float
-  longitude   Float
-  rtspUrl     String   @db.Text
-  subStream   String?  @db.Text
-  username    String?
-  password    String?
-  thumbnailUrl String?  @db.Text // เก็บพาธรูป Snapshot ล่าสุด
-  status      CameraStatus @default(ACTIVE)
-  lastSeen    DateTime?
-  
-  // ✅ Public Visibility
-  isPublic          Boolean   @default(false)
-  
-  // ✅ Acknowledgement System
-  isAcknowledged    Boolean   @default(true)
-  acknowledgeReason String?   @db.Text
-  acknowledgedAt    DateTime?
-  
-  // ✅ Stream Settings
-  streamType        StreamType @default(MAIN)
-  isAudioEnabled    Boolean    @default(false)
-  isTranscodeEnabled Boolean   @default(false) // ✅ Toggle สำหรับระบบ Transcoding (อนาคต)
-  resolution        String?    @db.VarChar(50) // เก็บความละเอียดล่าสุด (เช่น 1920x1080)
-  fps               Int?       // เก็บ FPS ล่าสุด (เช่น 25)
-  
-  userId      Int
-  user        User     @relation("ManagedBy", fields: [userId], references: [id])
-  
-  groups      CameraGroup[]
-  eventLogs   CameraEventLog[]
-  maintenance MaintenanceRecord[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                 Int                 @id @default(autoincrement())
+  name               String
+  latitude           Float
+  longitude          Float
+  rtspUrl            String              @db.Text
+  subStream          String?             @db.Text
+  username           String?
+  password           String?
+  thumbnailUrl       String?             @db.Text
+  status             CameraStatus        @default(ACTIVE)
+  lastSeen           DateTime?
+  userId             Int
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  acknowledgeReason  String?             @db.Text
+  acknowledgedAt     DateTime?
+  isAcknowledged     Boolean             @default(true)
+  isPublic           Boolean             @default(false)
+  isAudioEnabled     Boolean             @default(false)
+  streamType         StreamType          @default(MAIN)
+  fps                Int?
+  resolution         String?             @db.VarChar(50)
+  isTranscodeEnabled Boolean             @default(false)
+  subFps             Int?
+  subResolution      String?             @db.VarChar(50)
+  user               User                @relation("ManagedBy", fields: [userId], references: [id])
+  eventLogs          CameraEventLog[]
+  maintenance        MaintenanceRecord[]
+  groups             CameraGroup[]       @relation("CameraToCameraGroup")
 
   @@index([userId])
 }
 
-enum StreamType {
-  MAIN
-  SUB
-}
-
 model CameraGroup {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  description String?
-  
-  // ✅ Telegram Settings
+  id               Int      @id @default(autoincrement())
+  name             String   @unique
+  description      String?
   telegramBotToken String?
   telegramChatId   String?
-  isNotifyEnabled  Boolean @default(true)
-
-  // ✅ AI Future Integration (Reuse Logic from Mikrotik)
-  aiEnabled       Boolean @default(false)
-  aiSystemPrompt  String? @db.Text
-  
-  cameras     Camera[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isNotifyEnabled  Boolean  @default(true)
+  aiEnabled        Boolean  @default(false)
+  aiSystemPrompt   String?  @db.Text
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  cameras          Camera[] @relation("CameraToCameraGroup")
 }
 
 model CameraEventLog {
   id        Int      @id @default(autoincrement())
   cameraId  Int
-  camera    Camera   @relation(fields: [cameraId], references: [id], onDelete: Cascade)
-  
-  eventType String   // ONLINE, OFFLINE, ERROR, REBOOT
+  eventType String
   details   String?  @db.Text
   createdAt DateTime @default(now())
+  camera    Camera   @relation(fields: [cameraId], references: [id], onDelete: Cascade)
 
   @@index([cameraId])
   @@index([createdAt])
 }
 
 model MaintenanceRecord {
-  id            Int      @id @default(autoincrement())
-  cameraId      Int
-  camera        Camera   @relation(fields: [cameraId], references: [id])
-  
-  technicianId  Int
-  technician    User     @relation("Technician", fields: [technicianId], references: [id])
-  
-  taskTitle     String
-  details       String?  @db.Text
-  cost          Decimal? @db.Decimal(10, 2)
-  status        String   @default("COMPLETED") // PENDING, IN_PROGRESS, COMPLETED
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  cameraId     Int
+  technicianId Int
+  taskTitle    String
+  details      String?  @db.Text
+  cost         Decimal? @db.Decimal(10, 2)
+  status       String   @default("COMPLETED")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  camera       Camera   @relation(fields: [cameraId], references: [id])
+  technician   User     @relation("Technician", fields: [technicianId], references: [id])
 
   @@index([cameraId])
   @@index([technicianId])
@@ -133,16 +110,21 @@ model SystemSetting {
 }
 
 model ActivityLog {
-  id        Int        @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   userId    Int
   action    String
-  details   String?    @db.Text
+  details   String?  @db.Text
   ipAddress String?
-  createdAt DateTime   @default(now())
-  user      User       @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([createdAt])
+}
+
+enum StreamType {
+  MAIN
+  SUB
 }
 
 enum UserRole {
@@ -157,4 +139,17 @@ enum CameraStatus {
   INACTIVE
   ERROR
   MAINTENANCE
+}
+
+model ViewingSession {
+  id        Int      @id @default(autoincrement())
+  streamId  String
+  userId    Int?     // null for public/anonymous
+  sessionId String   // unique browser tab id (client-side generated)
+  lastSeen  DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@unique([streamId, sessionId])
+  @@index([streamId])
+  @@index([lastSeen])
 }

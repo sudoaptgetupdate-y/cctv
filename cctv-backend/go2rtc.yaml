@@ -25,9 +25,9 @@ streams:
   camera_1:
     - ffmpeg:rtsp://admin:Lkfgxifde0905@192.168.123.124:554/cam/realmonitor?channel=1&subtype=1#video=h264#size=704x576#fps=25
   camera_2_main:
-    - ffmpeg:rtsp://admin:Lkfgxifde0905@192.168.10.219:554/cam/realmonitor?channel=1&subtype=0#video=h264#size=640x480#fps=15
+    - ffmpeg:rtsp://admin:Lkfgxifde0905@192.168.10.219:554/cam/realmonitor?channel=1&subtype=0#video=h264#size=1920x1080#fps=25
   camera_2_sub:
-    - ffmpeg:rtsp://admin:Lkfgxifde0905@192.168.10.219:554/cam/realmonitor?channel=1&subtype=1#video=h264#size=640x480#fps=15
+    - ffmpeg:rtsp://admin:Lkfgxifde0905@192.168.10.219:554/cam/realmonitor?channel=1&subtype=0#video=h264#size=320x240#fps=25
   camera_1_main:
     - rtsp://admin:Lkfgxifde0905@192.168.123.124:554/cam/realmonitor?channel=1&subtype=0
   camera_1_sub:
