@@ -8,17 +8,17 @@ router.get('/ping', (req, res) => {
   res.json({ success: true, message: 'pong', timestamp: new Date() });
 });
 
-// 1. ดึงสถานะรวม (พจนานุกรมความละเอียด/FPS ของทุกกล้อง)
+// 1. ดึงสถานะรวม (statuses) - ต้องอยู่บนตัวแปร :streamId
 router.get('/statuses', verifyToken, streamController.getStatuses);
 
-// 2. ดึงสถานะเจาะจงเฉพาะสตรีม (Real-time Full Info)
-// ต้องวางไว้ก่อน /:cameraId เพราะมี 2 segments (/status)
+// 2. ดึงสถานะเจาะจงเฉพาะสตรีม (/:streamId/status)
+// นี่คือสิ่งที่ Frontend เรียก: /api/streams/camera_8_main/status
 router.get('/:streamId/status', streamController.getSingleStatus);
 
-// 3. Heartbeat (Post)
+// 3. Heartbeat
 router.post('/:streamId/heartbeat', tryVerifyToken, streamController.heartbeat);
 
-// 4. Proxy สำหรับ WebRTC (แก้ปัญหา CORS)
+// 4. Proxy สำหรับ WebRTC
 router.post('/webrtc/:streamId', express.text({ type: 'text/plain', limit: '1mb' }), async (req, res) => {
   const axios = require('axios');
   const { streamId } = req.params;
@@ -34,8 +34,7 @@ router.post('/webrtc/:streamId', express.text({ type: 'text/plain', limit: '1mb'
   }
 });
 
-// 5. ดึงคอนฟิกสตรีมมิ่งของกล้อง (ID อย่างเดียว)
-// ต้องวางไว้ล่างสุด เพราะ Express จะมองว่าทุกอย่างที่ต่อจาก / คือ :cameraId
+// 5. ดึงคอนฟิกสตรีมมิ่ง (/:cameraId) - ต้องอยู่ล่างสุด
 router.get('/:cameraId', streamController.getStreamInfo);
 
 module.exports = router;
