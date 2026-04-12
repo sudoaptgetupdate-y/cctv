@@ -34,20 +34,21 @@ const WebRTCPlayer = ({ streamId, isAudioEnabled = false, initialTranscode = fal
     const initPlayer = () => {
       if (!videoContainerRef.current || isCancelled) return;
       
-      // 🚀 ตรวจสอบความพร้อมของ Custom Element (รอจนกว่าจะถูก Register)
       if (!customElements.get('video-stream')) {
-        console.log('[Player] ⏳ Waiting for Streaming Library...');
-        setTimeout(initPlayer, 200); // เพิ่มหน่วงเวลาเล็กน้อยสำหรับครั้งแรกหลัง Refresh
+        setTimeout(initPlayer, 200);
         return;
       }
 
-      console.log(`[Player] 🎬 Initializing Player: ${streamId}`);
       videoContainerRef.current.innerHTML = '';
       
       const videoElement = document.createElement('video-stream');
+      
+      // 🚀 ปรับปรุง: ตั้งค่าเบื้องต้นเพื่อให้ปุ่มเสียงไม่ถูกล็อค
       videoElement.setAttribute('autoplay', '');
       videoElement.setAttribute('playsinline', '');
-      if (!isAudioEnabled) videoElement.setAttribute('muted', '');
+      
+      // แม้จะ muted แต่เราจะไม่บังคับแรงเกินไปเพื่อให้เบราว์เซอร์ยอมให้ปลดล็อคภายหลัง
+      videoElement.muted = !isAudioEnabled;
       
       videoElement.style.width = '100%';
       videoElement.style.height = '100%';
@@ -55,20 +56,25 @@ const WebRTCPlayer = ({ streamId, isAudioEnabled = false, initialTranscode = fal
 
       videoContainerRef.current.appendChild(videoElement);
 
-      // 🚀 หน่วงเวลาสั้นๆ ก่อนส่ง URL เพื่อให้ DOM พร้อม 100%
       setTimeout(() => {
         if (isCancelled) return;
         const cacheBuster = `&t=${Date.now()}`;
+        // 🚀 บังคับให้ go2rtc ส่ง Audio มาด้วยเสมอ
         videoElement.src = `/go2rtc-ws?src=${streamId}&mode=mse,webrtc${cacheBuster}`;
       }, 50);
 
       const checkVideoEvents = () => {
         const internalVideo = videoElement.querySelector('video');
         if (internalVideo) {
-          // ฟังเหตุการณ์ playing และ canplay
           const onPlaying = () => {
-            console.log(`[Player] ✅ Video Started: ${streamId}`);
             setLoading(false);
+            // 🚀 ปลดล็อคเสียงอัตโนมัติหากระบบตั้งค่าให้เปิดเสียงไว้ (ช่วยเรื่อง Autoplay บน Production)
+            if (isAudioEnabled) {
+              internalVideo.muted = false;
+              internalVideo.play().catch(() => {
+                console.log('[Player] Autoplay with audio blocked by browser');
+              });
+            }
           };
           internalVideo.addEventListener('playing', onPlaying);
           internalVideo.addEventListener('canplay', onPlaying);
@@ -79,9 +85,7 @@ const WebRTCPlayer = ({ streamId, isAudioEnabled = false, initialTranscode = fal
       checkVideoEvents();
     };
 
-    // เริ่มต้นทำงานทันที (เพราะสคริปต์โหลดที่ index.html แล้ว)
     initPlayer();
-    
     startPolling();
     startHeartbeat();
 
@@ -93,10 +97,8 @@ const WebRTCPlayer = ({ streamId, isAudioEnabled = false, initialTranscode = fal
     };
   }, [streamId, isAudioEnabled]);
 
-  // ✅ Force hide loading ถ้ามี Technical Status ยืนยันว่าภาพติดแล้ว
   useEffect(() => {
     if (loading && status && status.codec !== 'WAIT' && status.fps !== '??') {
-      console.log('[Player] Auto-revealing based on API status');
       setLoading(false);
     }
   }, [status, loading]);
@@ -161,7 +163,6 @@ const WebRTCPlayer = ({ streamId, isAudioEnabled = false, initialTranscode = fal
         </div>
       )}
 
-      {/* technischen status badges (Live / Viewers / Specs) */}
       <div className="absolute top-4 left-4 flex flex-col gap-2 pointer-events-none select-none z-20 w-full pr-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
