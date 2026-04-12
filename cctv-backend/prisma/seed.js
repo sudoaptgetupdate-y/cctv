@@ -6,10 +6,10 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('--- Starting Seeding Process ---');
 
-  // 1. ล้างข้อมูลเก่าทั้งหมด (ลำดับการลบสำคัญ)
+  // 1. ล้างข้อมูลเก่าทั้งหมด
   console.log('Cleaning old data...');
   try {
-    await prisma.viewingSession.deleteMany(); // 🚀 ล้าง Session คนดู
+    await prisma.viewingSession.deleteMany();
     await prisma.activityLog.deleteMany();
     await prisma.maintenanceRecord.deleteMany();
     await prisma.cameraEventLog.deleteMany();
@@ -22,21 +22,21 @@ async function main() {
     await prisma.user.deleteMany();
     await prisma.systemSetting.deleteMany();
   } catch (e) {
-    console.log('Note: Some tables might not exist yet, skipping cleanup for those.');
+    console.log('Note: Some tables might not exist yet, skipping cleanup.');
   }
 
-  // 2. สร้าง User ใหม่ (admin1234)
-  console.log('Creating users...');
+  // 2. สร้าง User ใหม่ (ntadmin / admin1234)
+  console.log('Creating Super Admin user...');
   const hashedPassword = await bcrypt.hash('admin1234', 10);
 
   const adminUser = await prisma.user.create({
     data: {
       firstName: 'Arichai',
-      lastName: 'Admin',
+      lastName: 'SuperAdmin',
       email: 'admin@ntnakhon.com',
-      username: 'admin',
+      username: 'ntadmin', // 🚀 เปลี่ยนเป็น ntadmin
       password: hashedPassword,
-      role: 'ADMIN',
+      role: 'SUPER_ADMIN', // 🚀 สิทธิ์สูงสุด
       isActive: true,
     },
   });
@@ -53,7 +53,7 @@ async function main() {
   // 4. สร้างกล้องตัวอย่าง
   console.log('Creating sample cameras...');
   
-  // กล้องแบบ Pass-through (ปกติ)
+  // กล้องแบบ Pass-through
   await prisma.camera.create({
     data: {
       name: '🔴 กล้องทดสอบ (Native Stream)',
@@ -67,7 +67,7 @@ async function main() {
     },
   });
 
-  // กล้องแบบเปิด Transcoding (เพื่อทดสอบการ Fix 15fps/Resolution)
+  // กล้องแบบเปิด Transcoding 10fps
   await prisma.camera.create({
     data: {
       name: '⚙️ กล้องทดสอบ (Transcoding 10fps)',
@@ -94,6 +94,7 @@ async function main() {
   });
 
   console.log('--- Seeding Completed Successfully ---');
+  console.log('Username: ntadmin / Password: admin1234 (Role: SUPER_ADMIN)');
 }
 
 main()
