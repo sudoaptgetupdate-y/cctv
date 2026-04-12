@@ -15,70 +15,63 @@
 
 ## 2. การนับจำนวนผู้เข้าชม (Application-Level Viewer Counting)
 
-เพื่อให้ได้ตัวเลขที่แม่นยำระดับ Production เราจะไม่ใช้ตัวเลข `consumers` จาก go2rtc (ซึ่งมักจะเพี้ยนจากการต่อท่อซ้ำซ้อน) แต่ใช้ระบบ **Heartbeat** ดังนี้:
+เพื่อให้ได้ตัวเลขที่แม่นยำระดับ Production เราใช้ระบบ **Heartbeat** ควบคู่กับฐานข้อมูล:
 
-### **กระบวนการนับ (Heartbeat Workflow)**
-1.  **Unique Session:** เมื่อตัวเล่น `WebRTCPlayer` ถูกโหลด จะสร้าง `sessionId` แบบสุ่มขึ้นมา 1 ตัว (ต่อ 1 Browser Tab)
-2.  **Heartbeat Pulse:** ทุกๆ 15 วินาที Frontend จะส่ง API `/api/streams/:streamId/heartbeat` เพื่อบอกว่า "ยังดูอยู่"
-3.  **Active Threshold:** Backend จะนับจำนวน Session ที่มีการส่ง Heartbeat เข้ามาภายใน 60 วินาทีล่าสุด
-4.  **Per-Camera Totals:** ระบบใช้เทคนิค **Prefix Search** (เช่น `camera_1_`) เพื่อรวมยอดผู้ชมจากทั้ง HD (Main) และ SD (Sub) ของกล้องตัวเดียวกันมาแสดงผล
-5.  **Auto-Cleanup:** มี Cron Job ทำงานทุก 1 นาที เพื่อลบ Session ที่ค้างอยู่ในฐานข้อมูลเกิน 2 นาที
+### **Heartbeat Workflow & Stability**
+1.  **Unique Session:** เมื่อตัวเล่น `WebRTCPlayer` ถูกโหลด จะสร้าง `sessionId` แบบสุ่มขึ้นมา (ต่อ 1 Browser Tab)
+2.  **Robust Persistence:** เพื่อป้องกันปัญหา **Race Condition** เมื่อมีผู้ชมเข้าพร้อมกันจำนวนมาก ระบบเปลี่ยนจากการใช้ Prisma `upsert` มาใช้ **Raw SQL `ON DUPLICATE KEY UPDATE`** เพื่อให้การบันทึกสถานะเป็นแบบ Atomic 100%
+3.  **Active Threshold:** Backend จะนับจำนวนผู้ชมที่มีการส่ง Heartbeat ภายใน 60 วินาทีล่าสุด
+4.  **Auto-Cleanup:** มี Cron Job ทำงานทุก 1 นาที เพื่อล้าง Session ที่ค้างเกิน 2 นาที
 
 ---
 
 ## 3. กลยุทธ์การเล่นวิดีโอ (Streaming Strategy)
 
-เราใช้กลยุทธ์ **"MSE Quick Start & WebRTC Upgrade"** เพื่อประสบการณ์การใช้งานที่ดีที่สุด:
+เราใช้กลยุทธ์ **"MSE Quick Start & WebRTC Upgrade"** เพื่อประสบการณ์ที่ดีที่สุด:
 
 ### **Protocols (วิธีส่งข้อมูล)**
-1.  **MSE (Fast Start):** ตัวเล่นจะเริ่มดึงภาพผ่าน MSE (WebSocket) ก่อนเป็นอันดับแรก เพราะเชื่อมต่อได้ไวที่สุด (1-2 วินาทีภาพติด)
-2.  **WebRTC (Background Upgrade):** ในขณะที่ภาพ MSE รันอยู่ ระบบจะทำ WebRTC Handshake ในพื้นหลัง
-3.  **Auto Switch:** หาก WebRTC พร้อมใช้งาน ตัวเล่นจะสลับมาใช้ WebRTC อัตโนมัติ (และปิดท่อ MSE ทิ้งเพื่อประหยัดแบนด์วิดท์)
+1.  **MSE (Fast Start):** เริ่มดึงภาพผ่าน WebSocket (`/go2rtc-ws`) เพื่อความเร็วในการติดภาพ (1-2 วินาที)
+2.  **WebRTC (Auto Upgrade):** ระบบทำ WebRTC Handshake ในพื้นหลังและสลับมาใช้อัตโนมัติเมื่อพร้อม
+3.  **Production Proxy:** ในสภาพแวดล้อม Docker ต้องตั้งค่า Nginx ให้รองรับ WebSocket Upgrade อย่างถูกต้องเพื่อให้ท่อวิดีโอไม่ถูกตัด (Connection Refused)
 
 ---
 
-## 4. เทคนิคการแก้ปัญหาจอดำ (Stability Fixes)
+## 4. เทคนิคการแก้ปัญหา 15fps และ Resolution (Transcoding Fixes)
 
-เพื่อให้การสลับกล้อง (Switching) ลื่นไหลและไม่เกิดอาการจอดำค้าง:
+เพื่อให้พารามิเตอร์การตั้งค่า (เช่น 10fps หรือ Resolution เฉพาะ) ทำงานได้จริงบนทุก OS:
 
-*   **React Key Strategy:** ใส่ `key={streamConfig.streamId}` ให้กับ `WebRTCPlayer` เพื่อบังคับให้ React ทำลายตัวเก่าและสร้างตัวใหม่จากศูนย์ทุกครั้งที่เปลี่ยนกล้อง
-*   **Explicit Cleanup:** ใน `go2rtc-player.js` มีการสั่ง `stop()` ทุก Media Track และล้าง `srcObject` อย่างชัดเจนก่อน Unmount เพื่อไม่ให้เกิด `DOMException`
-*   **Cache Buster:** เติม `&t={timestamp}` ลงใน URL ของ WebSocket เพื่อให้เบราว์เซอร์มองเป็นการเชื่อมต่อใหม่เสมอ ไม่ใช้ข้อมูลจาก Cache เก่า
-*   **Smart Sync (Backend):** Backend จะไม่สั่งลบ (DELETE) สตรีมใน go2rtc หาก Config ยังเหมือนเดิม แต่จะใช้ `PUT` เพื่ออัปเดตสตรีมเท่านั้น ทำให้ท่อผู้ชมไม่หลุด
+### **Source Mapping Strategy (_src)**
+*   **ปัญหา:** เครื่องหมาย `&` และ `?` ใน URL กล้อง มักทำให้พารามิเตอร์ `#` ของ go2rtc ผิดเพี้ยน
+*   **วิธีแก้:** ระบบจะลงทะเบียน URL กล้องดิบไว้ที่ชื่อ **`camera_ID_src`** ก่อน แล้วจึงสร้างสตรีมหลักโดยดึงจาก `_src` อีกที วิธีนี้ช่วยล้าง URL ให้สะอาด ทำให้พารามิเตอร์ `#size` และ `#fps` ส่งถึง FFmpeg ได้อย่างแม่นยำ 100%
+*   **Force Refresh:** ทุกครั้งที่มีการเปลี่ยน Config ระบบจะสั่งลบ (DELETE) สตรีมเดิมใน go2rtc ทิ้งก่อน เพื่อล้าง Cache เก่าที่อาจค้างอยู่ที่ 15fps
 
----
-
-## 5. การตั้งค่ากล้อง และ Transcoding
-
-ระบบรองรับการตั้งค่าที่ยืดหยุ่นผ่าน **Camera Management**:
-
-| ฟีเจอร์ | รายละเอียด |
-| :--- | :--- |
-| **Main Stream (HD)** | URL หลักความละเอียดสูง สำหรับดูรายละเอียดและบันทึก |
-| **Sub Stream (SD)** | URL รองความละเอียดต่ำ สำหรับดูบนแผนที่หรือมือถือเพื่อประหยัดเน็ต |
-| **Enable Transcoding** | **เปิด:** Server จะช่วยแปลงไฟล์ (ใช้ CPU) โดยใช้ `ffmpeg` **ปิด:** ส่งข้อมูลดิบ (Pass-through) |
-| **Credential Injection** | ระบบจะฉีด `user:pass` เข้าไปใน RTSP URL ให้อัตโนมัติหากมีการตั้งค่าแยกฟิลด์ไว้ |
+### **Real-time Status Detection**
+*   **Fast Feedback:** ระบบดึงค่า Resolution และ FPS จาก **"FFmpeg Command Source"** โดยตรง แทนการรอการ Probe จาก Engine ทำให้ UI แสดงผลค่าที่ตั้งไว้ได้ทันที (Instant Feedback)
 
 ---
 
-## 6. ความสามารถในการขยายระบบ (Scalability & Performance)
+## 5. การตั้งค่าระบบบน Production (Nginx Proxy Configuration)
 
-ระบบถูกออกแบบมาให้รองรับผู้เข้าชมจำนวนมากด้วยหลักการทรัพยากรที่มีประสิทธิภาพ:
+เพื่อให้ระบบทำงานได้เสถียรบน Docker + Linux:
 
-### **One Producer, Many Consumers**
-*   **การเชื่อมต่อกล้อง:** go2rtc จะต่อ RTSP ไปที่กล้องเพียง **1 ท่อเดียวเท่านั้น** ต่อ 1 ประเภทสตรีม (HD/SD) ไม่ว่าจะมีคนดู 1 คนหรือ 100 คน กล้องจะไม่รับภาระเพิ่ม
-*   **Process Management:** หากเปิด Transcoding ระบบจะรัน `ffmpeg` เพียง **1 Process** ต่อ 1 สตรีม และนำผลลัพธ์ไปแจกจ่ายให้ผู้ชมทุกคนร่วมกัน (Shared Stream)
-*   **Efficient Distribution:** go2rtc ใช้เทคนิค Memory Copy ในระดับภาษา Go เพื่อแจกจ่ายข้อมูลให้ Consumers ใน Process เดียวกัน ทำให้ประหยัดทรัพยากรสูง
-
-### **ปัจจัยจำกัดความสามารถ (Performance Bottlenecks)**
-1.  **Transcoding (CPU):** เป็นตัวจำกัดจำนวน "กล้อง" ที่จะเปิดดูพร้อมกันได้บน Server (แนะนำให้ใช้ Pass-through หากกล้องเป็น H.264 อยู่แล้ว)
-2.  **Network Bandwidth (Upload):** เป็นตัวจำกัดจำนวน "ผู้เข้าชม" รวมทั้งหมด (สูตรคำนวณ: จำนวนคนดู x Bitrate ของกล้อง)
-3.  **Client-side Specs:** เบราว์เซอร์ของผู้ใช้อาจจะค้างหากเปิดดูหลายกล้องพร้อมกันเนื่องจากต้องถอดรหัสวิดีโอจำนวนมาก
+1.  **WebSocket Support:** ต้องมีการตั้งค่า `Upgrade` และ `Connection` header สำหรับเส้นทาง `/go2rtc-ws`
+2.  **API Routing:** เส้นทาง `/api/streams/` ทั้งหมดต้องถูกส่งไปยัง Backend (พอร์ต 5000) เพื่อจัดการสถานะคนดูและ Config
+3.  **No Buffering:** ปิด `proxy_buffering` สำหรับทุกเส้นทางที่เกี่ยวกับวิดีโอ เพื่อลด Latency
 
 ---
 
-## 7. เคล็ดลับการปรับจูนประสิทธิภาพ (Tuning Tips)
+## 6. การดูแลรักษาและแก้ไขปัญหา (Maintenance & Troubleshooting)
 
-1.  **ประหยัด CPU Server:** หากกล้องส่งมาเป็น H.264 อยู่แล้ว ควร **Disable Transcoding**
-2.  **ปัญหาจอดำ:** หากกล้องเป็น H.265 และเบราว์เซอร์ไม่รองรับ ให้เปิด **Enable Transcoding** เพื่อแปลงเป็น H.264
-3.  **Network WS:** หากภาพไม่ขึ้น ให้ตรวจสอบแถบ **Network -> WS** ใน DevTools เพื่อดูว่าท่อ WebSocket เชื่อมต่อสำเร็จหรือไม่
+*   **ล้าง Cache กล้อง:** หากเปลี่ยนค่าแล้วภาพไม่เปลี่ยนตาม ให้สั่ง `docker compose restart go2rtc`
+*   **ตรวจสอบสตรีมภายใน:** สามารถเข้าดูสถานะสดของ Engine ได้ที่ `https://cctv.ntnakhon.com/go2rtc-ui/`
+*   **Log ตรวจสอบ:**
+    *   `docker compose logs -f backend`: ดูการลงทะเบียนกล้องและสถานะ Heartbeat
+    *   `docker compose logs -f go2rtc`: ดูสถานะการดึงสัญญาณจากกล้องจริง
+
+---
+
+## 7. Scalability & Performance
+
+*   **One Producer, Many Consumers:** go2rtc ต่อท่อไปที่กล้องเพียง 1 ท่อต่อ 1 สตรีมเท่านั้น
+*   **Shared Transcoding:** หากเปิด Transcode ระบบจะรัน FFmpeg เพียง 1 Process ต่อ 1 สตรีม และนำผลลัพธ์ไปแจกจ่ายให้ผู้ชมทุกคนร่วมกัน ช่วยประหยัด CPU มหาศาล
+*   **Host CPU Mode:** บน Virtual Production (Proxmox) ต้องเปิด CPU Type เป็น `host` เพื่อให้ FFmpeg ใช้ความสามารถของ Hardware ได้เต็มที่
