@@ -13,6 +13,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, online: 0, offline: 0 });
   const [selectedCamera, setSelectedCamera] = useState(null);
+  const [focusedCamera, setFocusedCamera] = useState(null);
   const [initialPosition, setInitialPosition] = useState(null);
 
   useEffect(() => {
@@ -40,6 +41,7 @@ const AdminDashboard = () => {
   };
 
   const handleSelectCamera = (camera, pos = null) => {
+    setFocusedCamera(camera);
     setInitialPosition(pos);
     setSelectedCamera(camera);
   };
@@ -78,6 +80,7 @@ const AdminDashboard = () => {
           <CameraMap 
             cameras={cameras} 
             onSelectCamera={handleSelectCamera} 
+            focusedCamera={focusedCamera}
           />
         </div>
       </div>
@@ -85,6 +88,7 @@ const AdminDashboard = () => {
       {/* หน้าต่างดูสตรีมสด */}
       {selectedCamera && (
         <StreamModal 
+          key={selectedCamera.id}
           camera={selectedCamera} 
           initialPosition={initialPosition}
           onClose={() => setSelectedCamera(null)} 

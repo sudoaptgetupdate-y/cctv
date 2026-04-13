@@ -333,7 +333,12 @@ const Cameras = () => {
       <Pagination currentPage={currentPage} totalPages={totalPages} setCurrentPage={setCurrentPage} />
 
       {selectedCamera && (
-        <StreamModal camera={selectedCamera} initialPosition={modalPosition} onClose={() => setSelectedCamera(null)} />
+        <StreamModal 
+          key={selectedCamera.id}
+          camera={selectedCamera} 
+          initialPosition={modalPosition} 
+          onClose={() => setSelectedCamera(null)} 
+        />
       )}
       <CameraFormModal 
         isOpen={showFormModal} onClose={() => setShowFormModal(false)} 

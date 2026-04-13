@@ -69,7 +69,21 @@ const PublicDashboard = () => {
 
   const handleSelectCamera = (camera, pos = null) => {
     setFocusedCamera(camera);
-    setInitialPosition(pos);
+    
+    // ถ้าไม่มีตำแหน่ง (เช่น คลิกจาก Sidebar) ให้หาตำแหน่งกลางของแผนที่
+    let finalPos = pos;
+    if (!finalPos) {
+      const mapContainer = document.querySelector('.leaflet-container');
+      if (mapContainer) {
+        const rect = mapContainer.getBoundingClientRect();
+        finalPos = {
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2
+        };
+      }
+    }
+
+    setInitialPosition(finalPos);
     setSelectedCamera(camera);
     if (window.innerWidth < 1024) setIsSidebarOpen(false);
   };
@@ -272,6 +286,7 @@ const PublicDashboard = () => {
       {/* 🎬 Live Stream Modal */}
       {selectedCamera && (
         <StreamModal 
+          key={selectedCamera.id}
           camera={selectedCamera} 
           initialPosition={initialPosition}
           onClose={() => setSelectedCamera(null)} 
