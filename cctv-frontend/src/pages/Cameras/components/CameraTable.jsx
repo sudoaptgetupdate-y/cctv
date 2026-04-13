@@ -24,7 +24,7 @@ const CameraTable = ({
   if (loading && cameras.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-20 text-slate-400 bg-white rounded-2xl border border-slate-200 shadow-sm min-h-[400px]">
-        <Loader2 size={48} className="animate-spin text-blue-600 mb-4" />
+        <Loader2 size={48} className="animate-spin text-indigo-600 mb-4" />
         <p className="font-bold text-sm uppercase tracking-widest">{t('common.loading')}</p>
       </div>
     );
@@ -91,7 +91,7 @@ const CameraTable = ({
           </div>
         </div>
         <div className="text-slate-500 font-bold bg-white sm:bg-transparent px-4 py-2 sm:p-0 rounded-xl border border-slate-200 sm:border-transparent shadow-sm sm:shadow-none tracking-tight">
-          {t('common.showing')} <span className="text-slate-900">{from}</span> {t('common.to')} <span className="text-slate-900">{to}</span> {t('common.from')} <span className="text-blue-600 underline underline-offset-4">{total}</span> {t('common.records')}
+          {t('common.showing')} <span className="text-slate-900">{from}</span> {t('common.to')} <span className="text-slate-900">{to}</span> {t('common.from')} <span className="text-indigo-600 underline underline-offset-4">{total}</span> {t('common.records')}
         </div>
       </div>
     </div>

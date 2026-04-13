@@ -39,7 +39,7 @@ const GroupFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edit
       }
     >
       <form onSubmit={onSubmit} className="space-y-8">
-        {/* ข้อมูลพื้นฐาน */}
+        {/* Basic Info */}
         <div className="space-y-4">
           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>
@@ -79,7 +79,7 @@ const GroupFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edit
         <div className="space-y-4 pt-6 border-t border-slate-50">
           <div className="flex items-center justify-between">
             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+              <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>
               {t('groups.form.telegram_section')}
             </h4>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -89,26 +89,26 @@ const GroupFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edit
                 checked={formData.isNotifyEnabled}
                 onChange={(e) => setFormData({...formData, isNotifyEnabled: e.target.checked})}
               />
-              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
             </label>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="col-span-1 md:col-span-2 space-y-1.5">
-              <label className="text-xs font-bold text-slate-600 ml-1 text-blue-600">{t('groups.form.bot_token')}</label>
+              <label className="text-xs font-bold ml-1 text-indigo-600">{t('groups.form.bot_token')}</label>
               <input 
                 type="password"
-                className="w-full px-4 py-3 rounded-2xl border border-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-blue-50/20 font-mono text-sm"
+                className="w-full px-4 py-3 rounded-2xl border border-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-indigo-50/20 font-mono text-sm"
                 placeholder="0000000000:AAxxxxxxxxx..."
                 value={formData.telegramBotToken}
                 onChange={(e) => setFormData({...formData, telegramBotToken: e.target.value})}
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-600 ml-1 text-blue-600">{t('groups.form.chat_id')}</label>
+              <label className="text-xs font-bold ml-1 text-indigo-600">{t('groups.form.chat_id')}</label>
               <input 
                 type="text"
-                className="w-full px-4 py-3 rounded-2xl border border-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-blue-50/20 font-mono text-sm"
+                className="w-full px-4 py-3 rounded-2xl border border-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-indigo-50/20 font-mono text-sm"
                 placeholder="-100xxxxxxxxx"
                 value={formData.telegramChatId}
                 onChange={(e) => setFormData({...formData, telegramChatId: e.target.value})}

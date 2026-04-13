@@ -42,6 +42,14 @@ async function main() {
   });
 
   // 3. สร้างกลุ่มกล้อง
+  const allCamerasGroup = await prisma.cameraGroup.create({
+    data: {
+      name: 'All Camera',
+      description: 'รวมกล้องทุกตัวในระบบ (Default Group)',
+      isNotifyEnabled: false, // กลุ่มรวมไม่ต้องแจ้งเตือนซ้ำซ้อน
+    },
+  });
+
   const mainGroup = await prisma.cameraGroup.create({
     data: {
       name: 'Main Monitoring Zone',
@@ -63,7 +71,12 @@ async function main() {
       status: 'ACTIVE',
       isPublic: true,
       userId: adminUser.id,
-      groups: { connect: { id: mainGroup.id } }
+      groups: { 
+        connect: [
+          { id: allCamerasGroup.id },
+          { id: mainGroup.id }
+        ]
+      }
     },
   });
 
@@ -80,7 +93,12 @@ async function main() {
       resolution: '1280x720',
       fps: 10,
       userId: adminUser.id,
-      groups: { connect: { id: mainGroup.id } }
+      groups: { 
+        connect: [
+          { id: allCamerasGroup.id },
+          { id: mainGroup.id }
+        ]
+      }
     },
   });
 

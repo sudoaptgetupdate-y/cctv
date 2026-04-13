@@ -88,7 +88,7 @@ const cameraService = {
 
   // เพิ่มกล้องใหม่
   async createCamera(data, userId) {
-    const { groupId, ...cameraData } = data;
+    let { groupIds, ...cameraData } = data;
     
     // ตรวจสอบชื่อซ้ำก่อนสร้าง
     const validation = await this.validateCameraData(cameraData);
@@ -96,12 +96,21 @@ const cameraService = {
       throw new Error(`VALIDATION_ERROR: ${validation.errors.join(', ')}`);
     }
 
+    // 🚀 เพิ่มกลุ่ม "All Camera" เข้าไปโดยอัตโนมัติ
+    const allGroup = await prisma.cameraGroup.findFirst({ where: { name: 'All Camera' } });
+    if (allGroup) {
+      if (!groupIds) groupIds = [];
+      if (!groupIds.includes(allGroup.id) && !groupIds.includes(allGroup.id.toString())) {
+        groupIds.push(allGroup.id);
+      }
+    }
+
     return await prisma.camera.create({
       data: {
         ...cameraData,
         userId: userId,
-        groups: groupId ? {
-          connect: { id: parseInt(groupId) }
+        groups: (groupIds && Array.isArray(groupIds) && groupIds.length > 0) ? {
+          connect: groupIds.map(id => ({ id: parseInt(id) }))
         } : undefined
       }
     });
@@ -109,7 +118,7 @@ const cameraService = {
 
   // แก้ไขข้อมูลกล้อง
   async updateCamera(id, data) {
-    const { groupId, ...cameraData } = data;
+    const { groupIds, ...cameraData } = data;
     
     // ตรวจสอบชื่อซ้ำ (ยกเว้นตัวเอง)
     const validation = await this.validateCameraData(cameraData, id);
@@ -125,8 +134,8 @@ const cameraService = {
       where: { id: parseInt(id) },
       data: {
         ...cameraData,
-        groups: groupId ? {
-          set: [{ id: parseInt(groupId) }]
+        groups: groupIds !== undefined ? {
+          set: Array.isArray(groupIds) ? groupIds.map(gid => ({ id: parseInt(gid) })) : []
         } : undefined
       }
     });

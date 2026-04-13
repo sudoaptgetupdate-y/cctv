@@ -31,7 +31,9 @@ const resources = {
         sign_out: "Sign Out",
         create: "Create",
         save_changes: "Save Changes",
-        restore: "Restore"
+        restore: "Restore",
+        add: "Add",
+        remove: "Remove"
       },
       sidebar: {
         dashboard: "Dashboard",
@@ -174,7 +176,8 @@ const resources = {
           hd_fps: "HD Frame Rate (FPS)",
           sd_resolution: "SD Resolution",
           sd_fps: "SD Frame Rate (FPS)",
-          original: "-- Original --"
+          original: "-- Original --",
+          no_groups_found: "No groups available"
         },
         messages: {
           fetch_error: "Failed to fetch cameras",
@@ -227,6 +230,17 @@ const resources = {
           ai_prompt: "AI System Prompt",
           ai_prompt_placeholder: "Instructions for AI to analyze events for this group..."
         },
+        manage: {
+          title: "Manage Group Members",
+          desc: "Select cameras to include in this group. Changes are saved only when you click 'Save Changes'.",
+          search_placeholder: "Search cameras by name or URL...",
+          others_title: "Other Cameras",
+          members_title: "Group Members",
+          loading: "Loading cameras...",
+          empty_available: "No other cameras found matching your search.",
+          empty_assigned: "No cameras currently assigned to this group.",
+          page: "Page {{current}} of {{total}}"
+        },
         messages: {
           fetch_error: "Failed to fetch groups",
           save_success: "Group saved successfully",
@@ -271,7 +285,9 @@ const resources = {
         sign_out: "ลงชื่อออก",
         create: "สร้าง",
         save_changes: "บันทึกการแก้ไข",
-        restore: "คืนค่า"
+        restore: "คืนค่า",
+        add: "เพิ่ม",
+        remove: "เอาออก"
       },
       sidebar: {
         dashboard: "แดชบอร์ด",
@@ -414,7 +430,8 @@ const resources = {
           hd_fps: "เฟรมเรต HD (FPS)",
           sd_resolution: "ความละเอียด SD",
           sd_fps: "เฟรมเรต SD (FPS)",
-          original: "-- ตามต้นฉบับ --"
+          original: "-- ตามต้นฉบับ --",
+          no_groups_found: "ไม่พบข้อมูลกลุ่ม"
         },
         messages: {
           fetch_error: "ไม่สามารถดึงข้อมูลกล้องได้",
@@ -485,6 +502,17 @@ const resources = {
           ai_section: "การรวมระบบ AI Support",
           ai_prompt: "AI System Prompt",
           ai_prompt_placeholder: "ระบุคำสั่งให้ AI วิเคราะห์เหตุการณ์สำหรับกลุ่มนี้..."
+        },
+        manage: {
+          title: "จัดการสมาชิกในกลุ่ม",
+          desc: "เลือกกล้องที่ต้องการให้อยู่ในกลุ่มนี้ การแก้ไขจะมีผลเมื่อคุณกด 'บันทึกการแก้ไข' เท่านั้น",
+          search_placeholder: "ค้นหากล้องด้วยชื่อ หรือ URL...",
+          others_title: "กล้องตัวอื่น",
+          members_title: "สมาชิกในกลุ่ม",
+          loading: "กำลังโหลดข้อมูลกล้อง...",
+          empty_available: "ไม่พบกล้องตัวอื่นที่ตรงกับการค้นหา",
+          empty_assigned: "ยังไม่มีกล้องที่สังกัดกลุ่มนี้",
+          page: "หน้า {{current}} จาก {{total}}"
         },
         messages: {
           fetch_error: "ไม่สามารถดึงข้อมูลกลุ่มได้",

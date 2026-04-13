@@ -53,11 +53,19 @@ const PublicDashboard = () => {
       c.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // จัดใส่กลุ่ม
+    // จัดใส่กลุ่ม (1 กล้องอาจอยู่ได้หลายกลุ่ม)
     filtered.forEach(camera => {
-      const gId = camera.groups?.[0]?.id || 'uncategorized';
-      if (!groupsMap[gId]) groupsMap[gId] = [];
-      groupsMap[gId].push(camera);
+      if (camera.groups && camera.groups.length > 0) {
+        camera.groups.forEach(group => {
+          const gId = group.id;
+          if (!groupsMap[gId]) groupsMap[gId] = [];
+          groupsMap[gId].push(camera);
+        });
+      } else {
+        const gId = 'uncategorized';
+        if (!groupsMap[gId]) groupsMap[gId] = [];
+        groupsMap[gId].push(camera);
+      }
     });
 
     return groupsMap;
@@ -89,13 +97,13 @@ const PublicDashboard = () => {
   };
 
   const currentGroupCameras = useMemo(() => {
-    return selectedGroupId === 'all' 
-      ? cameras.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()))
-      : cameras.filter(c => 
-          c.groups?.some(g => g.id === parseInt(selectedGroupId)) && 
-          c.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-  }, [cameras, selectedGroupId, searchTerm]);
+    if (selectedGroupId === 'all') {
+      return cameras.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    }
+    
+    // ดึงจาก groupedData ที่คำนวณไว้แล้ว (รองรับ 1 กล้องหลายกลุ่ม)
+    return groupedData[selectedGroupId] || [];
+  }, [cameras, selectedGroupId, searchTerm, groupedData]);
 
   return (
     <div className="h-screen w-screen flex flex-col bg-slate-50 overflow-hidden font-sans">

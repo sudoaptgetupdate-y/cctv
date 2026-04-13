@@ -47,7 +47,7 @@ const Cameras = () => {
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', groupId: '', isPublic: false, streamType: 'MAIN', isAudioEnabled: false, resolution: '', fps: '', subResolution: '', subFps: '', isTranscodeEnabled: false
+    name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', groupIds: [], isPublic: false, streamType: 'MAIN', isAudioEnabled: false, resolution: '', fps: '', subResolution: '', subFps: '', isTranscodeEnabled: false
   });
 
   // 🚀 Real-time Validation (Debounced)
@@ -132,7 +132,7 @@ const Cameras = () => {
         subStream: camera.subStream || '',
         username: camera.username || '',
         password: camera.password || '',
-        groupId: camera.groups?.[0]?.id || '',
+        groupIds: camera.groups ? camera.groups.map(g => g.id.toString()) : [],
         isPublic: camera.isPublic || false,
         streamType: camera.streamType || 'MAIN',
         isAudioEnabled: camera.isAudioEnabled || false,
@@ -144,8 +144,15 @@ const Cameras = () => {
       });
     } else {
       setEditingCamera(null);
+      
+      // 🚀 ค้นหา ID ของกลุ่ม "All Camera" เพื่อเลือกเป็น Default
+      const allGroup = groups.find(g => g.name === 'All Camera');
+      const defaultGroupIds = allGroup ? [allGroup.id.toString()] : [];
+
       setFormData({
-        name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', groupId: '', isPublic: false, streamType: 'MAIN', isAudioEnabled: false, resolution: '', fps: '', subResolution: '', subFps: '', isTranscodeEnabled: false
+        name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', 
+        groupIds: defaultGroupIds, 
+        isPublic: false, streamType: 'MAIN', isAudioEnabled: false, resolution: '', fps: '', subResolution: '', subFps: '', isTranscodeEnabled: false
       });
     }
     setShowFormModal(true);

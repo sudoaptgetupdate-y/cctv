@@ -79,7 +79,9 @@ const CameraTableRow = ({ camera, onPreview, onEdit, onDelete, onAcknowledge, on
                 ID: {camera.id.toString().padStart(4, '0')}
              </span>
              <span className="text-[10px] font-bold text-slate-400 italic">
-                {t('cameras.form.group_zone')}: {camera.groups?.[0]?.name || t('groups.status.standard')}
+                {t('cameras.form.group_zone')}: {camera.groups && camera.groups.length > 0 
+                  ? camera.groups.map(g => g.name).join(', ') 
+                  : t('groups.status.standard')}
              </span>
           </div>
         </div>

@@ -39,7 +39,7 @@ const cameraSchema = z.object({
     longitude: z.union([z.number(), z.string().regex(/^-?\d+(\.\d+)?$/)]).optional().nullable(),
     status: z.enum(['ACTIVE', 'INACTIVE', 'MAINTENANCE']).optional(),
     isPublic: z.boolean().optional(),
-    groupId: z.union([z.number(), z.string()]).optional().nullable(),
+    groupIds: z.array(z.union([z.number(), z.string()])).optional().nullable(),
     streamSettings: z.any().optional()
   })
 });

@@ -29,6 +29,10 @@ const groupService = {
   async validate(data, id = null) {
     const res = await apiClient.post(`/groups/validate${id ? `?id=${id}` : ''}`, data);
     return res.data.data;
+  },
+  async updateGroupCameras(id, cameraIds) {
+    const res = await apiClient.post(`/groups/${id}/cameras`, { cameraIds });
+    return res.data.data;
   }
 };
 

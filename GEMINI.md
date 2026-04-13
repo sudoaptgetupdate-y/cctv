@@ -37,6 +37,8 @@
 - [x] **Deployment Ready:** คู่มือ Docker Setup และ Nginx Proxy สมบูรณ์แบบ รองรับ WebSocket และ SSL
 - [x] **Enhance UX & Validation:** ระบบ Real-time Validation (ขณะพิมพ์), SweetAlert2, และ react-hot-toast สมบูรณ์แบบ
 - [x] **Full i18n Support:** รองรับ 2 ภาษา (TH/EN) ครบถ้วนในหน้าจัดการกล้องและกลุ่ม
+- [x] **Multi-group Camera Support:** 1 กล้องสามารถอยู่ได้หลายกลุ่ม (Many-to-Many)
+- [x] **Advanced Map Interaction:** ระบบซูมเข้าหากล้องอัตโนมัติ (FlyTo) และจัดวาง Modal ตามพิกัดจริงบนจอ
 
 ## 🛠️ Tech Stack & Ports
 - Frontend: Vite + React (Port 3000)
@@ -47,10 +49,9 @@
 ---
 
 ## 🎯 เป้าหมายถัดไป (Next Tasks)
-1. [ ] **Multi-group Camera Support:** 1 กล้องสามารถอยู่ได้หลายกลุ่ม
-2. [ ] **Advanced Analytics:** ระบบสรุปสถิติผ่าน Dashboard (Chart.js)
-3. [ ] **Interactive Telegram Bot:** พัฒนา Webhook ให้ Bot ตอบโต้ด้วย AI
-4. [ ] **Snapshot Service:** บันทึกภาพนิ่งลง Server
+1. [ ] **Advanced Analytics:** ระบบสรุปสถิติผ่าน Dashboard (Chart.js)
+2. [ ] **Interactive Telegram Bot:** พัฒนา Webhook ให้ Bot ตอบโต้ด้วย AI
+3. [ ] **Snapshot Service:** บันทึกภาพนิ่งลง Server
 
 ---
 

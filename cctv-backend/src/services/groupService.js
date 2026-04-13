@@ -28,18 +28,18 @@ const groupService = {
     });
   },
 
-  // ดึงข้อมูลกลุ่มตาม ID พร้อมรายชื่อกล้อง
+  // ดึงข้อมูลกลุ่มตาม ID พร้อมรายชื่อกล้อง (ดึงเฉพาะ ID เพื่อความเร็วในการจัดการสมาชิก)
   async getGroupById(id) {
     return await prisma.cameraGroup.findUnique({
       where: { id: parseInt(id) },
-      include: {
+      select: {
+        id: true,
+        name: true,
         cameras: {
           select: {
             id: true,
             name: true,
-            status: true,
-            latitude: true,
-            longitude: true
+            rtspUrl: true // จำเป็นต้องใช้แสดงใน Modal
           }
         }
       }

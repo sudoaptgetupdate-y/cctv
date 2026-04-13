@@ -45,8 +45,8 @@ const Pagination = ({ currentPage, totalPages, setCurrentPage, isSticky = true }
     : "flex justify-center mt-auto pt-4 mb-2";
   
   const innerClass = isSticky
-    ? "flex items-center gap-1 p-1.5 bg-blue-50/80 backdrop-blur-md border border-blue-200/60 rounded-full shadow-[0_8px_30px_rgb(59,130,246,0.15)] pointer-events-auto transition-all hover:bg-blue-50/95"
-    : "flex items-center gap-1 p-1.5 bg-blue-50/80 backdrop-blur-md border border-blue-200/60 rounded-full shadow-[0_4px_20px_rgb(59,130,246,0.1)] transition-all hover:bg-blue-50/95";
+    ? "flex items-center gap-1 p-1.5 bg-indigo-50/80 backdrop-blur-md border border-indigo-200/60 rounded-full shadow-[0_8px_30px_rgb(79,70,229,0.15)] pointer-events-auto transition-all hover:bg-indigo-50/95"
+    : "flex items-center gap-1 p-1.5 bg-indigo-50/80 backdrop-blur-md border border-indigo-200/60 rounded-full shadow-[0_4px_20px_rgb(79,70,229,0.1)] transition-all hover:bg-indigo-50/95";
 
   return (
     <div className={wrapperClass}>
@@ -56,7 +56,7 @@ const Pagination = ({ currentPage, totalPages, setCurrentPage, isSticky = true }
           onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
           disabled={currentPage === 1} 
           title={t('common.previous')}
-          className="p-2 rounded-full text-blue-500 hover:bg-blue-100 hover:text-blue-700 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-blue-500 transition-all"
+          className="p-2 rounded-full text-indigo-500 hover:bg-indigo-100 hover:text-indigo-700 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-indigo-500 transition-all"
         >
           <ChevronLeft size={20} strokeWidth={2.5} />
         </button>
@@ -64,7 +64,7 @@ const Pagination = ({ currentPage, totalPages, setCurrentPage, isSticky = true }
         <div className="flex items-center gap-1 px-2">
           {getPageNumbers().map((page, index) => (
             page === '...' ? (
-              <span key={`ellipsis-${index}`} className="w-8 text-center text-blue-400 font-bold select-none">
+              <span key={`ellipsis-${index}`} className="w-8 text-center text-indigo-400 font-bold select-none">
                 ...
               </span>
             ) : (
@@ -74,8 +74,8 @@ const Pagination = ({ currentPage, totalPages, setCurrentPage, isSticky = true }
                 title={t('common.page_n', { num: page })}
                 className={`w-9 h-9 rounded-full text-sm font-bold transition-all ${
                   currentPage === page 
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
-                    : 'text-blue-600/70 hover:bg-blue-100 hover:text-blue-700'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30' 
+                    : 'text-indigo-600/70 hover:bg-indigo-100 hover:text-indigo-700'
                 }`}
               >
                 {page}
@@ -88,7 +88,7 @@ const Pagination = ({ currentPage, totalPages, setCurrentPage, isSticky = true }
           onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
           disabled={currentPage === totalPages} 
           title={t('common.next')}
-          className="p-2 rounded-full text-blue-500 hover:bg-blue-100 hover:text-blue-700 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-blue-500 transition-all"
+          className="p-2 rounded-full text-indigo-500 hover:bg-indigo-100 hover:text-indigo-700 disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-indigo-500 transition-all"
         >
           <ChevronRight size={20} strokeWidth={2.5} />
         </button>
