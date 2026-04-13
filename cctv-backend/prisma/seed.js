@@ -27,7 +27,7 @@ async function main() {
 
   // 2. สร้าง User ใหม่ (ntadmin / admin1234)
   console.log('Creating Super Admin user...');
-  const hashedPassword = await bcrypt.hash('admin1234', 10);
+  const hashedPassword = await bcrypt.hash('nt@nks!234', 10);
 
   const adminUser = await prisma.user.create({
     data: {
