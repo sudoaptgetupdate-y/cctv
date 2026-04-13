@@ -27,7 +27,40 @@ const updateUserSchema = z.object({
   })
 });
 
+// ==========================================
+// 2. Camera Schemas
+// ==========================================
+const cameraSchema = z.object({
+  body: z.object({
+    name: z.string().min(1, "กรุณากรอกชื่อกล้อง"),
+    ipAddress: z.string().optional().nullable(),
+    rtspUrl: z.string().min(1, "กรุณากรอก RTSP URL"),
+    latitude: z.union([z.number(), z.string().regex(/^-?\d+(\.\d+)?$/)]).optional().nullable(),
+    longitude: z.union([z.number(), z.string().regex(/^-?\d+(\.\d+)?$/)]).optional().nullable(),
+    status: z.enum(['ACTIVE', 'INACTIVE', 'MAINTENANCE']).optional(),
+    isPublic: z.boolean().optional(),
+    groupId: z.union([z.number(), z.string()]).optional().nullable(),
+    streamSettings: z.any().optional()
+  })
+});
+
+// ==========================================
+// 3. Group Schemas
+// ==========================================
+const groupSchema = z.object({
+  body: z.object({
+    name: z.string().min(1, "กรุณากรอกชื่อกลุ่ม"),
+    description: z.string().optional().nullable(),
+    telegramToken: z.string().optional().nullable(),
+    telegramChatId: z.string().optional().nullable(),
+    isNotifyEnabled: z.boolean().optional(),
+    aiAnalysisEnabled: z.boolean().optional()
+  })
+});
+
 module.exports = {
   createUserSchema,
-  updateUserSchema
+  updateUserSchema,
+  cameraSchema,
+  groupSchema
 };

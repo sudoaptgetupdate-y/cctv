@@ -1,12 +1,15 @@
 import React from 'react';
-import { Search, RefreshCw, Filter, ShieldCheck, ShieldAlert, Wifi, WifiOff } from 'lucide-react';
+import { Search, RefreshCw, Filter, ShieldAlert, Wifi, WifiOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const CameraListToolbar = ({ searchTerm, setSearchTerm, statusFilter, setStatusFilter, onRefresh, loading }) => {
+  const { t } = useTranslation();
+
   const filters = [
-    { id: 'ALL', label: 'ทั้งหมด', icon: Filter, color: 'text-slate-500' },
-    { id: 'ACTIVE', label: 'ออนไลน์', icon: Wifi, color: 'text-emerald-500' },
-    { id: 'ERROR', label: 'มีปัญหา', icon: ShieldAlert, color: 'text-rose-500' },
-    { id: 'OFFLINE', label: 'ออฟไลน์', icon: WifiOff, color: 'text-slate-400' },
+    { id: 'ALL', label: t('cameras.filters.all'), icon: Filter, color: 'text-slate-500' },
+    { id: 'ACTIVE', label: t('cameras.filters.online'), icon: Wifi, color: 'text-emerald-500' },
+    { id: 'ERROR', label: t('cameras.filters.problem'), icon: ShieldAlert, color: 'text-rose-500' },
+    { id: 'OFFLINE', label: t('cameras.filters.offline'), icon: WifiOff, color: 'text-slate-400' },
   ];
 
   return (
@@ -17,7 +20,7 @@ const CameraListToolbar = ({ searchTerm, setSearchTerm, statusFilter, setStatusF
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
         <input
           type="text"
-          placeholder="ค้นหาชื่อกล้อง, พิกัด หรือ RTSP URL..."
+          placeholder={t('cameras.search_placeholder')}
           className="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -54,7 +57,7 @@ const CameraListToolbar = ({ searchTerm, setSearchTerm, statusFilter, setStatusF
             p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition-all
             ${loading ? 'animate-spin text-blue-600' : ''}
           `}
-          title="รีเฟรชข้อมูล"
+          title={t('common.refresh')}
         >
           <RefreshCw size={18} />
         </button>

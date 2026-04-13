@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, FolderKanban, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import Swal from 'sweetalert2';
+import toast from 'react-hot-toast';
 import groupService from '../../services/groupService';
 import Pagination from '../../components/Pagination';
 
@@ -15,6 +17,8 @@ const CameraGroups = () => {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
   
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,6 +37,29 @@ const CameraGroups = () => {
     aiSystemPrompt: ''
   });
 
+  // 🚀 Real-time Validation (Debounced)
+  useEffect(() => {
+    if (!showModal || !formData.name) {
+      setFormErrors(prev => ({ ...prev, name: null }));
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const validation = await groupService.validate({ name: formData.name }, editingGroup?.id);
+        if (!validation.isValid) {
+          setFormErrors(prev => ({ ...prev, name: validation.errors[0] }));
+        } else {
+          setFormErrors(prev => ({ ...prev, name: null }));
+        }
+      } catch (error) {
+        console.error('Validation error', error);
+      }
+    }, 500); // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [formData.name, editingGroup, showModal]);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -43,7 +70,7 @@ const CameraGroups = () => {
       const data = await groupService.getAll();
       setGroups(data);
     } catch (error) {
-      console.error('Failed to fetch groups');
+      toast.error(t('groups.messages.fetch_error'));
     } finally {
       setLoading(false);
     }
@@ -73,6 +100,7 @@ const CameraGroups = () => {
   // Handlers
   // ==========================================
   const handleOpenModal = (group = null) => {
+    setFormErrors({});
     if (group) {
       setEditingGroup(group);
       setFormData({
@@ -94,24 +122,70 @@ const CameraGroups = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
+    
+    // Check if there are any errors before submitting
+    if (formErrors.name) {
+      toast.error(formErrors.name);
+      return;
+    }
+
+    setIsSubmitting(true);
+    
     try {
-      if (editingGroup) await groupService.update(editingGroup.id, formData);
-      else await groupService.create(formData);
+      // 🚀 Re-check one last time before save
+      const validation = await groupService.validate(formData, editingGroup?.id);
+      
+      if (!validation.isValid) {
+        setFormErrors(prev => ({ ...prev, name: validation.errors[0] }));
+        Swal.fire({
+          icon: 'error',
+          title: t('common.error'),
+          text: validation.errors[0],
+          confirmButtonColor: '#4f46e5'
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // 🚀 2. บันทึกข้อมูล
+      if (editingGroup) {
+        await groupService.update(editingGroup.id, formData);
+        toast.success(t('groups.messages.update_success'));
+      } else {
+        await groupService.create(formData);
+        toast.success(t('groups.messages.save_success'));
+      }
+      
       setShowModal(false);
       fetchData();
     } catch (error) {
-      alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+      const errorMsg = error.response?.data?.message || t('groups.messages.save_error');
+      toast.error(errorMsg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('คุณต้องการลบกลุ่มนี้ใช่หรือไม่? (กล้องในกลุ่มนี้จะไม่ถูกลบ)')) {
+    const result = await Swal.fire({
+      title: t('groups.messages.delete_confirm_title'),
+      text: t('groups.messages.delete_confirm_text'),
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: t('groups.messages.confirm_delete'),
+      cancelButtonText: t('common.cancel')
+    });
+
+    if (result.isConfirmed) {
       try {
         await groupService.delete(id);
+        toast.success(t('groups.messages.delete_success'));
         fetchData();
       } catch (error) {
-        alert('ลบข้อมูลไม่สำเร็จ');
+        toast.error(t('groups.messages.delete_error'));
       }
     }
   };
@@ -186,6 +260,8 @@ const CameraGroups = () => {
         formData={formData}
         setFormData={setFormData}
         editingGroup={editingGroup}
+        isSubmitting={isSubmitting}
+        formErrors={formErrors}
       />
     </div>
   );

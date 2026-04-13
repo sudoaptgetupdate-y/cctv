@@ -1,10 +1,14 @@
 import React from 'react';
 import { Activity, Clock, Server, MonitorOff, CheckCircle2, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { th } from 'date-fns/locale';
+import { th, enUS } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 import Modal from '../../../components/Modal';
 
 const EventHistoryModal = ({ isOpen, onClose, camera, events, loading }) => {
+  const { t, i18n } = useTranslation();
+  const currentLocale = i18n.language === 'th' ? th : enUS;
+
   const getEventIcon = (type) => {
     switch (type) {
       case 'ONLINE': return <CheckCircle2 className="text-emerald-500" size={18} />;
@@ -27,17 +31,17 @@ const EventHistoryModal = ({ isOpen, onClose, camera, events, loading }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="ประวัติเหตุการณ์"
-      subtitle="Camera Event Timeline"
+      title={t('cameras.history_modal.title')}
+      subtitle={t('cameras.history_modal.subtitle')}
       size="lg"
       footer={
         <div className="flex flex-col items-center gap-4">
-           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">แสดงประวัติย้อนหลังสูงสุด 50 รายการ</p>
+           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('cameras.history_modal.limit_hint')}</p>
            <button
              onClick={onClose}
              className="w-full px-6 py-3 bg-slate-900 text-white rounded-2xl text-sm font-bold shadow-lg shadow-slate-900/10 hover:bg-slate-800 transition-all active:scale-[0.98]"
            >
-             ปิดหน้าต่าง
+             {t('common.close')}
            </button>
         </div>
       }
@@ -55,9 +59,9 @@ const EventHistoryModal = ({ isOpen, onClose, camera, events, loading }) => {
               </div>
            </div>
            <div className="text-right hidden sm:block">
-              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">สถานะปัจจุบัน</div>
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{t('cameras.history_modal.current_status')}</div>
               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${camera?.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
-                 {camera?.status}
+                 {camera?.status === 'ACTIVE' ? t('cameras.online') : (camera?.status === 'ERROR' ? t('cameras.error') : t('cameras.offline'))}
               </span>
            </div>
         </div>
@@ -69,14 +73,14 @@ const EventHistoryModal = ({ isOpen, onClose, camera, events, loading }) => {
           {loading ? (
             <div className="py-20 text-center space-y-3">
               <div className="h-8 w-8 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
-              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">กำลังดึงข้อมูลประวัติ...</p>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t('cameras.history_modal.fetching')}</p>
             </div>
           ) : events.length === 0 ? (
             <div className="py-20 text-center space-y-4">
                <div className="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto border border-slate-100">
                   <Activity size={32} className="text-slate-200" />
                </div>
-               <p className="text-slate-400 font-medium italic">ยังไม่มีบันทึกเหตุการณ์สำหรับกล้องตัวนี้</p>
+               <p className="text-slate-400 font-medium italic">{t('cameras.history_modal.no_events')}</p>
             </div>
           ) : (
             events.map((event, index) => (
@@ -93,18 +97,18 @@ const EventHistoryModal = ({ isOpen, onClose, camera, events, loading }) => {
                      </div>
                      <div>
                         <div className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                           {event.eventType}
+                           {event.eventType === 'ONLINE' ? t('cameras.online') : (event.eventType === 'OFFLINE' ? t('cameras.offline') : t('cameras.error'))}
                            {event.details && <span className="text-[10px] font-normal text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded italic">#{event.details}</span>}
                         </div>
                         <p className="text-xs text-slate-500 font-medium mt-0.5">
-                           {format(new Date(event.createdAt), "d MMMM yyyy 'เวลา' HH:mm:ss", { locale: th })}
+                           {format(new Date(event.createdAt), i18n.language === 'th' ? "d MMMM yyyy 'เวลา' HH:mm:ss" : "d MMMM yyyy 'at' HH:mm:ss", { locale: currentLocale })}
                         </p>
                      </div>
                   </div>
                   
                   <div className="md:text-right flex md:flex-col gap-2 md:gap-0">
-                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">บันทึกโดยระบบ</span>
-                     <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full block w-fit md:ml-auto">HealthCheck V1</span>
+                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">{t('cameras.history_modal.recorded_by')}</span>
+                     <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full block w-fit md:ml-auto">{t('cameras.history_modal.system_ver')}</span>
                   </div>
                 </div>
               </div>

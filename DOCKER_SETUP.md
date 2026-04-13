@@ -88,50 +88,100 @@ docker compose restart go2rtc
 
 ---
 
-## 5. 🛠️ คำสั่งที่ใช้บ่อย (Essential Commands)
+## 5. 🛠️ คู่มือการอัปเดตระบบ (Update Scenarios)
 
-### 🔄 การอัปเดตและ Build ใหม่
+หลังจากที่คุณทำการ `git pull` โค้ดล่าสุดลงมาที่ Server แล้ว ให้เลือกใช้คำสั่งตามสถานการณ์ดังนี้:
+
+### 🅰️ กรณีแก้ไข UI หรือ Nginx Config (Frontend)
+หากมีการแก้ไฟล์ใน `cctv-frontend/src` หรือไฟล์ `cctv-frontend/nginx.conf`:
 ```bash
-# อัปเดตโค้ดและ Build เฉพาะ Backend (กรณีแก้ไฟล์ .js หรือ seed.js)
+# Build เฉพาะ Frontend ใหม่ (ใช้เวลาไม่นานเพราะมี Cache)
+docker compose up -d --build frontend
+```
+
+### 🅱️ กรณีแก้ไข Logic หรือ API (Backend)
+หากมีการแก้ไฟล์ใน `cctv-backend/src`:
+```bash
+# Build เฉพาะ Backend ใหม่
+docker compose up -d --build backend
+```
+
+### 🅾️ กรณีมีการเพิ่มตารางหรือเปลี่ยน Schema (Prisma)
+หากคุณมีการแก้ไฟล์ `schema.prisma` (เช่น เพิ่มตาราง Multi-group):
+```bash
+# 1. Build Backend ใหม่ก่อนเพื่อให้มี Client ล่าสุด
 docker compose up -d --build backend
 
-# อัปเดตโค้ดและ Build เฉพาะ Frontend (กรณีแก้ UI)
-docker compose up -d --build frontend
-
-# บังคับรันคำสั่ง Seed ใหม่ (เพื่ออัปเดต User/Settings)
-docker compose exec backend npx prisma db seed
+# 2. Push โครงสร้างตารางใหม่ลงฐานข้อมูล (สำคัญ: ข้อมูลเดิมไม่หาย)
+docker compose exec backend npx prisma db push
 ```
 
-### 📋 การดู Log (Troubleshooting)
+### 🅾️ กรณีอัปเดตชุดใหญ่ (Full Update)
+หากมีการเปลี่ยนแปลงหลายส่วนพร้อมกัน:
 ```bash
-# ดู Log ของทุก Service แบบ Real-time
-docker compose logs -f
-
-# ดู Log เฉพาะ Backend (เพื่อเช็ค Error API หรือการเชื่อมต่อกล้อง)
-docker compose logs -f backend
-
-# ดู Log เฉพาะ go2rtc (เพื่อเช็คสถานะการดึงสัญญาณภาพจากกล้อง)
-docker compose logs -f go2rtc
-```
-
-### ⚙️ การจัดการ Container
-```bash
-# ตรวจสอบสถานะการทำงานของทุก Container (Status ต้องเป็น Up)
-docker compose ps
-
-# รีสตาร์ทระบบทั้งหมด
-docker compose restart
-
-# รีสตาร์ทเฉพาะ Engine สตรีมมิ่ง (เพื่อเคลียร์อาการค้าง)
-docker compose restart go2rtc
-
-# หยุดการทำงานและลบ Container ทั้งหมด (ข้อมูลใน DB ไม่หายเพราะใช้ Volume)
 docker compose down
+docker compose up -d --build
+docker compose exec backend npx prisma db push
 ```
 
 ---
 
-## 6. บันทึกทางเทคนิค (Technical Notes)
+## 6. 📋 คำสั่งตรวจสอบและจัดการอื่นๆ
+
+### การดู Log (Troubleshooting)
+```bash
+# ดู Log ทั้งหมดแบบ Real-time
+docker compose logs -f
+
+# ดู Log เฉพาะ Backend (เช็ค Error API)
+docker compose logs -f backend
+
+# ดู Log เฉพาะ go2rtc (เช็คการเชื่อมต่อกล้อง)
+docker compose logs -f go2rtc
+```
+
+### การจัดการฐานข้อมูล
+```bash
+# เข้าไปพิมพ์คำสั่ง SQL ใน MariaDB โดยตรง
+docker compose exec db mariadb -u cctv_user -p cctv_db
+
+# สั่งรัน Seed ข้อมูลใหม่ (กรณีเพิ่ม Sample Data ในไฟล์ seed.js)
+docker compose exec backend npx prisma db seed
+```
+
+### การจัดการ Container
+```bash
+# ตรวจสอบสถานะการทำงาน (ต้องขึ้น Up ทั้งหมด)
+docker compose ps
+
+# รีสตาร์ทเฉพาะ go2rtc (เมื่อสตรีมค้างหรือแก้ go2rtc.yaml)
+docker compose restart go2rtc
+```
+
+---
+
+## 7. 💡 เข้าใจการทำงานของ Docker Build (Knowledge Base)
+
+เพื่อให้คุณจัดการ Production ได้อย่างมืออาชีพ นี่คือสิ่งที่คุณควรรู้เกี่ยวกับคำสั่ง `--build`:
+
+### 🛠️ ความแตกต่างของขอบเขตการ Build
+*   **`docker compose up -d --build`**: Docker จะสร้าง Image ใหม่ให้กับ **ทุก Service** ที่มีการระบุคำสั่ง `build:` ในไฟล์คอมโพส และจะทำการ **Restart คอนเทนเนอร์ทั้งหมด** ในระบบ
+*   **`docker compose up -d --build [service_name]`**: เช่น `--build frontend` จะเป็นการเจาะจงสร้าง Image ใหม่และ Restart **เฉพาะ Service นั้นๆ** โดยที่ Service อื่น (เช่น ฐานข้อมูล หรือ go2rtc) จะยังคงทำงานต่อเนื่อง ไม่หยุดชะงัก
+
+### 🔄 กระบวนการที่เกิดขึ้น (Under the hood)
+เมื่อคุณรันคำสั่งพร้อม `--build`:
+1.  **Image Creation**: Docker จะสร้าง Image ตัวใหม่ล่าสุดขึ้นมา (มี ID ใหม่)
+2.  **Container Replacement**: Docker จะหยุดคอนเทนเนอร์ตัวเก่า -> ลบทิ้ง -> และสร้างคอนเทนเนอร์ตัวใหม่ขึ้นมาทันทีโดยใช้ Image ที่เพิ่งสร้างเสร็จ
+3.  **No Code Left Behind**: วิธีนี้ทำให้มั่นใจ 100% ว่าโค้ดใหม่ที่คุณ `git pull` มาจะถูกนำไปใช้งานจริง (การใช้แค่ `restart` โดยไม่มี `--build` จะเป็นการรัน Image ตัวเก่าซ้ำเฉยๆ)
+
+### ⚡ ระบบ Caching (ความเร็วในการ Build)
+Docker มีระบบ Cache อัจฉริยะที่จะช่วยประหยัดเวลา:
+*   **Fast Path**: หากคุณแก้ไขเฉพาะไฟล์โค้ด (เช่น `.jsx`, `.js`) Docker จะข้ามขั้นตอนที่ใช้เวลานานอย่าง `npm install` ไปเลย และไปเริ่มที่ขั้นตอน Build โค้ดแทน
+*   **Slow Path**: หากคุณมีการแก้ไขไฟล์ `package.json` Docker จะถือว่าสภาพแวดล้อมเปลี่ยนไป และจะทำการติดตั้ง Library ใหม่ทั้งหมดโดยอัตโนมัติ
+
+---
+
+## 8. บันทึกทางเทคนิค (Technical Notes)
 *   **15fps Fix:** ระบบแก้ปัญหาด้วยการบังคับลบสตรีมเก่าและใช้พารามิเตอร์ `#fps=...` ผ่าน Internal Source เพื่อเอาชนะปัญหา Cache บน go2rtc/Windows
 *   **Resolution Fix:** ระบบดึงค่าจากคำสั่ง FFmpeg (Source) โดยตรง ทำให้ UI แสดงผลได้ทันทีโดยไม่ต้องรอการ Probe ข้อมูลจาก Engine นานเกินไป
 *   **Heartbeat Stability:** เปลี่ยนจากการใช้ Prisma Upsert มาเป็น Raw SQL `ON DUPLICATE KEY UPDATE` เพื่อป้องกันปัญหา Concurrency บน MariaDB 100%

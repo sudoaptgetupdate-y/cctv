@@ -1,13 +1,16 @@
 import React from 'react';
-import { Camera, Save, Activity } from 'lucide-react';
+import { Camera, Save, Activity, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import Modal from '../../../components/Modal';
 
-const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, editingCamera, groups }) => {
+const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, editingCamera, groups, isSubmitting, formErrors = {} }) => {
+  const { t } = useTranslation();
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={editingCamera ? 'แก้ไขข้อมูลกล้อง' : 'เพิ่มกล้องใหม่'}
+      title={editingCamera ? t('cameras.edit_camera') : t('cameras.add_new')}
       subtitle="Camera Configuration & Streaming Setup"
       size="lg"
       footer={
@@ -15,16 +18,22 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
           <button 
             type="button"
             onClick={onClose}
-            className="px-6 py-3 rounded-2xl text-slate-500 font-bold hover:bg-slate-200 transition-all text-sm"
+            disabled={isSubmitting}
+            className="px-6 py-3 rounded-2xl text-slate-500 font-bold hover:bg-slate-200 transition-all text-sm disabled:opacity-50"
           >
-            ยกเลิก
+            {t('common.cancel')}
           </button>
           <button 
             onClick={onSubmit}
-            className="px-10 py-3 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2 text-sm"
+            disabled={isSubmitting || !!formErrors.name}
+            className="px-10 py-3 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2 text-sm disabled:opacity-70 disabled:grayscale"
           >
-            <Save className="h-5 w-5" />
-            <span>{editingCamera ? 'อัปเดตข้อมูล' : 'บันทึกกล้อง'}</span>
+            {isSubmitting ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Save className="h-5 w-5" />
+            )}
+            <span>{isSubmitting ? t('common.saving') : (editingCamera ? t('common.save_changes') : t('common.save'))}</span>
           </button>
         </div>
       }
@@ -34,28 +43,33 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
         <div className="col-span-1 md:col-span-2 space-y-4 border-b border-slate-50 pb-8">
           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-            Basic Information
+            {t('cameras.form.basic_info')}
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-600 ml-1">ชื่อกล้อง / จุดติดตั้ง</label>
+              <label className="text-xs font-bold text-slate-600 ml-1">{t('cameras.form.camera_name')}</label>
               <input 
                 required
                 type="text" 
-                className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-slate-50 text-sm font-medium"
-                placeholder="เช่น หน้าตลาดหมู่ 1"
+                className={`w-full px-4 py-3 rounded-2xl border ${formErrors.name ? 'border-red-500 ring-2 ring-red-500/10' : 'border-slate-200'} focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-slate-50 text-sm font-medium`}
+                placeholder={t('cameras.form.camera_name_placeholder')}
                 value={formData.name}
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
               />
+              {formErrors.name && (
+                <p className="text-[10px] text-red-500 font-bold ml-1 animate-in slide-in-from-top-1 duration-200">
+                  {formErrors.name}
+                </p>
+              )}
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-600 ml-1">กลุ่ม / พื้นที่ (Zones)</label>
+              <label className="text-xs font-bold text-slate-600 ml-1">{t('cameras.form.group_zone')}</label>
               <select 
                 className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-slate-50 text-sm font-medium"
                 value={formData.groupId}
                 onChange={(e) => setFormData({...formData, groupId: e.target.value})}
               >
-                <option value="">-- เลือกกลุ่ม --</option>
+                <option value="">{t('cameras.form.select_group')}</option>
                 {groups.map(g => (
                   <option key={g.id} value={g.id}>{g.name}</option>
                 ))}
@@ -63,7 +77,6 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
             </div>
           </div>
 
-          {/* ✅ เพิ่มส่วน Public Visibility */}
           <div className="pt-2">
             <label className="flex items-center gap-3 cursor-pointer group">
               <div className="relative">
@@ -75,7 +88,7 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
                 />
                 <div className="w-10 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
               </div>
-              <span className="text-xs font-bold text-slate-700 group-hover:text-blue-600 transition-colors">แสดงผลในหน้า Public Dashboard (ไม่ต้อง Login)</span>
+              <span className="text-xs font-bold text-slate-700 group-hover:text-blue-600 transition-colors">{t('cameras.form.public_visibility')}</span>
             </label>
           </div>
         </div>
@@ -84,7 +97,7 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
         <div className="space-y-4">
           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-            Location (Map)
+            {t('cameras.form.location_map')}
           </h4>
           <div className="space-y-4">
             <div className="space-y-1.5">
@@ -116,11 +129,11 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
         <div className="space-y-4">
           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>
-            Streaming Config
+            {t('cameras.form.streaming_config')}
           </h4>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-600 ml-1 text-indigo-600">Main RTSP URL</label>
+              <label className="text-xs font-bold text-slate-600 ml-1 text-indigo-600">{t('cameras.form.main_rtsp')}</label>
               <input 
                 required
                 type="text"
@@ -131,11 +144,11 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-600 ml-1 text-indigo-600">Sub-stream URL (Optional)</label>
+              <label className="text-xs font-bold text-slate-600 ml-1 text-indigo-600">{t('cameras.form.sub_rtsp')}</label>
               <input 
                 type="text"
                 className="w-full px-4 py-3 rounded-2xl border border-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-indigo-50/20 font-mono text-sm"
-                placeholder="สำหรับแสดงหน้าแผนที่"
+                placeholder={t('cameras.form.sub_rtsp_placeholder')}
                 value={formData.subStream}
                 onChange={(e) => setFormData({...formData, subStream: e.target.value})}
               />
@@ -143,15 +156,15 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
           </div>
         </div>
 
-        {/* ✅ เพิ่มส่วน Playback Settings */}
+        {/* ✅ Playback Settings */}
         <div className="col-span-1 md:col-span-2 space-y-4 pt-4 border-t border-slate-50">
           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
-            Playback Options
+            {t('cameras.form.playback_options')}
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
-              <label className="text-xs font-bold text-slate-600 ml-1">สตรีมเริ่มต้นสำหรับแสดงผล (Preferred Stream)</label>
+              <label className="text-xs font-bold text-slate-600 ml-1">{t('cameras.form.preferred_stream')}</label>
               <div className="flex gap-4">
                 <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border-2 transition-all cursor-pointer ${formData.streamType === 'MAIN' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'}`}>
                   <input 
@@ -173,28 +186,28 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
             </div>
 
             <div className="space-y-3">
-              <label className="text-xs font-bold text-slate-600 ml-1">การจัดการเสียง (Audio Support)</label>
+              <label className="text-xs font-bold text-slate-600 ml-1">{t('cameras.form.audio_support')}</label>
               <div 
                 onClick={() => setFormData({...formData, isAudioEnabled: !formData.isAudioEnabled})}
                 className={`flex items-center justify-between p-3 rounded-2xl border-2 transition-all cursor-pointer ${formData.isAudioEnabled ? 'border-emerald-500 bg-emerald-50' : 'border-slate-100 bg-slate-50'}`}
               >
                 <span className={`text-xs font-bold ${formData.isAudioEnabled ? 'text-emerald-700' : 'text-slate-500'}`}>
-                  {formData.isAudioEnabled ? 'เปิดใช้งานเสียง (Enable Audio)' : 'ปิดเสียง (Mute Audio)'}
+                  {formData.isAudioEnabled ? t('cameras.form.enable_audio') : t('cameras.form.mute_audio')}
                 </span>
                 <div className={`w-10 h-6 flex items-center rounded-full p-1 transition-all ${formData.isAudioEnabled ? 'bg-emerald-500' : 'bg-slate-300'}`}>
                   <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-all ${formData.isAudioEnabled ? 'translate-x-4' : ''}`}></div>
                 </div>
               </div>
-              <p className="text-[10px] text-slate-400 font-medium px-1 italic">* กล้องต้องรองรับและเปิดใช้ Audio ในตัวเครื่อง</p>
+              <p className="text-[10px] text-slate-400 font-medium px-1 italic">{t('cameras.form.audio_hint')}</p>
             </div>
           </div>
         </div>
 
-        {/* ✅ ระบบ Transcoding Toggle (Hybrid System) */}
+        {/* ✅ Transcoding Toggle */}
         <div className="col-span-1 md:col-span-2 space-y-4 pt-4 border-t border-slate-50">
           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>
-            Advanced Performance Mode
+            {t('cameras.form.performance_mode')}
           </h4>
           
           <label className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer group ${formData.isTranscodeEnabled ? 'bg-amber-50/50 border-amber-200' : 'bg-slate-50/50 border-slate-100 hover:border-slate-200 border-dashed'}`}>
@@ -204,9 +217,9 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
               </div>
               <div>
                 <span className={`text-xs font-black uppercase tracking-tight ${formData.isTranscodeEnabled ? 'text-amber-700' : 'text-slate-500'}`}>
-                  เปิดใช้งานการแปลงรหัส (Enable Transcoding)
+                  {t('cameras.form.enable_transcoding')}
                 </span>
-                <p className="text-[10px] text-slate-400 font-medium">ประมวลผลวิดีโอใหม่เพื่อบังคับความละเอียด/เฟรมเรต (กิน CPU สูง)</p>
+                <p className="text-[10px] text-slate-400 font-medium">{t('cameras.form.transcoding_hint')}</p>
               </div>
             </div>
             <div className="relative">
@@ -220,7 +233,6 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
             </div>
           </label>
 
-          {/* 🚀 แสดงช่องตั้งค่าเฉพาะเมื่อเปิดใช้งาน Transcoding เท่านั้น */}
           {formData.isTranscodeEnabled && (
             <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300 bg-amber-50/30 p-6 rounded-2xl border border-amber-100/50">
               
@@ -228,17 +240,17 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
               <div className="space-y-4">
                 <h5 className="text-[9px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
                   <div className="w-1 h-1 bg-amber-500 rounded-full"></div>
-                  Main Stream (HD) Configuration
+                  {t('cameras.form.main_stream_config')}
                 </h5>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-600 ml-1">HD Resolution</label>
+                    <label className="text-[11px] font-bold text-slate-600 ml-1">{t('cameras.form.hd_resolution')}</label>
                     <select 
                       className="w-full px-4 py-2.5 rounded-xl border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all bg-white text-sm font-medium"
                       value={formData.resolution}
                       onChange={(e) => setFormData({...formData, resolution: e.target.value})}
                     >
-                      <option value="">-- Original --</option>
+                      <option value="">{t('cameras.form.original')}</option>
                       <option value="3840x2160">4K (3840x2160)</option>
                       <option value="2560x1440">2K (2560x1440)</option>
                       <option value="1920x1080">Full HD (1920x1080)</option>
@@ -246,7 +258,7 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
                     </select>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-600 ml-1">HD Frame Rate (FPS)</label>
+                    <label className="text-[11px] font-bold text-slate-600 ml-1">{t('cameras.form.hd_fps')}</label>
                     <div className="relative">
                       <input 
                         type="number"
@@ -267,17 +279,17 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
               <div className="space-y-4">
                 <h5 className="text-[9px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
                   <div className="w-1 h-1 bg-amber-500 rounded-full"></div>
-                  Sub Stream (SD) Configuration
+                  {t('cameras.form.sub_stream_config')}
                 </h5>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-600 ml-1">SD Resolution</label>
+                    <label className="text-[11px] font-bold text-slate-600 ml-1">{t('cameras.form.sd_resolution')}</label>
                     <select 
                       className="w-full px-4 py-2.5 rounded-xl border border-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all bg-white text-sm font-medium"
                       value={formData.subResolution}
                       onChange={(e) => setFormData({...formData, subResolution: e.target.value})}
                     >
-                      <option value="">-- Original --</option>
+                      <option value="">{t('cameras.form.original')}</option>
                       <option value="1280x720">HD (1280x720)</option>
                       <option value="704x576">D1 (704x576)</option>
                       <option value="640x480">VGA (640x480)</option>
@@ -286,7 +298,7 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
                     </select>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-600 ml-1">SD Frame Rate (FPS)</label>
+                    <label className="text-[11px] font-bold text-slate-600 ml-1">{t('cameras.form.sd_fps')}</label>
                     <div className="relative">
                       <input 
                         type="number"

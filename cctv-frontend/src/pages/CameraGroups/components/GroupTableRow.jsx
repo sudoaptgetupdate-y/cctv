@@ -13,7 +13,7 @@ const GroupTableRow = ({ group, onEdit, onDelete }) => {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-600 border border-emerald-200">
           <CheckCircle2 size={12} strokeWidth={3} />
-          Active
+          {t('groups.status.active')}
         </span>
       );
     }
@@ -21,13 +21,13 @@ const GroupTableRow = ({ group, onEdit, onDelete }) => {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-600 border border-amber-200">
           <AlertCircle size={12} strokeWidth={3} />
-          Config Required
+          {t('groups.status.config_required')}
         </span>
       );
     }
     return (
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-slate-100 text-slate-500 border border-slate-200">
-        Disabled
+        {t('groups.status.disabled')}
       </span>
     );
   };
@@ -48,7 +48,7 @@ const GroupTableRow = ({ group, onEdit, onDelete }) => {
             {group.name}
           </span>
           <span className="text-xs text-slate-400 italic mt-0.5 max-w-[250px] truncate">
-            {group.description || 'ไม่มีรายละเอียด'}
+            {group.description || t('groups.no_description')}
           </span>
         </div>
       </td>
@@ -57,7 +57,7 @@ const GroupTableRow = ({ group, onEdit, onDelete }) => {
       <td className="p-4">
         <div className="flex items-center gap-2">
            <div className="px-3 py-1 bg-slate-100 rounded-lg border border-slate-200 text-xs font-black text-slate-600">
-              {group._count?.cameras || 0} กล้อง
+              {t('groups.cameras_count', { count: group._count?.cameras || 0 })}
            </div>
         </div>
       </td>
@@ -69,7 +69,7 @@ const GroupTableRow = ({ group, onEdit, onDelete }) => {
            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
               <Bot size={12} />
               <span className="truncate max-w-[150px]">
-                {group.telegramChatId ? `Chat: ${group.telegramChatId}` : 'ยังไม่ระบุ Chat ID'}
+                {group.telegramChatId ? `Chat: ${group.telegramChatId}` : t('groups.status.config_required')}
               </span>
            </div>
         </div>
@@ -81,10 +81,10 @@ const GroupTableRow = ({ group, onEdit, onDelete }) => {
           {group.aiEnabled ? (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 shadow-sm">
                <Wand2 size={12} />
-               <span className="text-[10px] font-black uppercase">AI Enabled</span>
+               <span className="text-[10px] font-black uppercase">{t('groups.status.ai_enabled')}</span>
             </div>
           ) : (
-            <span className="text-[10px] font-bold text-slate-300 uppercase">Standard</span>
+            <span className="text-[10px] font-bold text-slate-300 uppercase">{t('groups.status.standard')}</span>
           )}
         </div>
       </td>

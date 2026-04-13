@@ -2,12 +2,16 @@ import React from 'react';
 import { 
   PlayCircle, Edit2, Trash2, MapPin, Link as LinkIcon, 
   CheckCircle2, AlertTriangle, MonitorOff, Clock, ShieldCheck,
-  Activity, Loader2
+  Activity, Loader2, Bot
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { th } from 'date-fns/locale';
+import { th, enUS } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 
 const CameraTableRow = ({ camera, onPreview, onEdit, onDelete, onAcknowledge, onViewHistory, streamStatus }) => {
+  const { t, i18n } = useTranslation();
+  const currentLocale = i18n.language === 'th' ? th : enUS;
+
   const getStatusBadge = () => {
     // กรณีที่ Offline และยังไม่ได้รับทราบเหตุการณ์ (isAcknowledged === false)
     if (camera.status === 'ERROR' && !camera.isAcknowledged) {
@@ -15,13 +19,13 @@ const CameraTableRow = ({ camera, onPreview, onEdit, onDelete, onAcknowledge, on
          <div className="flex flex-col gap-1">
            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-rose-100 text-rose-600 border border-rose-200 shadow-sm animate-pulse">
              <AlertTriangle size={12} strokeWidth={3} />
-             Critical Error
+             {t('cameras.error')}
            </span>
            <button 
              onClick={() => onAcknowledge(camera)}
              className="text-[9px] font-bold text-rose-500 hover:text-rose-700 underline text-left ml-1"
            >
-             กดเพื่อรับทราบปัญหา
+             {t('cameras.ack')}
            </button>
          </div>
        );
@@ -31,7 +35,7 @@ const CameraTableRow = ({ camera, onPreview, onEdit, onDelete, onAcknowledge, on
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-600 border border-emerald-200">
           <CheckCircle2 size={12} strokeWidth={3} />
-          Online
+          {t('cameras.online')}
         </span>
       );
     }
@@ -40,7 +44,7 @@ const CameraTableRow = ({ camera, onPreview, onEdit, onDelete, onAcknowledge, on
        return (
          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-600 border border-amber-200">
            <ShieldCheck size={12} strokeWidth={3} />
-           Acknowledged
+           {t('cameras.acknowledged')}
          </span>
        );
     }
@@ -48,14 +52,14 @@ const CameraTableRow = ({ camera, onPreview, onEdit, onDelete, onAcknowledge, on
     return (
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-slate-100 text-slate-500 border border-slate-200">
         <MonitorOff size={12} strokeWidth={3} />
-        {camera.status}
+        {camera.status === 'INACTIVE' ? t('cameras.offline') : camera.status}
       </span>
     );
   };
 
   const lastSeenText = camera.lastSeen 
-    ? formatDistanceToNow(new Date(camera.lastSeen), { addSuffix: true, locale: th })
-    : 'ไม่เคยเชื่อมต่อ';
+    ? formatDistanceToNow(new Date(camera.lastSeen), { addSuffix: true, locale: currentLocale })
+    : t('common.no_data');
 
   return (
     <tr className="hover:bg-slate-50/80 transition-all group">
@@ -75,7 +79,7 @@ const CameraTableRow = ({ camera, onPreview, onEdit, onDelete, onAcknowledge, on
                 ID: {camera.id.toString().padStart(4, '0')}
              </span>
              <span className="text-[10px] font-bold text-slate-400 italic">
-                กลุ่ม: {camera.groups?.[0]?.name || 'ทั่วไป'}
+                {t('cameras.form.group_zone')}: {camera.groups?.[0]?.name || t('groups.status.standard')}
              </span>
           </div>
         </div>
@@ -102,7 +106,7 @@ const CameraTableRow = ({ camera, onPreview, onEdit, onDelete, onAcknowledge, on
         <div className="flex flex-col gap-2">
            <div className="flex items-center gap-2 text-[11px] font-bold text-slate-600">
               <Clock size={12} className="text-blue-500" />
-              <span>เห็นล่าสุด: {lastSeenText}</span>
+              <span>{t('cameras.last_seen')}: {lastSeenText}</span>
            </div>
            
            {/* ✅ การแสดงผลข้อมูล Metadata ตามโหมดสตรีม */}
@@ -157,28 +161,28 @@ const CameraTableRow = ({ camera, onPreview, onEdit, onDelete, onAcknowledge, on
           <button 
             onClick={() => onPreview(camera)}
             className="p-2 text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all" 
-            title="ดูสตรีมสด"
+            title={t('cameras.preview')}
           >
             <PlayCircle size={18} />
           </button>
           <button 
             onClick={() => onViewHistory(camera)}
             className="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-all" 
-            title="ประวัติเหตุการณ์"
+            title={t('cameras.history')}
           >
             <Clock size={18} />
           </button>
           <button 
             onClick={() => onEdit(camera)}
             className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" 
-            title="แก้ไข"
+            title={t('common.edit')}
           >
             <Edit2 size={18} />
           </button>
           <button 
             onClick={() => onDelete(camera.id)}
             className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all" 
-            title="ลบ"
+            title={t('common.delete')}
           >
             <Trash2 size={18} />
           </button>

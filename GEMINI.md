@@ -10,6 +10,17 @@
 
 ---
 
+## ⚖️ มาตรฐานการพัฒนา (Development Standards)
+- **UX/UI Standard:** ใช้หน้า **Camera Groups** เป็นต้นแบบในการพัฒนาหน้าอื่นๆ เสมอ (Mandatory)
+- **กฎเหล็กสำหรับการสร้างหน้าใหม่ (New Page Requirements):**
+    1. **Real-time Validation:** ต้องมีระบบตรวจสอบข้อมูลซ้ำ (Duplicate Check) ขณะพิมพ์ (Debounced 500ms) และแสดง Error Message ใต้ Input ทันที
+    2. **i18n Support:** ข้อความ Label, Placeholder, Tooltip และ Message ทั้งหมดต้องผ่านระบบ `t()` (รองรับ TH/EN 100%)
+    3. **Consistent Feedback:** 
+        - ใช้ **SweetAlert2** สำหรับการยืนยัน (Confirmation) และการเตือนระดับรุนแรง (Warning/Error)
+        - ใช้ **react-hot-toast** สำหรับแจ้งสถานะการทำงานทั่วไป (Success/Info)
+    4. **Submit Protection:** ทุกฟอร์มต้องมี `isSubmitting` state เพื่อแสดง Loader ในปุ่มและ Disable ปุ่มขณะบันทึกข้อมูล
+    5. **Empty & Loading States:** ทุกหน้าที่มีตาราง/รายการ ต้องมีการจัดการสถานะ Loading (Spinner) และ No Data (Empty Icon) ให้สวยงาม
+
 ## 📍 สถานะปัจจุบัน (Current Progress)
 - [x] **Backend Foundation:** Express + Prisma + MariaDB เชื่อมต่อสำเร็จ
 - [x] **Authentication:** ระบบ Login (JWT) และ Middleware (verifyToken) ทำงานได้จริง
@@ -20,8 +31,12 @@
 - [x] **Streaming Strategy:** 
     - ใช้ **2-Step Registration** (Source Mapping) เพื่อแก้ปัญหา 15fps และ Resolution
     - ใช้ **Source `_src`** สำหรับ URL ดิบ และตัวหลักผ่าน **FFmpeg Transcode**
+- [x] **Audio Excellence:** รองรับการเปิด-ปิดเสียง 100% พร้อมระบบ **OPUS Transcoding** เพื่อความเสถียรบน HTTPS (Production)
 - [x] **Robust Heartbeat:** ใช้ Raw SQL `ON DUPLICATE KEY UPDATE` เพื่อความเสถียรสูงสุด (รองรับ Concurrency)
 - [x] **Responsive Support:** ปรับจูน UI สำหรับมือถือ (Sidebar Backdrop, Video Preview)
+- [x] **Deployment Ready:** คู่มือ Docker Setup และ Nginx Proxy สมบูรณ์แบบ รองรับ WebSocket และ SSL
+- [x] **Enhance UX & Validation:** ระบบ Real-time Validation (ขณะพิมพ์), SweetAlert2, และ react-hot-toast สมบูรณ์แบบ
+- [x] **Full i18n Support:** รองรับ 2 ภาษา (TH/EN) ครบถ้วนในหน้าจัดการกล้องและกลุ่ม
 
 ## 🛠️ Tech Stack & Ports
 - Frontend: Vite + React (Port 3000)

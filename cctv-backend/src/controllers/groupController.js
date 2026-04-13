@@ -64,6 +64,16 @@ const groupController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  async validate(req, res, next) {
+    try {
+      const { id } = req.query;
+      const result = await groupService.validateGroupData(req.body, id);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
   }
 };
 

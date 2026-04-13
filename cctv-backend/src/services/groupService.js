@@ -46,8 +46,36 @@ const groupService = {
     });
   },
 
+  // 🚀 ตรวจสอบข้อมูลซ้ำ
+  async validateGroupData(data, excludeId = null) {
+    const { name } = data;
+    const errors = [];
+
+    const existingName = await prisma.cameraGroup.findFirst({
+      where: { 
+        name,
+        id: excludeId ? { not: parseInt(excludeId) } : undefined
+      }
+    });
+    
+    if (existingName) {
+      errors.push(`ชื่อกลุ่ม "${name}" ถูกใช้งานแล้วในระบบ`);
+    }
+
+    return { 
+      isValid: errors.length === 0,
+      errors
+    };
+  },
+
   // สร้างกลุ่มใหม่
   async createGroup(data) {
+    // ตรวจสอบชื่อซ้ำ
+    const validation = await this.validateGroupData(data);
+    if (!validation.isValid) {
+      throw new Error(`VALIDATION_ERROR: ${validation.errors.join(', ')}`);
+    }
+
     return await prisma.cameraGroup.create({
       data: data
     });
@@ -55,6 +83,12 @@ const groupService = {
 
   // อัปเดตข้อมูลกลุ่ม (รวมถึงการตั้งค่า Telegram/AI)
   async updateGroup(id, data) {
+    // ตรวจสอบชื่อซ้ำ (ยกเว้นตัวเอง)
+    const validation = await this.validateGroupData(data, id);
+    if (!validation.isValid) {
+      throw new Error(`VALIDATION_ERROR: ${validation.errors.join(', ')}`);
+    }
+
     return await prisma.cameraGroup.update({
       where: { id: parseInt(id) },
       data: data

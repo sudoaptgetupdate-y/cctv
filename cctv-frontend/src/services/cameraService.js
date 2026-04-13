@@ -35,6 +35,12 @@ const cameraService = {
   async getEvents(id) {
     const res = await apiClient.get(`/cameras/${id}/events`);
     return res.data.data;
+  },
+
+  async validate(data, id = null) {
+    const url = id ? `/cameras/validate?id=${id}` : '/cameras/validate';
+    const res = await apiClient.post(url, data);
+    return res.data.data;
   }
 };
 

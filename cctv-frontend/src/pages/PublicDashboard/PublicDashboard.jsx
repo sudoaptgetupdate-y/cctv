@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Camera, Map as MapIcon, Info, Search, Filter, Play, ChevronDown, ChevronRight, Menu, X, Globe, Layers } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import cameraService from '../../services/cameraService';
 import groupService from '../../services/groupService';
 import CameraMap from '../../components/CameraMap';
@@ -111,10 +112,10 @@ const PublicDashboard = () => {
         </div>
 
         <div className="flex items-center gap-3">
-           <a href="/login" className="hidden sm:flex items-center gap-2 px-4 py-2 text-xs font-black text-slate-500 hover:text-primary-600 transition-colors uppercase tracking-widest border border-slate-200 rounded-xl">
+           <Link to="/dashboard" className="hidden sm:flex items-center gap-2 px-4 py-2 text-xs font-black text-slate-500 hover:text-primary-600 transition-colors uppercase tracking-widest border border-slate-200 rounded-xl">
               <Globe className="h-3.5 w-3.5" />
               <span>Admin</span>
-           </a>
+           </Link>
            <button 
              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
              className="p-2.5 bg-slate-900 text-white rounded-xl lg:hidden shadow-lg shadow-slate-900/20"

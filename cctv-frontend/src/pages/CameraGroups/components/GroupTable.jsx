@@ -21,7 +21,7 @@ const GroupTable = ({
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-20 text-slate-400 bg-white rounded-2xl border border-slate-200 shadow-sm min-h-[400px]">
         <Loader2 size={48} className="animate-spin text-indigo-600 mb-4" />
-        <p className="font-bold text-sm uppercase tracking-widest">กำลังโหลดข้อมูลกลุ่ม...</p>
+        <p className="font-bold text-sm uppercase tracking-widest">{t('common.loading')}</p>
       </div>
     );
   }
@@ -32,9 +32,9 @@ const GroupTable = ({
         <div className="bg-slate-50 p-6 rounded-3xl mb-4 border border-slate-100">
           <FolderKanban size={64} className="text-slate-200" />
         </div>
-        <h3 className="text-xl font-bold text-slate-700 mb-1">ไม่พบข้อมูลกลุ่มกล้อง</h3>
+        <h3 className="text-xl font-bold text-slate-700 mb-1">{t('groups.no_groups_found')}</h3>
         <p className="text-slate-400 text-sm max-w-xs font-medium italic">
-          สร้างกลุ่มใหม่เพื่อจัดระเบียบและตั้งค่าการแจ้งเตือน
+          {t('groups.form.description_placeholder')}
         </p>
       </div>
     );

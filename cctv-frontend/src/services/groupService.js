@@ -25,6 +25,10 @@ const groupService = {
   async delete(id) {
     const res = await apiClient.delete(`/groups/${id}`);
     return res.data.data;
+  },
+  async validate(data, id = null) {
+    const res = await apiClient.post(`/groups/validate${id ? `?id=${id}` : ''}`, data);
+    return res.data.data;
   }
 };
 

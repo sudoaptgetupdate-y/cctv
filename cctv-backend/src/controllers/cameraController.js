@@ -73,6 +73,16 @@ const cameraController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  async validate(req, res, next) {
+    try {
+      const { id } = req.query;
+      const result = await cameraService.validateCameraData(req.body, id);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
   }
 };
 
