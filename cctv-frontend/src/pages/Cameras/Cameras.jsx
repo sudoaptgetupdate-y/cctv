@@ -144,19 +144,32 @@ const Cameras = () => {
       });
     } else {
       setEditingCamera(null);
-      
+
       // 🚀 ค้นหา ID ของกลุ่ม "All Camera" เพื่อเลือกเป็น Default
       const allGroup = groups.find(g => g.name === 'All Camera');
       const defaultGroupIds = allGroup ? [allGroup.id.toString()] : [];
 
       setFormData({
-        name: '', latitude: '', longitude: '', rtspUrl: '', subStream: '', username: '', password: '', 
+        name: '', 
+        latitude: '13.7563', // Default: Bangkok
+        longitude: '100.5018', // Default: Bangkok
+        rtspUrl: '', 
+        subStream: '', 
+        username: '', 
+        password: '', 
         groupIds: defaultGroupIds, 
-        isPublic: false, streamType: 'MAIN', isAudioEnabled: false, resolution: '', fps: '', subResolution: '', subFps: '', isTranscodeEnabled: false
+        isPublic: false, 
+        streamType: 'MAIN', 
+        isAudioEnabled: false, 
+        resolution: '', 
+        fps: '', 
+        subResolution: '', 
+        subFps: '', 
+        isTranscodeEnabled: false
       });
     }
     setShowFormModal(true);
-  };
+    };
 
   const handleAcknowledgeClick = (camera) => {
     setCameraToAck(camera);

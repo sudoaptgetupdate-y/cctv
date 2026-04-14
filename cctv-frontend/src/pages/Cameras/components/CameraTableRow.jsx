@@ -31,6 +31,15 @@ const CameraTableRow = ({ camera, onPreview, onEdit, onDelete, onAcknowledge, on
        );
     }
 
+    if (camera.status === 'PENDING') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-indigo-50 text-indigo-500 border border-indigo-100 animate-pulse">
+          <Loader2 size={12} strokeWidth={3} className="animate-spin" />
+          {t('cameras.pending')}
+        </span>
+      );
+    }
+
     if (camera.status === 'ACTIVE') {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-600 border border-emerald-200">

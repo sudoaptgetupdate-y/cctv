@@ -34,7 +34,7 @@ model Camera {
   username           String?
   password           String?
   thumbnailUrl       String?             @db.Text
-  status             CameraStatus        @default(ACTIVE)
+  status             CameraStatus        @default(PENDING)
   lastSeen           DateTime?
   userId             Int
   createdAt          DateTime            @default(now())
@@ -135,6 +135,7 @@ enum UserRole {
 }
 
 enum CameraStatus {
+  PENDING
   ACTIVE
   INACTIVE
   ERROR

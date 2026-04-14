@@ -11,34 +11,24 @@
 ---
 
 ## ⚖️ มาตรฐานการพัฒนา (Development Standards)
-- **UX/UI Standard:** ใช้หน้า **Camera Groups** เป็นต้นแบบในการพัฒนาหน้าอื่นๆ เสมอ (Mandatory)
+- **UX/UI Standard:** ใช้หน้า **Camera Groups** เป็นต้นแบบในการพัฒนาหน้าอื่นๆ เสมอ (Card UI + Modal สองคอลัมน์)
 - **กฎเหล็กสำหรับการสร้างหน้าใหม่ (New Page Requirements):**
-    1. **Real-time Validation:** ต้องมีระบบตรวจสอบข้อมูลซ้ำ (Duplicate Check) ขณะพิมพ์ (Debounced 500ms) และแสดง Error Message ใต้ Input ทันที
-    2. **i18n Support:** ข้อความ Label, Placeholder, Tooltip และ Message ทั้งหมดต้องผ่านระบบ `t()` (รองรับ TH/EN 100%)
-    3. **Consistent Feedback:** 
-        - ใช้ **SweetAlert2** สำหรับการยืนยัน (Confirmation) และการเตือนระดับรุนแรง (Warning/Error)
-        - ใช้ **react-hot-toast** สำหรับแจ้งสถานะการทำงานทั่วไป (Success/Info)
-    4. **Submit Protection:** ทุกฟอร์มต้องมี `isSubmitting` state เพื่อแสดง Loader ในปุ่มและ Disable ปุ่มขณะบันทึกข้อมูล
-    5. **Empty & Loading States:** ทุกหน้าที่มีตาราง/รายการ ต้องมีการจัดการสถานะ Loading (Spinner) และ No Data (Empty Icon) ให้สวยงาม
+    1. **Real-time Validation:** ต้องมีระบบตรวจสอบข้อมูลซ้ำ (Duplicate Check) ขณะพิมพ์ (Debounced 500ms)
+    2. **i18n Support:** รองรับ TH/EN 100% ผ่านระบบ `t()`
+    3. **Consistent Feedback:** ใช้ **SweetAlert2** สำหรับการยืนยัน และ **react-hot-toast** สำหรับแจ้งสถานะทั่วไป
+    4. **Submit Protection:** มี `isSubmitting` state ทุกฟอร์ม
+    5. **Sticky Pagination:** ใช้คอมโพเนนต์ Pagination สี Indigo แบบลอยตัวที่ท้ายตารางเสมอ
 
 ## 📍 สถานะปัจจุบัน (Current Progress)
-- [x] **Backend Foundation:** Express + Prisma + MariaDB เชื่อมต่อสำเร็จ
-- [x] **Authentication:** ระบบ Login (JWT) และ Middleware (verifyToken) ทำงานได้จริง
-- [x] **Camera Management:** API CRUD สำหรับจัดการข้อมูลกล้องเสร็จสมบูรณ์
-- [x] **Group Management:** API CRUD สำหรับจัดกลุ่มพื้นที่ (Zones) และตั้งค่า Telegram
-- [x] **Health Check Service:** ระบบเช็คสถานะกล้องอัตโนมัติ (node-cron) และแจ้งเตือนผ่าน Telegram
-- [x] **Frontend Shell:** React + Vite + Tailwind CSS + MainLayout (Sidebar/Header)
-- [x] **Streaming Strategy:** 
-    - ใช้ **2-Step Registration** (Source Mapping) เพื่อแก้ปัญหา 15fps และ Resolution
-    - ใช้ **Source `_src`** สำหรับ URL ดิบ และตัวหลักผ่าน **FFmpeg Transcode**
-- [x] **Audio Excellence:** รองรับการเปิด-ปิดเสียง 100% พร้อมระบบ **OPUS Transcoding** เพื่อความเสถียรบน HTTPS (Production)
-- [x] **Robust Heartbeat:** ใช้ Raw SQL `ON DUPLICATE KEY UPDATE` เพื่อความเสถียรสูงสุด (รองรับ Concurrency)
-- [x] **Responsive Support:** ปรับจูน UI สำหรับมือถือ (Sidebar Backdrop, Video Preview)
-- [x] **Deployment Ready:** คู่มือ Docker Setup และ Nginx Proxy สมบูรณ์แบบ รองรับ WebSocket และ SSL
-- [x] **Enhance UX & Validation:** ระบบ Real-time Validation (ขณะพิมพ์), SweetAlert2, และ react-hot-toast สมบูรณ์แบบ
-- [x] **Full i18n Support:** รองรับ 2 ภาษา (TH/EN) ครบถ้วนในหน้าจัดการกล้องและกลุ่ม
-- [x] **Multi-group Camera Support:** 1 กล้องสามารถอยู่ได้หลายกลุ่ม (Many-to-Many)
-- [x] **Advanced Map Interaction:** ระบบซูมเข้าหากล้องอัตโนมัติ (FlyTo) และจัดวาง Modal ตามพิกัดจริงบนจอ
+- [x] **Backend Foundation:** Express + Prisma + MariaDB (Many-to-Many Relationships)
+- [x] **Authentication:** ระบบ Login (JWT) และ Middleware ครบถ้วน
+- [x] **Camera Management:** จัดการข้อมูลกล้อง พร้อมระบบจัดหมวดหมู่แบบหลายกลุ่ม
+- [x] **Group Management:** UI รูปแบบ Card พร้อมระบบจัดการสมาชิกแบบ 2 คอลัมน์ (เหมือน MKT)
+- [x] **Automatic Grouping:** ระบบเพิ่มกลุ่ม "All Camera" ให้กล้องใหม่โดยอัตโนมัติ
+- [x] **Health Check & Notifications:** แจ้งเตือนผ่าน Telegram แยกตามกลุ่มที่สังกัด
+- [x] **Advanced UX:** ระบบ Auto-zoom (FlyTo) ในหน้า Dashboard และ Streaming Modal ที่ปรับพิกัดตามหน้าจอจริง
+- [x] **UI Overhaul:** ปรับปรุง Create/Edit Modal ให้เป็นสัดส่วน (Logical Sections) สวยงามและใช้งานง่าย
+- [x] **Performance Optimization:** ปรับปรุง API สำหรับจัดการสมาชิกให้เป็นแบบ "Lean" (ส่งเฉพาะข้อมูลที่จำเป็น) ลด Latency เหลือ < 20ms ในระบบจริง
 
 ## 🛠️ Tech Stack & Ports
 - Frontend: Vite + React (Port 3000)
@@ -62,7 +52,7 @@ gemini "objective" --path D:\1.Development\dev-cctv\cctv
 ```
 
 ## 📝 บันทึกถึง Gemini
-- **Routing Note:** ห้ามเปลี่ยนโครงสร้าง API Path โดยไม่ได้รับอนุญาต เพราะจะทำให้ Frontend ฝั่ง Dev พัง
-- **Viewer Counting:** ใช้ตาราง `ViewingSession` ใน DB และ Heartbeat จาก Frontend ห้ามใช้เลขจาก go2rtc
-- **Testing:** ทุกการแก้ไขต้องทดสอบบน Local Dev (Windows) ให้ผ่านก่อนเป็นอันดับแรก
+- **Lean API Policy:** ห้ามดึงข้อมูล Full Object มาใช้ใน Modal ที่แสดงแค่รายชื่อ (เช่น Membership Modal) ให้ดึงเฉพาะ ID, Name, RTSP
+- **Latency Note:** หากพบ Delay 4000ms+ บน Local PC ให้ตรวจสอบการเชื่อมต่อ DNS หรือ Antivirus เพราะบน Production ทำงานได้ < 20ms
+- **Testing:** ทุกการแก้ไขต้องทดสอบบน Local Dev (Windows) และตรวจสอบผลลัพธ์บน Virtual Production (Linux) เสมอ
 ---

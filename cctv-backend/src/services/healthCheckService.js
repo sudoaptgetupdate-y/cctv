@@ -20,12 +20,12 @@ const healthCheckService = {
 
       socket.on('timeout', () => {
         socket.destroy();
-        resolve({ id: camera.id, status: 'OFFLINE' });
+        resolve({ id: camera.id, status: 'INACTIVE' });
       });
 
       socket.on('error', () => {
         socket.destroy();
-        resolve({ id: camera.id, status: 'OFFLINE' });
+        resolve({ id: camera.id, status: 'INACTIVE' });
       });
 
       socket.connect(port, host);
@@ -56,7 +56,7 @@ const healthCheckService = {
         await prisma.cameraEventLog.create({
           data: {
             cameraId: camera.id,
-            eventType: result.status,
+            eventType: result.status === 'ACTIVE' ? 'ONLINE' : 'OFFLINE',
             details: result.status === 'ACTIVE' ? 'Camera is back online' : 'Camera connection lost'
           }
         });

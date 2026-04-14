@@ -20,61 +20,59 @@
 ### **Heartbeat Workflow & Stability**
 1.  **Unique Session:** เมื่อตัวเล่น `WebRTCPlayer` ถูกโหลด จะสร้าง `sessionId` แบบสุ่มขึ้นมา (ต่อ 1 Browser Tab)
 2.  **Robust Persistence:** เพื่อป้องกันปัญหา **Race Condition** เมื่อมีผู้ชมเข้าพร้อมกันจำนวนมาก ระบบใช้ **Raw SQL `ON DUPLICATE KEY UPDATE`** เพื่อให้การบันทึกสถานะเป็นแบบ Atomic 100%
-3.  **Active Threshold:** Backend จะนับจำนวนผู้ชมที่มีการส่ง Heartbeat ภายใน 60 วินาทีล่าสุด
+3.  **Active Threshold:** Backend จะนับจำนวนผู้ชมที่มีการส่ง Heartbeat ภายใน 60 วินล่าสุด
 4.  **Auto-Cleanup:** มี Cron Job ทำงานทุก 1 นาที เพื่อล้าง Session ที่ค้างเกิน 2 นาที
 
 ---
 
-## 3. กลยุทธ์การเล่นวิดีโอและการโหลดไลบรารี (Streaming Strategy)
+## 3. การเพิ่มประสิทธิภาพ API (Performance Optimization)
 
-เราใช้กลยุทธ์ **"MSE Quick Start & WebRTC Upgrade"** พร้อมระบบโหลดไลบรารีแบบ Global:
+เพื่อให้หน้าจอจัดการสมาชิก (Membership Management) ทำงานได้รวดเร็วที่สุด:
 
-### **การโหลดสคริปต์ (Library Loading)**
-*   **Global Pre-load:** ย้ายการโหลด `go2rtc-player.js` ไปไว้ที่ `index.html` เพื่อให้เบราว์เซอร์ลงทะเบียน Custom Element (`<video-stream>`) ทันทีที่แอปเปิด ลดปัญหา "จอดำค้าง" หรือ "Loading ไม่หาย" เมื่อเปิดกล้องครั้งแรกหลัง Refresh หน้าเว็บ
-*   **Readiness Check:** ในตัวเล่น `WebRTCPlayer` มีการตรวจสอบความพร้อมของไลบรารีผ่าน `customElements.get('video-stream')` ก่อนเริ่มทำงาน หากไลบรารียังโหลดไม่เสร็จ ระบบจะหน่วงเวลาและลองใหม่โดยอัตโนมัติ
-
----
-
-## 4. เทคนิคการแก้ปัญหา 15fps และ Resolution (Transcoding Fixes)
-
-เพื่อให้พารามิเตอร์การตั้งค่า (เช่น 10fps หรือ Resolution เฉพาะ) ทำงานได้จริงบนทุก OS:
-
-### **Source Mapping Strategy (_src)**
-*   **ปัญหา:** เครื่องหมาย `&` และ `?` ใน URL กล้อง มักทำให้พารามิเตอร์ `#` ของ go2rtc ผิดเพี้ยน
-*   **วิธีแก้:** ระบบจะลงทะเบียน URL กล้องดิบไว้ที่ชื่อ **`camera_ID_src`** ก่อน แล้วจึงสร้างสตรีมหลักโดยดึงจาก `_src` อีกที วิธีนี้ช่วยล้าง URL ให้สะอาด ทำให้พารามิเตอร์ `#size` และ `#fps` ส่งถึง FFmpeg ได้อย่างแม่นยำ 100%
-*   **Force Refresh:** ทุกครั้งที่มีการเปลี่ยน Config ระบบจะสั่งลบ (DELETE) สตรีมเดิมใน go2rtc ทิ้งก่อน เพื่อล้าง Cache เก่า
+### **Lean API Response**
+*   **ปัญหา:** การดึงข้อมูลกล้องแบบ Full Object (มีทั้งพิกัด, พาสเวิร์ด, สถานะลึกๆ) มาแสดงใน Modal ที่มีกล้องจำนวนมาก ทำให้ Payload มีขนาดใหญ่และ UI หน่วง
+*   **แนวทาง:** ในส่วนการจัดการสมาชิก (เช่น `getGroupById` สำหรับ Manage Modal) Backend จะถูกบังคับให้ดึงข้อมูลเฉพาะฟิลด์ที่จำเป็นเท่านั้น คือ **ID, Name, RTSP URL** ผลลัพธ์ช่วยลดเวลาประมวลผล JSON ลงได้มหาศาล
 
 ---
 
-## 5. การจัดการระบบเสียง (Audio Strategy for Web)
+## 4. การจัดการปัญหาความล่าช้า (Latency Debugging)
 
-เพื่อให้เสียงทำงานได้เสถียรทั้งบน HTTP และ HTTPS (Production):
+กรณีพบ API ตอบสนองช้าผิดปกติ (> 4000ms) ในสภาพแวดล้อม Local:
 
-### **OPUS Transcoding (The Golden Standard)**
-*   **ปัญหา:** ปุ่มเสียงบน Production (HTTPS) มักถูก Disable เนื่องจากเบราว์เซอร์ไม่รองรับ Codec เสียงดั้งเดิมจากกล้อง (เช่น G.711 หรือ AAC) ผ่าน WebRTC
-*   **วิธีแก้:** เมื่อเปิด Transcode ระบบจะบังคับแปลงสัญญาณเสียงเป็น **OPUS** (ใช้พารามิเตอร์ `#audio=opus`) ซึ่งเป็นฟอร์แมตที่เบราว์เซอร์ทุกตัวรองรับ 100% และกิน CPU ต่ำมาก
-*   **Audio Muted Policy:** ในฝั่ง Frontend ระบบมีการตั้งค่าให้วิดีโอเริ่มแบบ Muted ก่อนเพื่อตามกฎความปลอดภัยเบราว์เซอร์ แต่จะทำการ Unmute อัตโนมัติหาก Config ของกล้องระบุให้เปิดเสียงไว้
-
----
-
-## 6. การตั้งค่าระบบบน Production (Nginx Proxy Configuration)
-
-เพื่อให้ระบบทำงานได้เสถียรบน Docker + Linux:
-
-1.  **WebSocket Path:** เส้นทาง `/go2rtc-ws` ต้องชี้ไปที่ `http://go2rtc:1984/api/ws` พร้อมเปิดระบบ Upgrade
-2.  **API Routing:** เส้นทาง `/api/streams/` ทั้งหมดต้องถูกส่งไปยัง Backend (พอร์ต 5000) เพื่อจัดการสถานะคนดูและ Config
-3.  **No Buffering:** ปิด `proxy_buffering` สำหรับทุกเส้นทางที่เกี่ยวกับวิดีโอและเสียง เพื่อลด Latency และป้องกันท่อเสียงหลุด
+### **DNS & Network Issues**
+*   **MariaDB Reverse DNS:** บ่อยครั้งที่ MariaDB พยายามตรวจสอบ IP ของ Client (เครื่อง Dev) ทำให้เกิด Delay 4 วินาที (DNS Timeout) 
+*   **วิธีแก้:** ตั้งค่า `skip-name-resolve` ใน MariaDB Config เพื่อปิดการทำงานนี้
+*   **Environment Comparison:** หากบน Production (Linux/Docker) ทำงานได้ < 20ms แต่บน Windows ช้า แสดงว่าเป็นปัญหาที่ Networking Stack ของ OS, Firewall หรือ Antivirus ไม่ใช่ปัญหาที่ Code
 
 ---
 
-## 7. ปัญหาความไม่เสถียรของ HEVC (H.265) ในโหมด Pass-through
+## 5. เทคนิคการจัดการ Many-to-Many (Group Management)
 
-เมื่อใช้งานกล้องที่เป็น **H.265 (HEVC)** โดย **ไม่เปิด Transcoding** (โหมด MSE) อาจพบอาการ Loading ขึ้นเป็นระยะๆ สาเหตุเกิดจาก B-Frames และ GOP Interval ที่ไม่เข้ากับเบราว์เซอร์ แนวทางแก้ไขที่ดีที่สุดคือการปรับกล้องเป็น **H.264** หรือเปิด **Enable Transcoding** ในระบบ
+เพื่อให้ 1 กล้องสังกัดได้หลายกลุ่มอย่างเสถียร:
+
+### **Prisma Membership Logic**
+*   ใช้คำสั่ง `set` ในการอัปเดตสมาชิกกลุ่ม เพื่อให้ Prisma จัดการลบความสัมพันธ์เก่าและเพิ่มใหม่ใน Transaction เดียวกัน ลดความผิดพลาดของข้อมูล
+*   **Auto-Assignment:** ระบบมีการบังคับเพิ่มกลุ่ม "All Camera" (Default Group) ให้กับกล้องใหม่ทุกตัวในระดับ Service เพื่อให้ข้อมูลในหน้า Dashboard ครบถ้วนเสมอ
+
+---
+
+## 6. กลยุทธ์การเล่นวิดีโอ (Streaming Strategy)
+
+### **MSE Quick Start & WebRTC Upgrade**
+*   **Global Pre-load:** โหลดไลบรารีที่ `index.html` เพื่อให้ Custom Element `<video-stream>` พร้อมทำงานทันที
+*   **Source Mapping (_src):** ลงทะเบียน URL ดิบไว้ที่ชื่อ `camera_ID_src` เพื่อล้างพารามิเตอร์แปลกปลอม ก่อนส่งให้ FFmpeg Transcode วิธีนี้แก้ปัญหาการปรับ FPS และ Resolution ไม่ติดในบางกล้อง
+
+---
+
+## 7. การจัดการระบบเสียง (Audio Strategy for Web)
+
+### **OPUS Transcoding**
+*   บังคับแปลงเสียงเป็น **OPUS** (`#audio=opus`) เมื่อเปิด Transcode เพื่อให้ปุ่มเสียงใช้งานได้จริงบน HTTPS (Production) เนื่องจากเบราว์เซอร์ส่วนใหญ่ไม่รองรับ G.711/AAC ดั้งเดิมผ่าน WebRTC
 
 ---
 
 ## 8. Scalability & Performance
 
-*   **One Producer, Many Consumers:** go2rtc ต่อท่อไปที่กล้องเพียง 1 ท่อต่อ 1 สตรีมเท่านั้น
-*   **Shared Transcoding:** หากเปิด Transcode ระบบจะรัน FFmpeg เพียง 1 Process ต่อ 1 สตรีม และนำผลลัพธ์ไปแจกจ่ายให้ผู้ชมทุกคนร่วมกัน ช่วยประหยัด CPU มหาศาล
-*   **Host CPU Mode:** บน Virtual Production (Proxmox) ต้องเปิด CPU Type เป็น `host` เพื่อให้ FFmpeg ใช้ความสามารถของ Hardware ได้เต็มที่
+*   **One Producer, Many Consumers:** go2rtc ต่อท่อไปที่กล้องเพียง 1 ท่อต่อ 1 สตรีม และแชร์ภาพให้ผู้ชมทุกคน
+*   **Shared Transcoding:** FFmpeg รันเพียง 1 Process ต่อ 1 สตรีม แม้จะมีคนดูพร้อมกันหลายคน ประหยัด CPU มหาศาล
+*   **No Buffering:** ปิด Proxy Buffering ใน Nginx เพื่อลด Latency และป้องกันท่อเสียงหลุด

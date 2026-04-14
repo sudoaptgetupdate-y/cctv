@@ -40,3 +40,5 @@ streams:
     - rtsp://klfdsjklf.com
   camera_8_main:
     - rtsp://ssss.com
+  camera_16_main:
+    - rtsp://lkjfdskl.com

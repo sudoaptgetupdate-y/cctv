@@ -5,6 +5,25 @@ import { useTranslation } from 'react-i18next';
 
 const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, editingCamera, groups, isSubmitting, formErrors = {} }) => {
   const { t } = useTranslation();
+  const [groupSearch, setGroupSearch] = React.useState('');
+
+  // 🚀 Logic การจัดเรียงและค้นหากลุ่ม
+  const sortedAndFilteredGroups = React.useMemo(() => {
+    // 1. กรองตามคำค้นหา
+    const filtered = groups.filter(g => 
+      g.name.toLowerCase().includes(groupSearch.toLowerCase())
+    );
+
+    // 2. จัดเรียง: All Camera ก่อน ตามด้วยจำนวนกล้องจากมากไปน้อย
+    return [...filtered].sort((a, b) => {
+      if (a.name === 'All Camera') return -1;
+      if (b.name === 'All Camera') return 1;
+      
+      const countA = a._count?.cameras || 0;
+      const countB = b._count?.cameras || 0;
+      return countB - countA;
+    });
+  }, [groups, groupSearch]);
 
   return (
     <Transition show={isOpen} as={Fragment}>
@@ -82,32 +101,64 @@ const CameraFormModal = ({ isOpen, onClose, onSubmit, formData, setFormData, edi
                         </div>
 
                         <div className="space-y-2 md:col-span-2">
-                          <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider ml-1">{t('cameras.form.group_zone')}</label>
+                          <div className="flex items-center justify-between ml-1 mb-1">
+                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">{t('cameras.form.group_zone')}</label>
+                            <div className="relative group">
+                              <input 
+                                type="text"
+                                placeholder="Search group..."
+                                className="pl-8 pr-3 py-1 text-[10px] font-bold border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all bg-white"
+                                value={groupSearch}
+                                onChange={(e) => setGroupSearch(e.target.value)}
+                              />
+                              <X 
+                                size={12} 
+                                className={`absolute right-2 top-1.5 text-slate-300 cursor-pointer hover:text-slate-500 transition-colors ${groupSearch ? 'block' : 'hidden'}`}
+                                onClick={() => setGroupSearch('')}
+                              />
+                              <div className="absolute left-2.5 top-1.5 text-slate-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                              </div>
+                            </div>
+                          </div>
                           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 p-5 bg-slate-50/50 rounded-[1.5rem] border border-slate-100 max-h-[180px] overflow-y-auto custom-scrollbar">
-                            {groups.map(g => {
-                              const isSelected = formData.groupIds?.includes(g.id.toString());
-                              const isAllCamera = g.name === 'All Camera';
-                              
-                              return (
-                                <label key={g.id} className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer group/item ${isSelected ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-500/5' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}>
-                                  <input 
-                                    type="checkbox" className="sr-only"
-                                    checked={isSelected}
-                                    onChange={(e) => {
-                                      const checked = e.target.checked;
-                                      const currentIds = formData.groupIds || [];
-                                      if (checked) setFormData({...formData, groupIds: [...currentIds, g.id.toString()]});
-                                      else setFormData({...formData, groupIds: currentIds.filter(id => id !== g.id.toString())});
-                                    }}
-                                  />
-                                  <span className={`text-[10px] font-black truncate pr-2 ${isSelected ? 'text-blue-700' : 'text-slate-600'}`}>{g.name}</span>
-                                  {isSelected ? 
-                                    <CheckCircle2 size={16} className="text-blue-600 shrink-0" fill="currentColor" fillOpacity={0.1} /> : 
-                                    <Circle size={16} className="text-slate-300 shrink-0 group-hover/item:text-blue-300" />
-                                  }
-                                </label>
-                              );
-                            })}
+                            {sortedAndFilteredGroups.length > 0 ? (
+                              sortedAndFilteredGroups.map(g => {
+                                const isSelected = formData.groupIds?.includes(g.id.toString());
+                                const isAllCamera = g.name === 'All Camera';
+                                
+                                return (
+                                  <label key={g.id} className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer group/item ${isSelected ? 'bg-blue-50 border-blue-200 ring-1 ring-blue-500/5' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}>
+                                    <input 
+                                      type="checkbox" className="sr-only"
+                                      checked={isSelected}
+                                      onChange={(e) => {
+                                        const checked = e.target.checked;
+                                        const currentIds = formData.groupIds || [];
+                                        if (checked) setFormData({...formData, groupIds: [...currentIds, g.id.toString()]});
+                                        else setFormData({...formData, groupIds: currentIds.filter(id => id !== g.id.toString())});
+                                      }}
+                                    />
+                                    <div className="flex flex-col min-w-0 pr-2">
+                                      <span className={`text-[10px] font-black truncate ${isSelected ? 'text-blue-700' : 'text-slate-600'}`}>{g.name}</span>
+                                      {!isAllCamera && g.cameras?.length > 0 && (
+                                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">
+                                          {g.cameras.length} Devices
+                                        </span>
+                                      )}
+                                    </div>
+                                    {isSelected ? 
+                                      <CheckCircle2 size={16} className="text-blue-600 shrink-0" fill="currentColor" fillOpacity={0.1} /> : 
+                                      <Circle size={16} className="text-slate-300 shrink-0 group-hover/item:text-blue-300" />
+                                    }
+                                  </label>
+                                );
+                              })
+                            ) : (
+                              <div className="col-span-full py-4 text-center">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('groups.manage.empty_available')}</p>
+                              </div>
+                            )}
                           </div>
                         </div>
 

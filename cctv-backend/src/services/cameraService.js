@@ -141,10 +141,24 @@ const cameraService = {
     });
   },
 
-  // ลบกล้อง
+  // ลบกล้อง (พร้อมลบความสัมพันธ์ที่เกี่ยวข้อง)
   async deleteCamera(id) {
-    return await prisma.camera.delete({
-      where: { id: parseInt(id) }
+    const cameraId = parseInt(id);
+
+    // 1. ตรวจสอบก่อนว่ากล้องมีอยู่จริงไหม
+    const camera = await prisma.camera.findUnique({ where: { id: cameraId } });
+    if (!camera) return { success: true, message: 'Camera already deleted or not found' };
+
+    // 2. ลบข้อมูลที่เกี่ยวข้องกันก่อน (เนื่องจากบางส่วนไม่ได้ตั้ง Cascade Delete ใน Prisma Schema)
+    // - ลบประวัติการซ่อม (MaintenanceRecord)
+    await prisma.maintenanceRecord.deleteMany({ where: { cameraId } });
+    
+    // - ลบประวัติเหตุการณ์ (Event Logs) - ตัวนี้ตั้ง Cascade ไว้แล้วแต่ลบซ้ำเผื่อไว้ก็ไม่เสียหาย
+    await prisma.cameraEventLog.deleteMany({ where: { cameraId } });
+
+    // 3. ลบตัวกล้อง (ใช้ deleteMany แทน delete เพื่อป้องกัน 'Record not found' error จาก Race Condition)
+    return await prisma.camera.deleteMany({
+      where: { id: cameraId }
     });
   },
 
