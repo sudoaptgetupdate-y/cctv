@@ -9,6 +9,7 @@ import CameraGroups from './pages/CameraGroups/CameraGroups';
 import UserManagement from './pages/UserManagement/UserManagement';
 import Settings from './pages/Settings/Settings';
 import AuditLogs from './pages/AuditLogs/AuditLogs';
+import Reports from './pages/Reports/Reports';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
             <Route path="/users" element={<UserManagement />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/logs" element={<AuditLogs />} />
+            <Route path="/reports" element={<Reports />} />
           </Route>
         </Route>
         

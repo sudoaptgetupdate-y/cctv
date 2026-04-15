@@ -3,6 +3,7 @@ import { Camera, Map as MapIcon, Info, Search, Filter, Play, ChevronDown, Chevro
 import { Link } from 'react-router-dom';
 import cameraService from '../../services/cameraService';
 import groupService from '../../services/groupService';
+import logService from '../../services/logService';
 import CameraMap from '../../components/CameraMap';
 import StreamModal from '../../components/StreamModal';
 import Footer from '../../components/Footer';
@@ -21,6 +22,8 @@ const PublicDashboard = () => {
 
   useEffect(() => {
     fetchInitialData();
+    // บันทึกการเข้าชมหน้า Dashboard
+    logService.recordVisit({ action: 'VIEW_PAGE' });
   }, []);
 
   const fetchInitialData = async () => {
@@ -94,6 +97,9 @@ const PublicDashboard = () => {
     setInitialPosition(finalPos);
     setSelectedCamera(camera);
     if (window.innerWidth < 1024) setIsSidebarOpen(false);
+
+    // บันทึกการคลิกดูสตรีม
+    logService.recordVisit({ cameraId: camera.id, action: 'WATCH_STREAM' });
   };
 
   const currentGroupCameras = useMemo(() => {

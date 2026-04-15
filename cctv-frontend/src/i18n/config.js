@@ -42,10 +42,24 @@ const resources = {
         users: "Users",
         logs: "Audit Logs",
         settings: "Settings",
+        reports: "Reports",
         main: "Main",
         monitoring: "Monitoring",
         system: "System Administration",
         my_profile: "My Profile"
+      },
+      reports: {
+        title: "Visitor Analytics",
+        subtitle: "Monitor traffic and camera usage statistics",
+        all_cameras: "All Cameras",
+        total_views: "Total Views",
+        unique_visitors: "Unique Visitors",
+        top_camera: "Most Active Camera",
+        avg_daily: "Avg. Daily Views",
+        traffic_trend: "Traffic Trend",
+        top_5_cameras: "Top 5 Cameras",
+        views_by_camera: "Views",
+        fetch_error: "Failed to fetch report data"
       },
       users: {
         title: "User Management",
@@ -297,10 +311,24 @@ const resources = {
         users: "จัดการผู้ใช้งาน",
         logs: "ประวัติการใช้งาน",
         settings: "ตั้งค่าระบบ",
+        reports: "สรุปรายงาน",
         main: "หน้าหลัก",
         monitoring: "การตรวจสอบ",
         system: "การจัดการระบบ",
         my_profile: "โปรไฟล์ของฉัน"
+      },
+      reports: {
+        title: "สรุปสถิติผู้เข้าชม",
+        subtitle: "ตรวจสอบปริมาณการเข้าชมและสถิติการใช้งานกล้อง",
+        all_cameras: "กล้องทั้งหมด",
+        total_views: "จำนวนการเข้าชมรวม",
+        unique_visitors: "ผู้เข้าชม (ไม่ซ้ำ)",
+        top_camera: "กล้องที่มีคนดูมากที่สุด",
+        avg_daily: "เฉลี่ยการดูต่อวัน",
+        traffic_trend: "แนวโน้มการเข้าชม",
+        top_5_cameras: "กล้อง 5 อันดับแรก",
+        views_by_camera: "จำนวนการเข้าชม",
+        fetch_error: "ไม่สามารถดึงข้อมูลรายงานได้"
       },
       users: {
         title: "ระบบจัดการผู้ใช้งาน",

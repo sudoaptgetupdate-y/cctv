@@ -29,17 +29,18 @@
 - [x] **Advanced UX:** ระบบ Auto-zoom (FlyTo) ในหน้า Dashboard และ Streaming Modal ที่ปรับพิกัดตามหน้าจอจริง
 - [x] **UI Overhaul:** ปรับปรุง Create/Edit Modal ให้เป็นสัดส่วน (Logical Sections) สวยงามและใช้งานง่าย
 - [x] **Performance Optimization:** ปรับปรุง API สำหรับจัดการสมาชิกให้เป็นแบบ "Lean" (ส่งเฉพาะข้อมูลที่จำเป็น) ลด Latency เหลือ < 20ms ในระบบจริง
+- [x] **Visitor Analytics:** ระบบเก็บสถิติผู้เข้าชมหน้า Public Dashboard และการคลิกดูสตรีมกล้องแยกตามรายตัว
+- [x] **Advanced Reporting:** หน้าจอสรุปสถิติ (Reports) พร้อมกราฟวิเคราะห์แนวโน้ม (Chart.js) รองรับการเลือกช่วงเวลาแบบ Hybrid (Raw/Summary Data) เพื่อความรวดเร็ว
 
 ## 🛠️ Tech Stack & Ports
-- Frontend: Vite + React (Port 3000)
-- Backend: Node.js + Express (Port 5000)
-- Database: MariaDB (Local: 10.0.0.16 / Prod: Docker Container)
+...
 - Streaming: go2rtc (Windows exe / Docker Container)
+- Analytics: Chart.js + React-Chartjs-2
 
 ---
 
 ## 🎯 เป้าหมายถัดไป (Next Tasks)
-1. [ ] **Advanced Analytics:** ระบบสรุปสถิติผ่าน Dashboard (Chart.js)
+1. [ ] **Summary Report Export:** ระบบส่งออกรายงานเป็นไฟล์ PDF หรือ Excel
 2. [ ] **Interactive Telegram Bot:** พัฒนา Webhook ให้ Bot ตอบโต้ด้วย AI
 3. [ ] **Snapshot Service:** บันทึกภาพนิ่งลง Server
 

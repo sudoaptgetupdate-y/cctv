@@ -1,6 +1,54 @@
 const prisma = require('../config/prisma');
+const logService = require('../services/logService');
 
 const logController = {
+  /**
+   * บันทึกประวัติการเข้าชมหน้า Public Dashboard (ไม่มี Token)
+   */
+  async createPublicVisitLog(req, res, next) {
+    try {
+      const { cameraId, action } = req.body;
+      const ipAddress = req.ip || req.headers['x-forwarded-for'];
+      const userAgent = req.headers['user-agent'];
+
+      await logService.createPublicVisitorLog({
+        cameraId,
+        action,
+        ipAddress,
+        userAgent
+      });
+
+      res.status(201).json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * ดึงรายงานผู้เข้าชมหน้า Public (ต้องมี Token Admin)
+   */
+  async getVisitorReport(req, res, next) {
+    try {
+      const { startDate, endDate, cameraId } = req.query;
+
+      if (!startDate || !endDate) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'startDate and endDate are required' 
+        });
+      }
+
+      const reportData = await logService.getVisitorReport(startDate, endDate, cameraId);
+
+      res.json({
+        success: true,
+        data: reportData
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   /**
    * ดึงประวัติสถานะกล้อง (ONLINE/OFFLINE/ERROR)
    */

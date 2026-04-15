@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Menu, X, LayoutDashboard, Users, LogOut, User, Settings, 
-  Camera, ClipboardList, ChevronLeft, ChevronRight, Globe, Activity
+  Camera, ClipboardList, ChevronLeft, ChevronRight, Globe, Activity,
+  BarChart3
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext'; 
@@ -32,6 +33,7 @@ const MainLayout = () => {
       title: t('sidebar.main', 'Main'),
       items: [
         { to: '/dashboard', icon: LayoutDashboard, label: t('sidebar.dashboard'), roles: ['SUPER_ADMIN', 'ADMIN', 'EMPLOYEE'] },
+        { to: '/reports', icon: BarChart3, label: t('sidebar.reports', 'Reports'), roles: ['SUPER_ADMIN', 'ADMIN'] },
       ]
     },
     {

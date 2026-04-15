@@ -154,3 +154,27 @@ model ViewingSession {
   @@index([streamId])
   @@index([lastSeen])
 }
+
+model PublicVisitorLog {
+  id        Int      @id @default(autoincrement())
+  cameraId  Int?     // null if viewing dashboard
+  action    String   // "VIEW_PAGE", "WATCH_STREAM"
+  ipAddress String?
+  userAgent String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([cameraId])
+  @@index([createdAt])
+}
+
+model PublicVisitorSummary {
+  id         Int      @id @default(autoincrement())
+  date       DateTime @db.Date
+  cameraId   Int?
+  action     String
+  totalViews Int      @default(0)
+  uniqueIPs  Int      @default(0)
+
+  @@unique([date, cameraId, action])
+  @@index([date])
+}
