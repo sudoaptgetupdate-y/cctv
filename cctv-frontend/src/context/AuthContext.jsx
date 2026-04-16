@@ -13,15 +13,26 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     const token = localStorage.getItem('cctv_token');
-    if (token) {
-      try {
-        const res = await apiClient.get('/auth/me');
-        setUser(res.data.data);
-      } catch (error) {
-        localStorage.removeItem('cctv_token');
-      }
+    if (!token) {
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+
+    try {
+      const res = await apiClient.get('/auth/me');
+      setUser(res.data.data);
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      // เฉพาะกรณี Unauthorized (401) หรือ Forbidden (403) เท่านั้นถึงจะลบ Token
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        localStorage.removeItem('cctv_token');
+        setUser(null);
+      }
+      // ถ้าเป็น Error อื่นๆ (เช่น 500 หรือ Network Error) เราจะยังไม่ลบ Token 
+      // เพื่อให้โอกาสผู้ใช้ในการ Refresh หรือลองใหม่โดยไม่ต้อง Login
+    } finally {
+      setLoading(false);
+    }
   };
 
   const login = async (username, password) => {
