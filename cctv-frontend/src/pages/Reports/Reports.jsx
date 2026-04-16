@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   BarChart3, Calendar, Camera, Globe, Users, TrendingUp, 
-  ArrowUpRight, ArrowDownRight, Clock, MapPin, Eye, Filter, RefreshCw
+  ArrowUpRight, ArrowDownRight, Clock, MapPin, Eye, Filter, RefreshCw,
+  Download
 } from 'lucide-react';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { th } from 'date-fns/locale';
@@ -9,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import logService from '../../services/logService';
 import cameraService from '../../services/cameraService';
 import toast from 'react-hot-toast';
+import Swal from 'sweetalert2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -39,13 +41,14 @@ const Reports = () => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [cameras, setCameras] = useState([]);
-  const [reportData, setReportData] = useState([]);
+  const [enhancedData, setEnhancedData] = useState(null);
   const [dateRange, setDateRange] = useState('7'); // '1', '7', '15', '30', 'custom'
   const [customDates, setCustomDates] = useState({
     start: format(subDays(new Date(), 7), 'yyyy-MM-dd'),
     end: format(new Date(), 'yyyy-MM-dd')
   });
   const [selectedCameraId, setSelectedCameraId] = useState('all');
+  const [topLimit, setTopLimit] = useState(5);
 
   useEffect(() => {
     fetchCameras();
@@ -75,27 +78,90 @@ const Reports = () => {
         end = format(new Date(), 'yyyy-MM-dd');
       }
 
-      const data = await logService.getVisitorReport(
+      const data = await logService.getEnhancedVisitorReport(
         start, 
         end, 
         selectedCameraId === 'all' ? null : selectedCameraId
       );
-      setReportData(data);
+      setEnhancedData(data);
     } catch (error) {
-      console.error('Failed to fetch report:', error);
+      console.error('Failed to fetch enhanced report:', error);
       toast.error(t('reports.fetch_error', 'Failed to fetch report data'));
     } finally {
       setLoading(false);
     }
   };
 
+  const handleExport = async () => {
+    const { value: formatType } = await Swal.fire({
+      title: t('reports.export_title', 'Export Report'),
+      text: t('reports.export_desc', 'Choose your preferred file format'),
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Excel (.xlsx)',
+      cancelButtonText: t('common.cancel', 'Cancel'),
+      confirmButtonColor: '#4F46E5',
+      showDenyButton: true,
+      denyButtonText: 'PDF (.pdf)',
+      denyButtonColor: '#EF4444',
+    });
+
+    if (formatType === undefined) return; // Cancelled
+
+    let exportFormat = '';
+    const isExcel = formatType === true || (Swal.isVisible() && Swal.getConfirmButton().contains(document.activeElement));
+    const isPdf = formatType === false || (Swal.isVisible() && Swal.getDenyButton().contains(document.activeElement));
+
+    if (isExcel) exportFormat = 'excel';
+    else if (isPdf) exportFormat = 'pdf';
+    else return;
+
+    try {
+      toast.loading(t('reports.exporting', 'Exporting report...'), { id: 'export' });
+      
+      let start, end;
+      if (dateRange === 'custom') {
+        start = customDates.start;
+        end = customDates.end;
+      } else {
+        const days = parseInt(dateRange);
+        start = format(subDays(new Date(), days), 'yyyy-MM-dd');
+        end = format(new Date(), 'yyyy-MM-dd');
+      }
+
+      const blob = await logService.exportVisitorReport(
+        start, 
+        end, 
+        selectedCameraId === 'all' ? null : selectedCameraId,
+        exportFormat
+      );
+
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      const extension = exportFormat === 'excel' ? 'xlsx' : 'pdf';
+      link.setAttribute('download', `Visitor_Report_${start}_to_${end}.${extension}`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      
+      toast.success(t('reports.export_success', 'Report exported successfully'), { id: 'export' });
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error(t('reports.export_error', 'Failed to export report'), { id: 'export' });
+    }
+  };
+
   // 📊 คำนวณสรุปผล (Stats)
   const stats = useMemo(() => {
-    const totalViews = reportData.reduce((sum, item) => sum + item.totalViews, 0);
-    const uniqueVisitors = reportData.reduce((sum, item) => sum + (item.uniqueIPs || 0), 0);
+    if (!enhancedData) return { totalViews: 0, uniqueVisitors: 0, topCamera: 'N/A', maxViews: 0, availability: 0 };
+    
+    const { dailyStats, trends, availability } = enhancedData;
+    const totalViews = trends.views.current;
+    const uniqueVisitors = trends.visitors.current;
     
     // หากล้องที่คนดูเยอะที่สุด
-    const cameraCounts = reportData.reduce((acc, item) => {
+    const cameraCounts = dailyStats.reduce((acc, item) => {
       if (item.cameraId) {
         acc[item.cameraId] = (acc[item.cameraId] || 0) + item.totalViews;
       }
@@ -113,13 +179,22 @@ const Reports = () => {
 
     const topCamera = cameras.find(c => c.id === parseInt(topCameraId))?.name || 'N/A';
 
-    return { totalViews, uniqueVisitors, topCamera, maxViews };
-  }, [reportData, cameras]);
+    return { 
+      totalViews, 
+      uniqueVisitors, 
+      topCamera, 
+      maxViews, 
+      availability: availability?.score || 100,
+      trends 
+    };
+  }, [enhancedData, cameras]);
 
   // 📈 เตรียมข้อมูลสำหรับ Line Chart (Traffic)
   const chartData = useMemo(() => {
-    // 1. รวมข้อมูลแยกตามวัน (ใช้ YYYY-MM-DD เป็น Key เพื่อให้เรียงลำดับง่าย)
-    const dailyMap = reportData.reduce((acc, item) => {
+    if (!enhancedData) return { labels: [], datasets: [] };
+    
+    const { dailyStats } = enhancedData;
+    const dailyMap = dailyStats.reduce((acc, item) => {
       const d = item.date || item.createdAt;
       const dateKey = format(new Date(d), 'yyyy-MM-dd');
       
@@ -129,10 +204,7 @@ const Reports = () => {
       return acc;
     }, {});
 
-    // 2. เรียงลำดับวันที่จากน้อยไปมาก
     const sortedDates = Object.keys(dailyMap).sort();
-    
-    // 3. แปลงเป็น Label สำหรับแสดงผล (dd MMM)
     const labels = sortedDates.map(d => format(new Date(d), 'dd MMM', { locale: th }));
     
     return {
@@ -156,10 +228,31 @@ const Reports = () => {
         }
       ]
     };
-  }, [reportData, t]);
+  }, [enhancedData, t]);
+
+  // 🕒 Hourly Traffic Chart
+  const hourlyChartData = useMemo(() => {
+    if (!enhancedData) return { labels: [], datasets: [] };
+    
+    const { hourlyTraffic } = enhancedData;
+    return {
+      labels: hourlyTraffic.map(h => `${h.hour}:00`),
+      datasets: [
+        {
+          label: t('reports.peak_time', 'Hourly Views'),
+          data: hourlyTraffic.map(h => h.count),
+          backgroundColor: 'rgba(59, 130, 246, 0.8)',
+          borderRadius: 4
+        }
+      ]
+    };
+  }, [enhancedData, t]);
 
   const barChartData = useMemo(() => {
-    const cameraStats = reportData.reduce((acc, item) => {
+    if (!enhancedData) return { labels: [], datasets: [] };
+    
+    const { dailyStats } = enhancedData;
+    const cameraStats = dailyStats.reduce((acc, item) => {
       if (!item.cameraId) return acc;
       const cam = cameras.find(c => c.id === parseInt(item.cameraId));
       const camName = cam ? cam.name : `Camera ${item.cameraId}`;
@@ -169,7 +262,7 @@ const Reports = () => {
 
     const sorted = Object.entries(cameraStats)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
+      .slice(0, topLimit);
 
     return {
       labels: sorted.map(s => s[0]),
@@ -182,7 +275,7 @@ const Reports = () => {
         }
       ]
     };
-  }, [reportData, cameras, t]);
+  }, [enhancedData, cameras, t]);
 
   return (
     <div className="space-y-6">
@@ -200,13 +293,23 @@ const Reports = () => {
           </p>
         </div>
 
-        <button 
-          onClick={fetchReport}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-600 hover:bg-slate-50 transition-all uppercase tracking-widest"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-          {t('common.refresh', 'Refresh')}
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={handleExport}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 border border-indigo-500 rounded-xl text-xs font-black text-white hover:bg-indigo-700 transition-all uppercase tracking-widest shadow-lg shadow-indigo-200"
+          >
+            <Download className="h-3.5 w-3.5" />
+            {t('common.export', 'Export')}
+          </button>
+
+          <button 
+            onClick={fetchReport}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-600 hover:bg-slate-50 transition-all uppercase tracking-widest"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+            {t('common.refresh', 'Refresh')}
+          </button>
+        </div>
       </div>
 
       {/* 🔍 Filters */}
@@ -282,85 +385,143 @@ const Reports = () => {
         )}
       </div>
 
-      {/* 📊 Stat Cards */}
+      {/* 📊 Stat Cards with Trends */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           icon={<Eye className="h-5 w-5" />}
           label={t('reports.total_views', 'Total Views')}
           value={stats.totalViews.toLocaleString()}
+          trend={stats.trends?.views?.growth}
           color="blue"
         />
         <StatCard 
           icon={<Users className="h-5 w-5" />}
           label={t('reports.unique_visitors', 'Unique Visitors')}
           value={stats.uniqueVisitors.toLocaleString()}
+          trend={stats.trends?.visitors?.growth}
           color="emerald"
+        />
+        <StatCard 
+          icon={<MapPin className="h-5 w-5" />}
+          label={t('reports.uptime', 'System Availability')}
+          value={`${stats.availability}%`}
+          color="indigo"
+          subValue={stats.availability > 95 ? 'Healthy' : 'Check System'}
         />
         <StatCard 
           icon={<Camera className="h-5 w-5" />}
           label={t('reports.top_camera', 'Most Active Camera')}
           value={stats.topCamera}
           subValue={`${stats.maxViews.toLocaleString()} views`}
-          color="indigo"
-        />
-        <StatCard 
-          icon={<TrendingUp className="h-5 w-5" />}
-          label={t('reports.avg_daily', 'Avg. Daily Views')}
-          value={Math.round(stats.totalViews / (reportData.length || 1)).toLocaleString()}
           color="amber"
         />
       </div>
 
       {/* 📈 Main Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+        <div className="lg:col-span-2 space-y-6">
+          {/* Traffic Trend */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 mb-6">
               <TrendingUp className="h-4 w-4 text-blue-500" />
               {t('reports.traffic_trend', 'Traffic Trend')}
             </h3>
+            <div className="h-[300px]">
+              <Line 
+                data={chartData} 
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                  scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { grid: { display: false } }
+                  }
+                }} 
+              />
+            </div>
           </div>
-          <div className="h-[300px]">
-            <Line 
-              data={chartData} 
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: { display: false }
-                },
-                scales: {
-                  y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
-                  x: { grid: { display: false } }
-                }
-              }} 
-            />
+
+          {/* Peak Time Analysis */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 mb-6">
+              <Clock className="h-4 w-4 text-indigo-500" />
+              {t('reports.peak_time_title', 'Hourly Traffic (Peak Time)')}
+            </h3>
+            <div className="h-[200px]">
+              <Bar 
+                data={hourlyChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                  scales: {
+                    y: { display: false },
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                  }
+                }}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-              <Camera className="h-4 w-4 text-indigo-500" />
-              {t('reports.top_5_cameras', 'Top 5 Cameras')}
-            </h3>
+        <div className="space-y-6">
+          {/* Top Cameras Rankings */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                <Camera className="h-4 w-4 text-indigo-500" />
+                {t('reports.top_n_cameras', { count: topLimit })}
+              </h3>
+              <select 
+                className="text-[10px] font-black bg-slate-100 border-none rounded-lg px-2 py-1 outline-none"
+                value={topLimit}
+                onChange={(e) => setTopLimit(parseInt(e.target.value))}
+              >
+                <option value={5}>Top 5</option>
+                <option value={10}>Top 10</option>
+                <option value={20}>Top 20</option>
+              </select>
+            </div>
+            <div className="h-[300px]">
+              <Bar 
+                data={barChartData}
+                options={{
+                  indexAxis: 'y',
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                  scales: {
+                    x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    y: { grid: { display: false } }
+                  }
+                }}
+              />
+            </div>
           </div>
-          <div className="h-[300px]">
-            <Bar 
-              data={barChartData}
-              options={{
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: { display: false }
-                },
-                scales: {
-                  x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
-                  y: { grid: { display: false } }
-                }
-              }}
-            />
+
+          {/* Device Stats */}
+          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+             <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 mb-6">
+              <Globe className="h-4 w-4 text-emerald-500" />
+              {t('reports.device_stats', 'Device Distribution')}
+            </h3>
+            <div className="space-y-4">
+               {enhancedData?.techStats?.devices && Object.entries(enhancedData.techStats.devices).map(([type, count]) => (
+                 <div key={type} className="flex items-center justify-between">
+                   <span className="text-xs font-bold text-slate-600">{type}</span>
+                   <div className="flex items-center gap-3 flex-1 mx-4">
+                     <div className="h-1.5 bg-slate-100 rounded-full flex-1 overflow-hidden">
+                       <div 
+                         className="h-full bg-emerald-500 rounded-full" 
+                         style={{ width: `${(count / (enhancedData.trends.views.current || 1) * 100) || 0}%` }}
+                       />
+                     </div>
+                   </div>
+                   <span className="text-[10px] font-black text-slate-400">{Math.round((count / (enhancedData.trends.views.current || 1) * 100) || 0)}%</span>
+                 </div>
+               ))}
+            </div>
           </div>
         </div>
       </div>
@@ -368,7 +529,7 @@ const Reports = () => {
   );
 };
 
-const StatCard = ({ icon, label, value, subValue, color }) => {
+const StatCard = ({ icon, label, value, subValue, color, trend }) => {
   const colors = {
     blue: 'bg-blue-50 text-blue-600 border-blue-100',
     emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
@@ -381,7 +542,15 @@ const StatCard = ({ icon, label, value, subValue, color }) => {
       <div className={`w-12 h-12 rounded-2xl ${colors[color]} border flex items-center justify-center mb-4 transition-all group-hover:scale-110`}>
         {icon}
       </div>
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{label}</p>
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{label}</p>
+        {trend !== undefined && (
+          <div className={`flex items-center gap-0.5 text-[10px] font-black ${trend >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+            {trend >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+            {Math.abs(trend)}%
+          </div>
+        )}
+      </div>
       <div className="flex items-baseline gap-2">
         <h4 className="text-xl font-black text-slate-800 tracking-tight">{value}</h4>
         {subValue && <span className="text-[10px] font-bold text-slate-400">{subValue}</span>}

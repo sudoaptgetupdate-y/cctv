@@ -2,6 +2,7 @@
 
 > [!IMPORTANT]
 > **กฎเหล็กของการพัฒนา (Critical Rule):**
+> คุยหรืออธิบายภาษาไทย
 > ฉันพัฒนา 2 Server ควบคู่กันไปเสมอ:
 > 1. **Local PC Dev:** ใช้ `nodemon` รัน Backend ตรงๆ และเชื่อมต่อ Database 10.0.0.16
 > 2. **Virtual Production:** ใช้งานบน `Ubuntu + Docker` (Docker Compose)
@@ -30,20 +31,23 @@
 - [x] **UI Overhaul:** ปรับปรุง Create/Edit Modal ให้เป็นสัดส่วน (Logical Sections) สวยงามและใช้งานง่าย
 - [x] **Performance Optimization:** ปรับปรุง API สำหรับจัดการสมาชิกให้เป็นแบบ "Lean" (ส่งเฉพาะข้อมูลที่จำเป็น) ลด Latency เหลือ < 20ms ในระบบจริง
 - [x] **Visitor Analytics:** ระบบเก็บสถิติผู้เข้าชมหน้า Public Dashboard และการคลิกดูสตรีมกล้องแยกตามรายตัว
-- [x] **Advanced Reporting:** หน้าจอสรุปสถิติ (Reports) พร้อมกราฟวิเคราะห์แนวโน้ม (Chart.js) รองรับการเลือกช่วงเวลาแบบ Hybrid (Raw/Summary Data) เพื่อความรวดเร็ว
+- [x] **Advanced Reporting:** หน้าจอสรุปสถิติ (Reports) พร้อมกราฟวิเคราะห์แนวโน้ม (Chart.js) รองรับการเลือกช่วงเวลาแบบ Hybrid และระบบวิเคราะห์เชิงลึก (Trends, Peak Time, Device Stats)
 - [x] **Universal Audio Control:** ระบบเปิด-ปิดเสียงที่เสถียร 100% ทั้งโหมดปกติและ Transcoding โดยใช้เทคนิค WebRTC Track Filtering (Frontend) ควบคู่กับ FFmpeg Parameter (Backend)
+- [x] **Intelligent Report Export:** ระบบส่งออกรายงาน PDF/Excel ระดับมืออาชีพ พร้อมส่วนสรุปผู้บริหาร (Executive Summary) และการวิเคราะห์แนวโน้ม (รองรับภาษาไทย 100%)
+- [x] **Dynamic Ranking System:** ระบบจัดอันดับกล้องยอดนิยมแบบยืดหยุ่น (Top 5, 10, 20) พร้อม UI ที่ปรับเปลี่ยนตามการเลือกของผู้ใช้
 
 ## 🛠️ Tech Stack & Ports
 ...
 - Streaming: go2rtc (Windows exe / Docker Container)
-- Analytics: Chart.js + React-Chartjs-2
+- Analytics: Chart.js + React-Chartjs-2 + UA-Parser-JS
+- Export: ExcelJS + PDFKit (THSarabunNew support)
 
 ---
 
 ## 🎯 เป้าหมายถัดไป (Next Tasks)
-1. [ ] **Summary Report Export:** ระบบส่งออกรายงานเป็นไฟล์ PDF หรือ Excel
-2. [ ] **Interactive Telegram Bot:** พัฒนา Webhook ให้ Bot ตอบโต้ด้วย AI
-3. [ ] **Snapshot Service:** บันทึกภาพนิ่งลง Server
+1. [ ] **Interactive Telegram Bot:** พัฒนา Webhook ให้ Bot ตอบโต้ด้วย AI และรายงานสถิติอัตโนมัติ
+2. [ ] **Snapshot Service:** ระบบบันทึกภาพนิ่งลง Server เมื่อเกิดเหตุการณ์สำคัญ
+3. [ ] **Advanced Filtering:** ระบบค้นหา Log กรองตามประเภทอุปกรณ์หรือเบราว์เซอร์
 
 ---
 

@@ -1,4 +1,5 @@
 const prisma = require('../config/prisma');
+const { parseUA } = require('../utils/uaParser');
 
 /**
  * บันทึกประวัติการทำงานของระบบ (Activity Log)
@@ -105,7 +106,6 @@ const logService = {
           }
         };
         
-        // กรองตามกล้องถ้ามีการระบุ
         if (cameraId && cameraId !== 'all') {
           where.cameraId = parseInt(cameraId);
         }
@@ -117,9 +117,7 @@ const logService = {
 
         if (logs.length === 0) return [];
 
-        // จัดกลุ่มข้อมูลตามวัน
         const summary = logs.reduce((acc, log) => {
-          // ใช้ Local Date เพื่อให้ตรงกับที่ผู้ใช้เห็น
           const date = log.createdAt.toISOString().split('T')[0];
           const key = `${date}_${log.action}_${log.cameraId || 'null'}`;
           
@@ -143,14 +141,13 @@ const logService = {
           uniqueIPs: s.uniqueIPs.size
         }));
       } else {
-        // ถ้าเลือกช่วง > 30 วัน ดึงจาก Summary Table
         let where = {
           date: {
             gte: start,
             lte: end
           }
         };
-        if (cameraId) where.cameraId = parseInt(cameraId);
+        if (cameraId && cameraId !== 'all') where.cameraId = parseInt(cameraId);
 
         const summaryData = await prisma.publicVisitorSummary.findMany({
           where,
@@ -166,31 +163,151 @@ const logService = {
   },
 
   /**
+   * ดึงรายงานผู้เข้าชมแบบเจาะลึก (Enhanced Analytics)
+   */
+  async getEnhancedVisitorReport(startDate, endDate, cameraId = null) {
+    try {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+
+      // เรียกใช้ getVisitorReport ใน object เดียวกัน
+      const basicReport = await this.getVisitorReport(startDate, endDate, cameraId);
+      
+      let where = {
+        createdAt: { gte: start, lte: end }
+      };
+      if (cameraId && cameraId !== 'all') where.cameraId = parseInt(cameraId);
+
+      const rawLogs = await prisma.publicVisitorLog.findMany({
+        where,
+        select: { createdAt: true, userAgent: true, action: true }
+      });
+
+      const hourlyTraffic = Array(24).fill(0).map((_, i) => ({ hour: i, count: 0 }));
+      const techStats = {
+        devices: {},
+        browsers: {},
+        os: {}
+      };
+
+      rawLogs.forEach(log => {
+        const hour = new Date(log.createdAt).getHours();
+        hourlyTraffic[hour].count += 1;
+
+        if (log.userAgent) {
+          const ua = parseUA(log.userAgent);
+          techStats.devices[ua.deviceType] = (techStats.devices[ua.deviceType] || 0) + 1;
+          techStats.browsers[ua.browser] = (techStats.browsers[ua.browser] || 0) + 1;
+          techStats.os[ua.os] = (techStats.os[ua.os] || 0) + 1;
+        }
+      });
+
+      const diffTime = end - start;
+      const prevStart = new Date(start.getTime() - diffTime - 1);
+      const prevEnd = new Date(start.getTime() - 1);
+      
+      const prevReport = await this.getVisitorReport(
+        prevStart.toISOString().split('T')[0],
+        prevEnd.toISOString().split('T')[0],
+        cameraId
+      );
+
+      const currentTotal = basicReport.reduce((sum, i) => sum + i.totalViews, 0);
+      const prevTotal = prevReport.reduce((sum, i) => sum + i.totalViews, 0);
+      
+      const currentVisitors = basicReport.reduce((sum, i) => sum + i.uniqueIPs, 0);
+      const prevVisitors = prevReport.reduce((sum, i) => sum + i.uniqueIPs, 0);
+
+      const calculateGrowth = (curr, prev) => {
+        if (prev === 0) return curr > 0 ? 100 : 0;
+        return parseFloat((((curr - prev) / prev) * 100).toFixed(1));
+      };
+
+      const uptimeData = await this.getSystemAvailability(start, end, cameraId);
+
+      return {
+        dailyStats: basicReport,
+        hourlyTraffic,
+        techStats,
+        availability: uptimeData,
+        trends: {
+          views: {
+            current: currentTotal,
+            previous: prevTotal,
+            growth: calculateGrowth(currentTotal, prevTotal)
+          },
+          visitors: {
+            current: currentVisitors,
+            previous: prevVisitors,
+            growth: calculateGrowth(currentVisitors, prevVisitors)
+          }
+        }
+      };
+    } catch (error) {
+      console.error('Failed to get enhanced visitor report:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * คำนวณความเสถียรของระบบ (Availability Score)
+   */
+  async getSystemAvailability(start, end, cameraId = null) {
+    try {
+      const where = {
+        createdAt: { gte: start, lte: end }
+      };
+      if (cameraId && cameraId !== 'all') where.cameraId = parseInt(cameraId);
+
+      const logs = await prisma.cameraEventLog.findMany({
+        where,
+        orderBy: { createdAt: 'asc' }
+      });
+
+      if (logs.length === 0) return { score: 100, onlineCount: 0, offlineCount: 0 };
+
+      const onlineCount = logs.filter(l => l.eventType === 'ONLINE').length;
+      const offlineCount = logs.filter(l => l.eventType === 'OFFLINE').length;
+      const totalEvents = onlineCount + offlineCount;
+
+      const score = totalEvents > 0 
+        ? parseFloat(((onlineCount / totalEvents) * 100).toFixed(2)) 
+        : 100;
+
+      return {
+        score,
+        onlineCount,
+        offlineCount,
+        totalEvents
+      };
+    } catch (error) {
+      console.error('Failed to calculate system availability:', error);
+      return { score: 0, onlineCount: 0, offlineCount: 0 };
+    }
+  },
+
+  /**
    * สรุปยอดผู้เข้าชมรายวันจาก Raw Logs ลง Summary Table
-   * รันทุกเที่ยงคืนสำหรับข้อมูลของเมื่อวาน
    */
   async summarizeDailyVisitors(targetDate = null) {
     try {
-      // ถ้าไม่ระบุวันที่ ให้สรุปของเมื่อวาน
       const date = targetDate ? new Date(targetDate) : new Date();
       if (!targetDate) date.setDate(date.getDate() - 1);
       
       const startOfDay = new Date(date.setHours(0, 0, 0, 0));
       const endOfDay = new Date(date.setHours(23, 59, 59, 999));
 
-      // 1. ดึงข้อมูลดิบของวันนั้น
       const logs = await prisma.publicVisitorLog.findMany({
         where: {
-          createdAt: {
-            gte: startOfDay,
-            lte: endOfDay
-          }
+          createdAt: { gte: startOfDay, lte: endOfDay }
         }
       });
 
       if (logs.length === 0) return;
 
-      // 2. จัดกลุ่มข้อมูล (Dimensions: Date, CameraId, Action)
       const groups = logs.reduce((acc, log) => {
         const key = `${log.cameraId || 'null'}_${log.action}`;
         if (!acc[key]) {
@@ -206,7 +323,6 @@ const logService = {
         return acc;
       }, {});
 
-      // 3. บันทึกลง Summary Table (ใช้ Transaction)
       const summaryEntries = Object.values(groups).map(g => {
         return prisma.publicVisitorSummary.upsert({
           where: {
@@ -231,19 +347,12 @@ const logService = {
       });
 
       await prisma.$transaction(summaryEntries);
-      console.log(`โœ… [Summary] Daily visitor summary completed for ${startOfDay.toISOString().split('T')[0]}`);
       
-      // 4. ลบ Raw Logs เก่าที่เกิน 60 วัน (Maintenance)
       const deleteThreshold = new Date();
       deleteThreshold.setDate(deleteThreshold.getDate() - 60);
       await prisma.publicVisitorLog.deleteMany({
-        where: {
-          createdAt: {
-            lt: deleteThreshold
-          }
-        }
+        where: { createdAt: { lt: deleteThreshold } }
       });
-
     } catch (error) {
       console.error('Failed to summarize daily visitors:', error);
     }

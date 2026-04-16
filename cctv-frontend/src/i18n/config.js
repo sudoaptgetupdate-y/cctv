@@ -33,7 +33,9 @@ const resources = {
         save_changes: "Save Changes",
         restore: "Restore",
         add: "Add",
-        remove: "Remove"
+        remove: "Remove",
+        export: "Export",
+        apply: "Apply"
       },
       sidebar: {
         dashboard: "Dashboard",
@@ -57,9 +59,14 @@ const resources = {
         top_camera: "Most Active Camera",
         avg_daily: "Avg. Daily Views",
         traffic_trend: "Traffic Trend",
-        top_5_cameras: "Top 5 Cameras",
+        top_n_cameras: "Top {{count}} Cameras",
         views_by_camera: "Views",
-        fetch_error: "Failed to fetch report data"
+        fetch_error: "Failed to fetch report data",
+        export_title: "Export Report",
+        export_desc: "Choose your preferred file format",
+        exporting: "Exporting report...",
+        export_success: "Report exported successfully",
+        export_error: "Failed to export report"
       },
       users: {
         title: "User Management",
@@ -302,7 +309,9 @@ const resources = {
         save_changes: "บันทึกการแก้ไข",
         restore: "คืนค่า",
         add: "เพิ่ม",
-        remove: "เอาออก"
+        remove: "เอาออก",
+        export: "ส่งออก",
+        apply: "ตกลง"
       },
       sidebar: {
         dashboard: "แดชบอร์ด",
@@ -326,9 +335,14 @@ const resources = {
         top_camera: "กล้องที่มีคนดูมากที่สุด",
         avg_daily: "เฉลี่ยการดูต่อวัน",
         traffic_trend: "แนวโน้มการเข้าชม",
-        top_5_cameras: "กล้อง 5 อันดับแรก",
+        top_n_cameras: "กล้อง {{count}} อันดับแรก",
         views_by_camera: "จำนวนการเข้าชม",
-        fetch_error: "ไม่สามารถดึงข้อมูลรายงานได้"
+        fetch_error: "ไม่สามารถดึงข้อมูลรายงานได้",
+        export_title: "ส่งออกรายงาน",
+        export_desc: "เลือกรูปแบบไฟล์ที่ต้องการ",
+        exporting: "กำลังส่งออกรายงาน...",
+        export_success: "ส่งออกรายงานสำเร็จ",
+        export_error: "ส่งออกรายงานไม่สำเร็จ"
       },
       users: {
         title: "ระบบจัดการผู้ใช้งาน",
