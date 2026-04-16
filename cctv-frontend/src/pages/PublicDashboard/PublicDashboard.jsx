@@ -74,9 +74,13 @@ const PublicDashboard = () => {
     return groupsMap;
   }, [cameras, searchTerm]);
 
-  // 🔍 กรองเฉพาะกลุ่มที่มีกล้องอยู่จริง (Public Cameras)
+  // 🔍 กรองเฉพาะกลุ่มที่มีกล้องอยู่จริง (Public Cameras) และไม่ใช่กลุ่ม All Camera (เพราะเรามีปุ่มแยกแล้ว)
   const filteredGroups = useMemo(() => {
     return groups.filter(group => {
+      // ซ่อนกลุ่ม All Camera/All Cameras เพราะเราแสดงเป็นปุ่มหลักแล้ว
+      const isAllGroup = group.name.toLowerCase() === 'all camera' || group.name.toLowerCase() === 'all cameras';
+      if (isAllGroup) return false;
+
       const camerasInGroup = groupedData[group.id] || [];
       return camerasInGroup.length > 0;
     });
