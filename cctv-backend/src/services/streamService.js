@@ -31,6 +31,8 @@ const streamService = {
     try {
       await axios.delete(`${go2rtcUrl}/api/streams`, { params: { name: streamId } }).catch(() => {});
       
+      console.log(`[StreamService] Config for ${streamId}: Audio=${camera.isAudioEnabled}, Transcode=${camera.isTranscodeEnabled}`);
+
       if (camera.isTranscodeEnabled) {
         const sourceId = `${streamId}_src`;
         await axios.delete(`${go2rtcUrl}/api/streams`, { params: { name: sourceId } }).catch(() => {});
@@ -39,17 +41,20 @@ const streamService = {
         const res = (effectiveType === 'SUB' ? camera.subResolution : camera.resolution) || (effectiveType === 'SUB' ? '640x360' : '1280x720');
         const fps = (effectiveType === 'SUB' ? camera.subFps : camera.fps) || (effectiveType === 'SUB' ? 10 : 15);
 
-        // 🚀 ทางแก้ปัญหาเสียง: เปลี่ยนจาก copy เป็น opus (WebRTC Native)
-        // หากเปิดเสียงใน Config ให้ทำการแปลงเป็น opus ทันที
-        // หากปิดเสียง ให้ใช้ #audio=no
         const audioParam = camera.isAudioEnabled ? '#audio=opus' : '#audio=no';
         const finalSrc = `ffmpeg:${sourceId}#video=h264#size=${res}#fps=${fps}#vprofile=main${audioParam}`;
         
+        console.log(`[StreamService] Transcode PUT: ${finalSrc}`);
         await axios.put(`${go2rtcUrl}/api/streams`, null, { params: { name: streamId, src: finalSrc } });
       } else {
+        // 🚀 กลับมาใช้ Direct Pass เพื่อความเสถียรสูงสุด
+        // ส่วนการปิดเสียงจะไปจัดการที่ Frontend ผ่าน Parameter &media=video แทน
+        console.log(`[StreamService] Direct Pass: ${currentRtspUrl}`);
         await axios.put(`${go2rtcUrl}/api/streams`, null, { params: { name: streamId, src: currentRtspUrl } });
       }
-    } catch (error) { }
+    } catch (error) {
+      console.error(`[StreamService] Error:`, error.message);
+    }
 
     return { 
       streamId, 

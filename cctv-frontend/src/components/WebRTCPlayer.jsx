@@ -47,6 +47,10 @@ const WebRTCPlayer = ({ streamId, isAudioEnabled = false, initialTranscode = fal
       videoElement.setAttribute('autoplay', '');
       videoElement.setAttribute('playsinline', '');
       
+      // 🚀 แก้ไขจุดสำคัญ: ตั้งค่า media property เพื่อบอก player ว่าจะเอา audio หรือไม่
+      // วิธีนี้จะทำให้ WebRTC Negotiation ไม่สร้าง Audio Transceiver เลยหากปิดเสียง
+      videoElement.media = isAudioEnabled ? 'video,audio' : 'video';
+      
       // แม้จะ muted แต่เราจะไม่บังคับแรงเกินไปเพื่อให้เบราว์เซอร์ยอมให้ปลดล็อคภายหลัง
       videoElement.muted = !isAudioEnabled;
       
@@ -59,8 +63,9 @@ const WebRTCPlayer = ({ streamId, isAudioEnabled = false, initialTranscode = fal
       setTimeout(() => {
         if (isCancelled) return;
         const cacheBuster = `&t=${Date.now()}`;
-        // 🚀 บังคับให้ go2rtc ส่ง Audio มาด้วยเสมอ
-        videoElement.src = `/go2rtc-ws?src=${streamId}&mode=mse,webrtc${cacheBuster}`;
+        // 🚀 หากปิดเสียง ให้ขอเฉพาะ video track (&media=video) เพื่อไม่ให้ go2rtc ส่งเสียงมา
+        const mediaParam = isAudioEnabled ? '' : '&media=video';
+        videoElement.src = `/go2rtc-ws?src=${streamId}&mode=mse,webrtc${mediaParam}${cacheBuster}`;
       }, 50);
 
       const checkVideoEvents = () => {

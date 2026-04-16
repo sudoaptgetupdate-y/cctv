@@ -48,3 +48,5 @@ streams:
     - rtsp://admin:Lkfgxifde0905@192.168.123.124:554/cam/realmonitor?channel=1&subtype=0
   camera_27_sub:
     - rtsp://admin:Lkfgxifde0905@192.168.123.124:554/cam/realmonitor?channel=1&subtype=1
+  camera_27_main_src:
+    - rtsp://admin:Lkfgxifde0905@192.168.123.124:554/cam/realmonitor?channel=1&subtype=0

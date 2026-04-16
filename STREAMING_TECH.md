@@ -66,8 +66,14 @@
 
 ## 7. การจัดการระบบเสียง (Audio Strategy for Web)
 
-### **OPUS Transcoding**
+### **OPUS Transcoding (When Transcode is ON)**
 *   บังคับแปลงเสียงเป็น **OPUS** (`#audio=opus`) เมื่อเปิด Transcode เพื่อให้ปุ่มเสียงใช้งานได้จริงบน HTTPS (Production) เนื่องจากเบราว์เซอร์ส่วนใหญ่ไม่รองรับ G.711/AAC ดั้งเดิมผ่าน WebRTC
+*   หากสั่งปิดเสียง ระบบจะส่ง `#audio=no` ไปยัง FFmpeg เพื่อตัด Track เสียงออกตั้งแต่ขั้นตอนการ Encode
+
+### **WebRTC Track Filtering (When Transcode is OFF)**
+*   **ปัญหา:** การส่ง `#audio=no` ใน RTSP URL ตรงๆ มักถูกละเลยโดย Streaming Engine หรือทำให้การ Handshake ล้มเหลว (จอดำ)
+*   **แนวทางแก้ไข:** ใช้การควบคุมที่ระดับ **Protocol Handshake (Frontend)** โดยการตั้งค่าพร็อพเพอร์ตี้ `.media = 'video'` ให้กับ Custom Element `<video-stream>`
+*   **ผลลัพธ์:** เบราว์เซอร์จะไม่สร้าง Audio Transceiver ในขั้นตอน WebRTC Negotiation ทำให้ Server ไม่ส่งข้อมูลเสียงข้าม Network มาเลย ช่วยประหยัด Bandwidth และรับประกันความเงียบ 100% โดยไม่ต้องพึ่งพา FFmpeg
 
 ---
 

@@ -31,6 +31,7 @@
 - [x] **Performance Optimization:** ปรับปรุง API สำหรับจัดการสมาชิกให้เป็นแบบ "Lean" (ส่งเฉพาะข้อมูลที่จำเป็น) ลด Latency เหลือ < 20ms ในระบบจริง
 - [x] **Visitor Analytics:** ระบบเก็บสถิติผู้เข้าชมหน้า Public Dashboard และการคลิกดูสตรีมกล้องแยกตามรายตัว
 - [x] **Advanced Reporting:** หน้าจอสรุปสถิติ (Reports) พร้อมกราฟวิเคราะห์แนวโน้ม (Chart.js) รองรับการเลือกช่วงเวลาแบบ Hybrid (Raw/Summary Data) เพื่อความรวดเร็ว
+- [x] **Universal Audio Control:** ระบบเปิด-ปิดเสียงที่เสถียร 100% ทั้งโหมดปกติและ Transcoding โดยใช้เทคนิค WebRTC Track Filtering (Frontend) ควบคู่กับ FFmpeg Parameter (Backend)
 
 ## 🛠️ Tech Stack & Ports
 ...
