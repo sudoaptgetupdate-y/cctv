@@ -1,14 +1,18 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useRef } from 'react';
 import apiClient from '../utils/apiClient';
+import axios from 'axios';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const isChecking = useRef(false);
 
   useEffect(() => {
-    checkAuth();
+    if (!isChecking.current) {
+      checkAuth();
+    }
   }, []);
 
   const checkAuth = async () => {
@@ -18,20 +22,38 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
+    // ป้องกันการยิง Request ซ้อนกัน
+    if (isChecking.current) return;
+    isChecking.current = true;
+
     try {
       const res = await apiClient.get('/auth/me');
       setUser(res.data.data);
+      setLoading(false);
     } catch (error) {
+      // ถ้าเป็นการยกเลิก Request (เช่น Refresh หน้าจอ) ไม่ต้องทำอะไร
+      if (axios.isCancel(error) || error.code === 'ERR_CANCELED') {
+        return;
+      }
+
       console.error('Auth check failed:', error);
+      
       // เฉพาะกรณี Unauthorized (401) หรือ Forbidden (403) เท่านั้นถึงจะลบ Token
       if (error.response && (error.response.status === 401 || error.response.status === 403)) {
         localStorage.removeItem('cctv_token');
         setUser(null);
+        setLoading(false);
+      } else {
+        // กรณี Network Error หรือ Server 500
+        // เรายังคง Loading ต่อไป หรือลองใหม่อีกครั้งเพื่อไม่ให้เด้งไปหน้า Login ทันที
+        console.warn('Network or Server error, retrying in 2s...');
+        setTimeout(() => {
+          isChecking.current = false;
+          checkAuth();
+        }, 2000);
       }
-      // ถ้าเป็น Error อื่นๆ (เช่น 500 หรือ Network Error) เราจะยังไม่ลบ Token 
-      // เพื่อให้โอกาสผู้ใช้ในการ Refresh หรือลองใหม่โดยไม่ต้อง Login
     } finally {
-      setLoading(false);
+      // ไม่ใช้ finally เพื่อ set loading false เพราะเราต้องการควบคุมลำดับเหตุการณ์เองข้างบน
     }
   };
 
