@@ -74,6 +74,14 @@ const PublicDashboard = () => {
     return groupsMap;
   }, [cameras, searchTerm]);
 
+  // 🔍 กรองเฉพาะกลุ่มที่มีกล้องอยู่จริง (Public Cameras)
+  const filteredGroups = useMemo(() => {
+    return groups.filter(group => {
+      const camerasInGroup = groupedData[group.id] || [];
+      return camerasInGroup.length > 0;
+    });
+  }, [groups, groupedData]);
+
   const toggleGroup = (id) => {
     setExpandedGroups(prev => ({ ...prev, [id]: !prev[id] }));
   };
@@ -165,7 +173,7 @@ const PublicDashboard = () => {
         >
           All Cameras ({cameras.length})
         </button>
-        {groups.map(group => (
+        {filteredGroups.map(group => (
           <button 
             key={group.id}
             onClick={() => setSelectedGroupId(group.id.toString())}
@@ -175,7 +183,7 @@ const PublicDashboard = () => {
               : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
             }`}
           >
-            {group.name} ({group._count?.cameras || 0})
+            {group.name} ({groupedData[group.id]?.length || 0})
           </button>
         ))}
       </div>
@@ -210,11 +218,9 @@ const PublicDashboard = () => {
               </div>
             ) : (
               <div className="py-2">
-                {/* วนลูปตามกลุ่ม (Groups) */}
-                {groups.map(group => {
+                {/* วนลูปตามกลุ่มที่มีกล้อง (Filtered Groups) */}
+                {filteredGroups.map(group => {
                   const camerasInGroup = groupedData[group.id] || [];
-                  if (camerasInGroup.length === 0 && searchTerm) return null;
-                  
                   const isExpanded = expandedGroups[group.id];
 
                   return (
