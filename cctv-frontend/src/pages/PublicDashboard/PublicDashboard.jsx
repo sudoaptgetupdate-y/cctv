@@ -222,7 +222,54 @@ const PublicDashboard = () => {
               </div>
             ) : (
               <div className="py-2">
-                {/* วนลูปตามกลุ่มที่มีกล้อง (Filtered Groups) */}
+                {/* 📌 Master List: All Cameras (Always at top) */}
+                {!searchTerm && (
+                  <div className="mb-1">
+                    <button 
+                      onClick={() => toggleGroup('all')}
+                      className={`w-full flex items-center justify-between px-5 py-3 transition-all hover:bg-white ${expandedGroups['all'] ? 'bg-white' : ''}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-1.5 rounded-lg ${expandedGroups['all'] ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>
+                          <Camera className="h-3.5 w-3.5" />
+                        </div>
+                        <span className={`text-[11px] font-black uppercase tracking-wider ${expandedGroups['all'] ? 'text-slate-900' : 'text-slate-500'}`}>
+                          All Cameras
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-400 rounded-full">{cameras.length}</span>
+                        {expandedGroups['all'] ? <ChevronDown className="h-3.5 w-3.5 text-slate-400" /> : <ChevronRight className="h-3.5 w-3.5 text-slate-400" />}
+                      </div>
+                    </button>
+
+                    {expandedGroups['all'] && (
+                      <div className="bg-white/50 py-1 px-2 space-y-1">
+                        {cameras.map(camera => (
+                          <button 
+                            key={`all-${camera.id}`}
+                            onClick={() => handleSelectCamera(camera)}
+                            className="w-full text-left p-3 rounded-xl hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-100 transition-all group flex items-center justify-between"
+                          >
+                            <div className="flex-1 min-w-0 pr-2">
+                              <p className="text-xs font-bold text-slate-700 group-hover:text-primary-600 truncate transition-colors">{camera.name}</p>
+                            </div>
+                            <Play className="h-3 w-3 text-slate-300 group-hover:text-primary-500 transition-colors" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 🏷️ Separator & Header */}
+                {filteredGroups.length > 0 && (
+                  <div className="px-5 pt-4 pb-2">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Camera Groups / Zones</p>
+                  </div>
+                )}
+
+                {/* 📂 Camera Groups */}
                 {filteredGroups.map(group => {
                   const camerasInGroup = groupedData[group.id] || [];
                   const isExpanded = expandedGroups[group.id];
