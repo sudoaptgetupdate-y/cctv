@@ -49,6 +49,8 @@
 - [x] **Enterprise Report Export:** ระบบส่งออก PDF/Excel รองรับ 2 ภาษา (Bilingual) พร้อมส่วนสรุปผู้บริหาร
 - [x] **Log Retention Policy:** ระบบตั้งค่าระยะเวลาเก็บข้อมูล (Visitor Logs/Summary) ผ่านหน้า Settings
 - [x] **Full Bilingual Support:** หน้า Dashboard และ Reports รองรับการสลับภาษาแบบ Reactive 100%
+- [x] **Bulk Camera Management:** ระบบนำเข้ากล้องแบบกลุ่ม (Bulk Import) รองรับ 6 คอลัมน์ พร้อมระบบ Preview, Auto-grouping และ Auto-creation ของกลุ่มใหม่
+- [x] **Architectural Refactoring:** ปรับปรุงหน้า Reports และระบบ Modal ให้เป็นแบบ Modular แยก Logic และ UI ชัดเจน 100%
 
 ## 🛠️ Tech Stack & Ports
 ...
