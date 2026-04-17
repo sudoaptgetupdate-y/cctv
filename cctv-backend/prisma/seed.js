@@ -44,7 +44,7 @@ async function main() {
   // 3. สร้างกลุ่มกล้อง
   const allCamerasGroup = await prisma.cameraGroup.create({
     data: {
-      name: 'All Camera',
+      name: 'All Cameras',
       description: 'รวมกล้องทุกตัวในระบบ (Default Group)',
       isNotifyEnabled: false, // กลุ่มรวมไม่ต้องแจ้งเตือนซ้ำซ้อน
     },
@@ -61,42 +61,19 @@ async function main() {
   // 4. สร้างกล้องตัวอย่าง
   console.log('Creating sample cameras...');
   
-  // กล้องแบบ Pass-through
   await prisma.camera.create({
     data: {
-      name: '🔴 กล้องทดสอบ (Native Stream)',
-      latitude: 13.7563,
-      longitude: 100.5018,
-      rtspUrl: 'rtsp://admin:admin1234@10.0.0.100:554/live',
+      name: 'EngineerOffice',
+      latitude: 8.3993959,
+      longitude: 99.969966,
+      rtspUrl: 'rtsp://admin:password@125.24.156.76:1554/cam/realmonitor?channel=1&subtype=0',
+      subStream: 'rtsp://admin:password@125.24.156.76:1554/cam/realmonitor?channel=1&subtype=1',
       status: 'ACTIVE',
       isPublic: true,
       userId: adminUser.id,
       groups: { 
         connect: [
-          { id: allCamerasGroup.id },
-          { id: mainGroup.id }
-        ]
-      }
-    },
-  });
-
-  // กล้องแบบเปิด Transcoding 10fps
-  await prisma.camera.create({
-    data: {
-      name: '⚙️ กล้องทดสอบ (Transcoding 10fps)',
-      latitude: 13.7500,
-      longitude: 100.5100,
-      rtspUrl: 'rtsp://admin:admin1234@192.168.10.219:554/live', 
-      status: 'ACTIVE',
-      isPublic: true,
-      isTranscodeEnabled: true,
-      resolution: '1280x720',
-      fps: 10,
-      userId: adminUser.id,
-      groups: { 
-        connect: [
-          { id: allCamerasGroup.id },
-          { id: mainGroup.id }
+          { id: allCamerasGroup.id }
         ]
       }
     },

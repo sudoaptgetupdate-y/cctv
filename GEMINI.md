@@ -22,6 +22,9 @@
     3. **Consistent Feedback:** ใช้ **SweetAlert2** สำหรับการยืนยัน และ **react-hot-toast** สำหรับแจ้งสถานะทั่วไป
     4. **Submit Protection:** มี `isSubmitting` state ทุกฟอร์ม
     5. **Sticky Pagination:** ใช้คอมโพเนนต์ Pagination สี Indigo แบบลอยตัวที่ท้ายตารางเสมอ
+    6. **Component Architecture:** สำหรับหน้าที่ซับซ้อน ให้แยก Sub-components ไว้ในโฟลเดอร์ `components/` ภายใต้นั้น (เช่น `src/pages/Reports/components/`)
+        - **Logic & UI Separation:** หน้าหลัก (Main Page) จัดการเฉพาะ State, Data Fetching และ Business Logic ส่วน Sub-components รับข้อมูลผ่าน Props เพื่อแสดงผลเท่านั้น
+        - **Independent i18n:** ทุก Sub-component ต้องรองรับ i18n 100% โดยใช้ `useTranslation` ภายในตัวคอมโพเนนต์เอง
 
 ## 📍 สถานะปัจจุบัน (Current Progress)
 - [x] **Backend Foundation:** Express + Prisma + MariaDB (Many-to-Many Relationships)
