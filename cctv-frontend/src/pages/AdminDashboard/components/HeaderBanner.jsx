@@ -7,9 +7,9 @@ const HeaderBanner = ({ user, stats }) => {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return t('dashboard.greeting.morning', 'Good morning');
-    if (hour < 18) return t('dashboard.greeting.afternoon', 'Good afternoon');
-    return t('dashboard.greeting.evening', 'Good evening');
+    if (hour < 12) return t('dashboard.greeting.morning');
+    if (hour < 18) return t('dashboard.greeting.afternoon');
+    return t('dashboard.greeting.evening');
   };
 
   const currentDate = new Date().toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'th-TH', { 
@@ -26,7 +26,7 @@ const HeaderBanner = ({ user, stats }) => {
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-blue-600 mb-2">
             <Activity size={16} />
-            <span className="text-[11px] font-black uppercase tracking-widest">{t('dashboard.title', 'CCTV Dashboard')}</span>
+            <span className="text-[11px] font-black uppercase tracking-widest">{t('dashboard.title')}</span>
           </div>
           <h2 className="text-3xl font-black text-slate-800 tracking-tight">
             {getGreeting()}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{user?.firstName || 'User'}</span>! 👋
@@ -48,13 +48,13 @@ const HeaderBanner = ({ user, stats }) => {
             </span>
             <div className="flex flex-col">
               <span className="text-xs font-black uppercase tracking-wider">
-                {isSystemHealthy ? t('dashboard.status.optimal', 'System Optimal') : t('dashboard.status.attention', 'Needs Attention')}
+                {isSystemHealthy ? t('dashboard.status.optimal') : t('dashboard.status.attention')}
               </span>
             </div>
             {isSystemHealthy ? <CheckCircle2 size={18} className="ml-1 opacity-80" /> : <AlertTriangle size={18} className="ml-1 opacity-80" />}
           </div>
           <p className="text-[11px] text-slate-400 font-medium tracking-wide">
-            {t('dashboard.status.last_updated', 'Last Sync')}: <span className="text-slate-500">{new Date().toLocaleTimeString()}</span>
+            {t('dashboard.status.last_updated')}: <span className="text-slate-500">{new Date().toLocaleTimeString(i18n.language === 'en' ? 'en-US' : 'th-TH')}</span>
           </p>
         </div>
       </div>

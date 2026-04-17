@@ -6,9 +6,11 @@ import StreamModal from '../../components/StreamModal';
 import { useAuth } from '../../context/AuthContext';
 import HeaderBanner from './components/HeaderBanner';
 import StatCards from './components/StatCards';
+import { useTranslation } from 'react-i18next';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [cameras, setCameras] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, online: 0, offline: 0 });
@@ -63,15 +65,15 @@ const AdminDashboard = () => {
               <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
                 <MapIcon className="h-5 w-5" />
               </div>
-              จุดติดตั้งกล้องบนแผนที่จริง
+              {t('dashboard.map.title')}
             </h3>
-            <p className="text-xs text-slate-400 font-medium mt-0.5 ml-9">แสดงตำแหน่งกล้อง CCTV ทั้งหมดในระบบ</p>
+            <p className="text-xs text-slate-400 font-medium mt-0.5 ml-9">{t('dashboard.map.subtitle')}</p>
           </div>
           <button 
             onClick={fetchData} 
             disabled={loading}
             className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all active:scale-90"
-            title="Refresh Map"
+            title={t('dashboard.map.refresh')}
           >
              <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin text-blue-500' : ''}`} />
           </button>

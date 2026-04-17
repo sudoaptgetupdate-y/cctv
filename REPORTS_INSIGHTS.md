@@ -1,52 +1,55 @@
-# 📊 Report Enhancements & Actionable Insights Plan
+# 📊 Report Enhancements & Actionable Insights (Status: Completed ✅)
 
-เอกสารฉบับนี้ระบุรายละเอียดแผนการพัฒนาเทคโนโลยีการวิเคราะห์ข้อมูล (Analytics) สำหรับหน้า Reports เพื่อยกระดับจากสรุปสถิติทั่วไปสู่ระบบวิเคราะห์ข้อมูลอัจฉริยะ (Business Intelligence)
-
----
-
-## 🏗️ แผนการดำเนินงาน 3 ระยะ (3-Phase Roadmap)
-
-### Phase 1: Backend Data Refactoring (รากฐานข้อมูล)
-*เป้าหมาย: เพิ่มขีดความสามารถในการประมวลผลข้อมูลดิบให้มีความละเอียดสูง*
-
-1.  **Device & Browser Identification:**
-    *   ติดตั้งไลบรารี `ua-parser-js`
-    *   สร้าง Utility สำหรับ Parse `userAgent` เพื่อแยกมิติ (Dimensions): อุปกรณ์ (Mobile/Tablet/Desktop), เบราว์เซอร์ (Chrome/Safari/ฯลฯ) และระบบปฏิบัติการ
-2.  **Hourly Traffic Aggregation:**
-    *   อัปเดต `logService.getVisitorReport` ให้รองรับการ Group ข้อมูลรายชั่วโมง (0-23)
-    *   สร้าง Cache หรือตาราง Summary รายชั่วโมงสำหรับข้อมูลที่มีอายุ > 7 วัน
-3.  **Trend Calculation Logic:**
-    *   พัฒนา Logic การดึงข้อมูลเปรียบเทียบ (Period-over-Period) 
-    *   คำนวณสูตร: `((ปัจจุบัน - ก่อนหน้า) / ก่อนหน้า) * 100`
-4.  **System Availability Correlation:**
-    *   ดึงข้อมูลจาก `CameraEventLog` มาคำนวณหา % Uptime ของกล้องแต่ละตัวในแต่ละวัน
-    *   สูตรคำนวณ: `(เวลาที่ Online / เวลาทั้งหมดในรอบรายงาน) * 100`
-
-### Phase 2: UI/UX Visualization (การแสดงผลระดับ Enterprise)
-*เป้าหมาย: สร้างหน้า Dashboard ที่ช่วยในการตัดสินใจได้ทันที*
-
-1.  **Peak Time Heatmap/Bar Chart:**
-    *   แสดงกราฟแท่ง 24 แท่ง (00:00 - 23:00) เพื่อหา Peak Load ของระบบ
-2.  **Trend Indicators on Stat Cards:**
-    *   เพิ่มสัญลักษณ์ลูกศร (↑/↓) และตัวเลขเปอร์เซ็นต์ข้างหลังสถิติหลัก
-    *   ใช้สี Semantic: เขียว (ดีขึ้น), แดง (ลดลง), เทา (คงที่)
-3.  **Technical Distribution Charts:**
-    *   เพิ่ม Pie Chart แสดงสัดส่วนอุปกรณ์ (ช่วยตัดสินใจเรื่อง Mobile Optimization)
-    *   เพิ่ม Pie Chart แสดงสัดส่วนเบราว์เซอร์
-4.  **Integrated Health Score:**
-    *   แสดง "Availability Score" เป็น Gauge Chart หรือแถบ Progress สีตามสถานะ (เขียว > 99%)
-
-### Phase 3: Intelligent Export (รายงานสรุปผู้บริหาร)
-*เป้าหมาย: ส่งออกรายงานที่วิเคราะห์สรุปผลให้เสร็จสรรพ*
-
-1.  **Executive Summary Page (PDF):**
-    *   หน้าแรกของ PDF จะสรุป Insight สำคัญ: "สัปดาห์นี้คนดูเพิ่มขึ้น 10% ช่วงเวลาที่ดูมากที่สุดคือ 19:00 น. และระบบมีความเสถียร 99.8%"
-2.  **Detailed Insight Sheet (Excel):**
-    *   เพิ่ม Tab "Hourly_Analysis" และ "Technical_Stats" ในไฟล์ Excel
+เอกสารฉบับนี้ระบุรายละเอียดเทคโนโลยีการวิเคราะห์ข้อมูล (Analytics) และระบบจัดการข้อมูลประวัติ (Data Maintenance) ที่ถูกพัฒนาขึ้นเพื่อยกระดับระบบสู่ Business Intelligence เต็มรูปแบบ
 
 ---
 
-## 📈 ประโยชน์ที่คาดว่าจะได้รับ (Expected Value)
-1.  **System Health Monitoring:** รู้ทันทีว่าคนดูน้อยลงเพราะระบบไม่เสถียร หรือเพราะพฤติกรรมผู้ใช้เปลี่ยนไป
-2.  **Resource Planning:** รู้ช่วงเวลา Peak เพื่อเตรียม Bandwidth หรือวางแผนซ่อมบำรุง
-3.  **UX Improvement:** รู้ว่าผู้ใช้ส่วนใหญ่เข้าผ่านอุปกรณ์อะไร เพื่อปรับ UI ให้เหมาะสมที่สุด
+## 🚀 ฟีเจอร์ที่พัฒนาเสร็จสมบูรณ์ (Implemented Features)
+
+### 1. Backend Data Intelligence (รากฐานข้อมูลเชิงลึก)
+*   **Device & Browser Identification:** ใช้ `ua-parser-js` แยกมิติข้อมูลอุปกรณ์ (Mobile/Desktop), เบราว์เซอร์ และระบบปฏิบัติการ ได้แม่นยำ 100%
+*   **Hourly Traffic Analytics:** ระบบ Group ข้อมูลรายชั่วโมง (0-23) เพื่อวิเคราะห์ช่วงเวลา Peak Load
+*   **Period-over-Period Trends:** คำนวณอัตราการเติบโต (%) เปรียบเทียบกับช่วงเวลาก่อนหน้าอัตโนมัติ
+*   **System Availability Score:** วิเคราะห์ % Uptime ของกล้องจาก Event Logs เพื่อวัดความเสถียรของระบบ
+
+### 2. High-Fidelity UI/UX Visualization
+*   **Advanced Charts:**
+    *   **Traffic Trend (Line Chart):** แสดงแนวโน้มผู้เข้าชมพร้อมระบบ Dynamic Locale (TH/EN)
+    *   **Technical Distribution (Doughnut):** สัดส่วนอุปกรณ์/เบราว์เซอร์/OS ด้วยชุดสี High-Contrast
+    *   **Peak Time Analysis (Bar Chart):** กราฟแท่งแสดงโหลดการใช้งานรายชั่วโมง
+*   **Camera Leaderboard:** ระบบจัดอันดับกล้องยอดนิยมรูปแบบใหม่ พร้อม Rank Badges และ Progress Bar (แทนกราฟแท่งแบบเดิม)
+*   **Top 10 Visitors Table:** แสดงรายชื่อ IP Address ที่เข้าใช้งานสูงสุด พร้อมวันเวลาล่าสุดและประเภทอุปกรณ์
+
+### 3. Log Retention & System Maintenance
+*   **Dynamic Policy Settings:** Admin สามารถตั้งค่าระยะเวลาการเก็บข้อมูลได้เองผ่านหน้า Settings:
+    *   **Raw Visitor Logs:** (แนะนำ 30-90 วัน) เก็บข้อมูลดิบเชิงลึก
+    *   **Summary Data:** (แนะนำ 12-60 เดือน) เก็บยอดสรุปรายวันเพื่อใช้ดู Trend ระยะยาว
+*   **Auto-Cleanup Service:** ระบบลบข้อมูลที่หมดอายุอัตโนมัติผ่าน Daily Cron Job เพื่อประหยัดพื้นที่ HDD
+
+### 4. Intelligent Bilingual Export (TH/EN)
+*   **Multi-language Support:** รายงาน PDF และ Excel รองรับ 2 ภาษา 100% ตามภาษาที่ผู้ใช้เลือกขณะกด Export
+*   **Executive Summary PDF:** รายงาน PDF ระดับมืออาชีพ ประกอบด้วย:
+    *   กล่องสรุปผลภาพรวม (Executive Summary Box)
+    *   ตารางวิเคราะห์ข้อมูลทางเทคนิค (Technical Insights Table)
+    *   ตารางสถิติรายวัน (Detailed Daily Stats)
+*   **Comprehensive Excel:** แยก Sheet "Usage Insights" สำหรับวิเคราะห์ข้อมูลเชิงลึกรายมิติ
+
+---
+
+## 🛠️ ข้อมูลทางเทคนิค (Technical Reference)
+
+| หัวข้อ | เทคโนโลยีที่ใช้ | หมายเหตุ |
+| :--- | :--- | :--- |
+| **Parsing** | `ua-parser-js` | แยก Mobile/Tablet/Desktop/Browser/OS |
+| **Charts** | `Chart.js` + `react-chartjs-2` | รองรับ Responsive & Dynamic Colors |
+| **PDF** | `pdfkit-table` | จัด Layout แบบตารางเพื่อความเป๊ะของสัดส่วน |
+| **Excel** | `exceljs` | รองรับ Multi-sheet และ Styling |
+| **i18n** | `react-i18next` | รองรับการเปลี่ยนภาษาแบบ Reactive |
+
+---
+
+## 📈 ประโยชน์ที่ระบบมอบให้ (Business Value)
+1.  **System Health Monitoring:** รู้ความเสถียรของกล้องแต่ละตัวเทียบกับปริมาณคนดู
+2.  **Resource Planning:** เตรียม Bandwidth ให้เพียงพอตามช่วงเวลา Peak และประเภทอุปกรณ์
+3.  **Storage Optimization:** ควบคุมการใช้พื้นที่ HDD ได้แม่นยำผ่านหน้า Settings
+4.  **Reporting Ready:** พร้อมนำรายงานส่งต่อให้ผู้บริหารได้ทันทีด้วยรูปแบบที่เป็นสากล

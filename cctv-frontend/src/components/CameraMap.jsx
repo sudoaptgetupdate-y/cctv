@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Camera, Radio, Activity } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import 'leaflet/dist/leaflet.css';
 
 // คอมโพเนนต์ช่วยปรับมุมมองแผนที่ให้ครอบคลุมกล้องทุกตัว
@@ -61,6 +62,7 @@ const createCameraIcon = (status) => {
 };
 
 const CameraMap = ({ cameras, onSelectCamera, focusedCamera }) => {
+  const { t } = useTranslation();
   const defaultCenter = [13.7563, 100.5018];
   const center = cameras.length > 0 
     ? [cameras[0].latitude, cameras[0].longitude] 
@@ -105,7 +107,7 @@ const CameraMap = ({ cameras, onSelectCamera, focusedCamera }) => {
                 </div>
                 <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold uppercase tracking-tight">
                   <Activity className="h-3 w-3" />
-                  <span>Click to view live stream</span>
+                  <span>{t('dashboard.map.tooltip_hint')}</span>
                 </div>
               </div>
             </Tooltip>

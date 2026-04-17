@@ -35,7 +35,9 @@ const resources = {
         add: "Add",
         remove: "Remove",
         export: "Export",
-        apply: "Apply"
+        apply: "Apply",
+        days: "Days",
+        custom: "Custom"
       },
       sidebar: {
         dashboard: "Dashboard",
@@ -49,6 +51,30 @@ const resources = {
         monitoring: "Monitoring",
         system: "System Administration",
         my_profile: "My Profile"
+      },
+      dashboard: {
+        title: "CCTV Dashboard",
+        greeting: {
+          morning: "Good morning",
+          afternoon: "Good afternoon",
+          evening: "Good evening"
+        },
+        status: {
+          optimal: "System Optimal",
+          attention: "Needs Attention",
+          last_updated: "Last Sync"
+        },
+        stats: {
+          total_cameras: "Total Cameras",
+          online: "Online",
+          offline: "Offline"
+        },
+        map: {
+          title: "CCTV Locations on Map",
+          subtitle: "Shows all registered CCTV locations in the system",
+          refresh: "Refresh Map",
+          tooltip_hint: "Click to view live stream"
+        }
       },
       reports: {
         title: "Visitor Analytics",
@@ -66,7 +92,24 @@ const resources = {
         export_desc: "Choose your preferred file format",
         exporting: "Exporting report...",
         export_success: "Report exported successfully",
-        export_error: "Failed to export report"
+        export_error: "Failed to export report",
+        uptime: "System Availability",
+        uptime_excellent: "Excellent",
+        uptime_check: "Check Logs",
+        peak_time_analysis: "Hourly Traffic (Peak Time)",
+        peak_time: "Hourly Views",
+        top_rankings: "Camera Rankings",
+        top_visitors: "Top 10 Visitors (By IP)",
+        unique_ips: "Unique Devices",
+        ip_address: "IP Address",
+        last_activity: "Last Activity",
+        total_visits: "Visits",
+        platform_browser: "Platform / Browser",
+        times: "times",
+        no_data: "No visitor data found for this period",
+        devices: "Device Types",
+        browsers: "Browsers",
+        os: "Operating Systems"
       },
       users: {
         title: "User Management",
@@ -311,7 +354,9 @@ const resources = {
         add: "เพิ่ม",
         remove: "เอาออก",
         export: "ส่งออก",
-        apply: "ตกลง"
+        apply: "ตกลง",
+        days: "วัน",
+        custom: "กำหนดเอง"
       },
       sidebar: {
         dashboard: "แดชบอร์ด",
@@ -325,6 +370,30 @@ const resources = {
         monitoring: "การตรวจสอบ",
         system: "การจัดการระบบ",
         my_profile: "โปรไฟล์ของฉัน"
+      },
+      dashboard: {
+        title: "แผงควบคุมระบบ",
+        greeting: {
+          morning: "อรุณสวัสดิ์",
+          afternoon: "สวัสดีตอนบ่าย",
+          evening: "สวัสดีตอนเย็น"
+        },
+        status: {
+          optimal: "ระบบทำงานปกติ",
+          attention: "ควรตรวจสอบระบบ",
+          last_updated: "อัปเดตล่าสุด"
+        },
+        stats: {
+          total_cameras: "กล้องทั้งหมด",
+          online: "ออนไลน์",
+          offline: "ออฟไลน์"
+        },
+        map: {
+          title: "จุดติดตั้งกล้องบนแผนที่จริง",
+          subtitle: "แสดงตำแหน่งกล้อง CCTV ทั้งหมดในระบบ",
+          refresh: "รีเฟรชแผนที่",
+          tooltip_hint: "คลิกเพื่อดูสตรีมสด"
+        }
       },
       reports: {
         title: "สรุปสถิติผู้เข้าชม",
@@ -347,6 +416,7 @@ const resources = {
         uptime_excellent: "ยอดเยี่ยม",
         uptime_check: "ควรตรวจสอบ Log",
         peak_time_analysis: "สถิติรายชั่วโมง (ช่วงเวลา Peak)",
+        peak_time: "จำนวนการเข้าชม",
         top_rankings: "อันดับการใช้งานกล้อง",
         top_visitors: "ผู้เข้าชม 10 อันดับแรก (แยกตาม IP)",
         unique_ips: "จำนวนอุปกรณ์",
@@ -598,6 +668,10 @@ i18n
   .init({
     resources,
     fallbackLng: 'th',
+    detection: {
+      order: ['localStorage', 'cookie', 'navigator', 'htmlTag', 'path', 'subdomain'],
+      caches: ['localStorage', 'cookie'],
+    },
     interpolation: {
       escapeValue: false
     }

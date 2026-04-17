@@ -15,7 +15,7 @@ const StatCards = ({ stats }) => {
           <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300 shadow-inner">
             <Camera size={24} />
           </div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest group-hover:text-blue-600 transition-colors">{t('dashboard.stats.total_cameras', 'Total Cameras')}</p>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest group-hover:text-blue-600 transition-colors">{t('dashboard.stats.total_cameras')}</p>
           <h3 className="text-4xl font-black text-slate-900 mt-1">{stats.total}</h3>
         </div>
       </div>
@@ -27,7 +27,7 @@ const StatCards = ({ stats }) => {
           <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-4 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300 shadow-inner">
             <CheckCircle size={24} />
           </div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">{t('dashboard.stats.online', 'Online')}</p>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest group-hover:text-emerald-600 transition-colors">{t('dashboard.stats.online')}</p>
           <div className="flex items-end gap-2 mt-1">
             <h3 className="text-4xl font-black text-slate-900">{stats.online}</h3>
             {stats.total > 0 && (<span className="text-sm font-bold text-emerald-500 mb-1">({Math.round(onlinePercentage)}%)</span>)}
@@ -42,7 +42,7 @@ const StatCards = ({ stats }) => {
           <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center mb-4 group-hover:bg-rose-500 group-hover:text-white transition-colors duration-300 shadow-inner">
             <Radio size={24} />
           </div>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest group-hover:text-rose-600 transition-colors">{t('dashboard.stats.offline', 'Offline')}</p>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest group-hover:text-rose-600 transition-colors">{t('dashboard.stats.offline')}</p>
           <div className="flex items-end gap-2 mt-1">
             <h3 className="text-4xl font-black text-slate-900">{stats.offline}</h3>
             {stats.offline > 0 && <AlertTriangle size={20} className="text-rose-500 mb-2 animate-pulse" />}
