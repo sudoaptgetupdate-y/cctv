@@ -428,6 +428,30 @@ const logController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  /**
+   * เคลียร์ข้อมูลผู้เข้าชมทั้งหมด (ใช้สำหรับทดสอบ - เฉพาะ Super Admin)
+   */
+  async clearAllVisitorData(req, res, next) {
+    try {
+      // ตรวจสอบสิทธิ์ Super Admin อีกครั้งที่ Controller
+      if (req.user.role !== 'SUPER_ADMIN') {
+        return res.status(403).json({ message: 'Unauthorized: Only Super Admin can perform this action' });
+      }
+
+      await prisma.$transaction([
+        prisma.publicVisitorLog.deleteMany(),
+        prisma.publicVisitorSummary.deleteMany()
+      ]);
+
+      res.json({
+        success: true,
+        message: 'All visitor analytics data has been cleared successfully'
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 };
 

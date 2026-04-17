@@ -24,4 +24,7 @@ router.get('/export/pdf', verifyToken, logController.exportVisitorReportPdf);
 // บันทึกการเข้าชม (Public - ไม่ต้องมี Token)
 router.post('/public/visit', logController.createPublicVisitLog);
 
+// --- Clear Data (Testing only) ---
+router.delete('/clear-visitor-data', verifyToken, logController.clearAllVisitorData);
+
 module.exports = router;
