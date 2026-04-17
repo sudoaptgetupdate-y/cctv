@@ -18,12 +18,13 @@ import {
   PointElement,
   LineElement,
   BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend,
   Filler
 } from 'chart.js';
-import { Line, Bar } from 'react-chartjs-2';
+import { Line, Bar, Doughnut } from 'react-chartjs-2';
 
 ChartJS.register(
   CategoryScale,
@@ -31,6 +32,7 @@ ChartJS.register(
   PointElement,
   LineElement,
   BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend,
@@ -38,7 +40,7 @@ ChartJS.register(
 );
 
 const Reports = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [cameras, setCameras] = useState([]);
   const [enhancedData, setEnhancedData] = useState(null);
@@ -133,7 +135,8 @@ const Reports = () => {
         start, 
         end, 
         selectedCameraId === 'all' ? null : selectedCameraId,
-        exportFormat
+        exportFormat,
+        i18n.language || 'th'
       );
 
       const url = window.URL.createObjectURL(new Blob([blob]));
@@ -275,20 +278,85 @@ const Reports = () => {
         }
       ]
     };
-  }, [enhancedData, cameras, t]);
+  }, [enhancedData, cameras, t, topLimit]);
+
+  // 🍩 Technical Stats Charts (Devices, Browsers, OS)
+  const getDoughnutData = (stats, label, baseColor) => {
+    if (!stats) return { labels: [], datasets: [] };
+    const entries = Object.entries(stats);
+    return {
+      labels: entries.map(e => e[0]),
+      datasets: [
+        {
+          label,
+          data: entries.map(e => e[1]),
+          backgroundColor: [
+            `${baseColor}88`,
+            `${baseColor}66`,
+            `${baseColor}44`,
+            `${baseColor}AA`,
+            `${baseColor}CC`,
+          ],
+          borderColor: '#fff',
+          borderWidth: 2,
+        }
+      ]
+    };
+  };
+
+  const deviceData = useMemo(() => 
+    getDoughnutData(enhancedData?.techStats?.devices, t('reports.devices', 'Devices'), '#3B82F6'), 
+  [enhancedData, t]);
+
+  const browserData = useMemo(() => 
+    getDoughnutData(enhancedData?.techStats?.browsers, t('reports.browsers', 'Browsers'), '#10B981'), 
+  [enhancedData, t]);
+
+  const osData = useMemo(() => 
+    getDoughnutData(enhancedData?.techStats?.os, t('reports.os', 'OS Distribution'), '#6366F1'), 
+  [enhancedData, t]);
+
+  const doughnutOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          boxWidth: 8,
+          font: { size: 9, weight: 'bold' },
+          padding: 8,
+          usePointStyle: true
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const label = context.label || '';
+            const value = context.raw || 0;
+            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+            const percentage = ((value / total) * 100).toFixed(1);
+            return `${label}: ${value} (${percentage}%)`;
+          }
+        }
+      }
+    },
+    cutout: '70%',
+    spacing: 2
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-700">
       {/* 🏷️ Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-3">
-            <div className="p-2 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-200">
-              <BarChart3 className="h-6 w-6" />
+          <h2 className="text-2xl font-black text-slate-800 tracking-tighter flex items-center gap-3">
+            <div className="h-12 w-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl text-white shadow-xl shadow-blue-100 flex items-center justify-center">
+              <BarChart3 size={24} />
             </div>
             {t('reports.title', 'Visitor Analytics')}
           </h2>
-          <p className="text-slate-500 text-sm font-medium mt-1">
+          <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mt-1 ml-15 italic">
             {t('reports.subtitle', 'Monitor traffic and camera usage statistics')}
           </p>
         </div>
@@ -296,7 +364,7 @@ const Reports = () => {
         <div className="flex items-center gap-2">
           <button 
             onClick={handleExport}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 border border-indigo-500 rounded-xl text-xs font-black text-white hover:bg-indigo-700 transition-all uppercase tracking-widest shadow-lg shadow-indigo-200"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-2xl text-[10px] font-black text-white transition-all uppercase tracking-widest shadow-xl shadow-indigo-500/20 active:scale-95"
           >
             <Download className="h-3.5 w-3.5" />
             {t('common.export', 'Export')}
@@ -304,7 +372,7 @@ const Reports = () => {
 
           <button 
             onClick={fetchReport}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-600 hover:bg-slate-50 transition-all uppercase tracking-widest"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-[10px] font-black text-slate-600 hover:bg-slate-50 transition-all uppercase tracking-widest active:scale-95"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
             {t('common.refresh', 'Refresh')}
@@ -315,14 +383,14 @@ const Reports = () => {
       {/* 🔍 Filters */}
       <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-2xl">
+          <div className="flex items-center gap-1 bg-slate-100 p-1.5 rounded-2xl">
             {['1', '7', '15', '30'].map(val => (
               <button
                 key={val}
                 onClick={() => setDateRange(val)}
-                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                   dateRange === val 
-                  ? 'bg-white text-blue-600 shadow-sm' 
+                  ? 'bg-white text-blue-600 shadow-lg shadow-blue-500/10' 
                   : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
@@ -331,9 +399,9 @@ const Reports = () => {
             ))}
             <button
               onClick={() => setDateRange('custom')}
-              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+              className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                 dateRange === 'custom' 
-                ? 'bg-white text-blue-600 shadow-sm' 
+                ? 'bg-white text-blue-600 shadow-lg shadow-blue-500/10' 
                 : 'text-slate-500 hover:text-slate-700'
               }`}
             >
@@ -342,42 +410,45 @@ const Reports = () => {
           </div>
 
           <div className="flex-1 min-w-[200px]">
-             <select 
-               className="w-full bg-slate-50 border-slate-200 rounded-2xl text-xs font-bold px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-               value={selectedCameraId}
-               onChange={(e) => setSelectedCameraId(e.target.value)}
-             >
-               <option value="all">{t('reports.all_cameras', 'All Cameras')}</option>
-               {cameras.map(c => (
-                 <option key={c.id} value={c.id}>{c.name}</option>
-               ))}
-             </select>
+             <div className="relative">
+               <Camera size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+               <select 
+                 className="w-full bg-slate-50 border-slate-200 rounded-2xl text-xs font-bold pl-11 pr-4 py-3 outline-none focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none cursor-pointer"
+                 value={selectedCameraId}
+                 onChange={(e) => setSelectedCameraId(e.target.value)}
+               >
+                 <option value="all">{t('reports.all_cameras', 'All Cameras')}</option>
+                 {cameras.map(c => (
+                   <option key={c.id} value={c.id}>{c.name}</option>
+                 ))}
+               </select>
+             </div>
           </div>
         </div>
 
         {dateRange === 'custom' && (
-          <div className="flex flex-wrap items-center gap-4 pt-2 border-t border-slate-100 animate-in fade-in slide-in-from-top-2">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black text-slate-400 uppercase">{t('common.from', 'From')}</span>
+          <div className="flex flex-wrap items-center gap-6 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('common.from', 'From')}</span>
               <input 
                 type="date" 
-                className="bg-slate-50 border-slate-200 rounded-xl text-xs font-bold px-3 py-2 outline-none"
+                className="bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold px-4 py-2 outline-none focus:ring-4 focus:ring-blue-500/5 transition-all"
                 value={customDates.start}
                 onChange={(e) => setCustomDates({...customDates, start: e.target.value})}
               />
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black text-slate-400 uppercase">{t('common.to', 'To')}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('common.to', 'To')}</span>
               <input 
                 type="date" 
-                className="bg-slate-50 border-slate-200 rounded-xl text-xs font-bold px-3 py-2 outline-none"
+                className="bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold px-4 py-2 outline-none focus:ring-4 focus:ring-blue-500/5 transition-all"
                 value={customDates.end}
                 onChange={(e) => setCustomDates({...customDates, end: e.target.value})}
               />
             </div>
             <button 
               onClick={fetchReport}
-              className="px-6 py-2 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
+              className="px-8 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-xl shadow-slate-900/20 hover:bg-black transition-all active:scale-95"
             >
               {t('common.apply', 'Apply')}
             </button>
@@ -388,31 +459,31 @@ const Reports = () => {
       {/* 📊 Stat Cards with Trends */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
-          icon={<Eye className="h-5 w-5" />}
+          icon={<Eye size={20} />}
           label={t('reports.total_views', 'Total Views')}
           value={stats.totalViews.toLocaleString()}
           trend={stats.trends?.views?.growth}
           color="blue"
         />
         <StatCard 
-          icon={<Users className="h-5 w-5" />}
+          icon={<Users size={20} />}
           label={t('reports.unique_visitors', 'Unique Visitors')}
           value={stats.uniqueVisitors.toLocaleString()}
           trend={stats.trends?.visitors?.growth}
           color="emerald"
         />
         <StatCard 
-          icon={<MapPin className="h-5 w-5" />}
+          icon={<MapPin size={20} />}
           label={t('reports.uptime', 'System Availability')}
           value={`${stats.availability}%`}
           color="indigo"
-          subValue={stats.availability > 95 ? 'Healthy' : 'Check System'}
+          subValue={stats.availability > 95 ? t('reports.uptime_excellent', 'Excellent') : t('reports.uptime_check', 'Check Logs')}
         />
         <StatCard 
-          icon={<Camera className="h-5 w-5" />}
-          label={t('reports.top_camera', 'Most Active Camera')}
+          icon={<Camera size={20} />}
+          label={t('reports.top_camera', 'Top Camera')}
           value={stats.topCamera}
-          subValue={`${stats.maxViews.toLocaleString()} views`}
+          subValue={`${stats.maxViews.toLocaleString()} ${t('reports.views_by_camera', 'views')}`}
           color="amber"
         />
       </div>
@@ -421,60 +492,65 @@ const Reports = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {/* Traffic Trend */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-            <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 mb-6">
-              <TrendingUp className="h-4 w-4 text-blue-500" />
+          <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+            <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em] flex items-center gap-3 mb-8">
+              <TrendingUp className="text-blue-500" size={18} />
               {t('reports.traffic_trend', 'Traffic Trend')}
             </h3>
-            <div className="h-[300px]">
+            <div className="h-[350px]">
               <Line 
                 data={chartData} 
                 options={{
                   responsive: true,
                   maintainAspectRatio: false,
-                  plugins: { legend: { display: false } },
+                  plugins: { 
+                    legend: { 
+                      position: 'top',
+                      labels: { font: { weight: 'bold', size: 10 }, usePointStyle: true }
+                    } 
+                  },
                   scales: {
-                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
-                    x: { grid: { display: false } }
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 10 } } },
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } }
                   }
                 }} 
               />
             </div>
           </div>
 
-          {/* Peak Time Analysis */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-            <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 mb-6">
-              <Clock className="h-4 w-4 text-indigo-500" />
-              {t('reports.peak_time_title', 'Hourly Traffic (Peak Time)')}
-            </h3>
-            <div className="h-[200px]">
-              <Bar 
-                data={hourlyChartData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: { legend: { display: false } },
-                  scales: {
-                    y: { display: false },
-                    x: { grid: { display: false }, ticks: { font: { size: 10 } } }
-                  }
-                }}
-              />
-            </div>
+          {/* Technical Distribution Row */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <TechnicalCard 
+              title={t('reports.devices', 'Devices')} 
+              data={deviceData} 
+              options={doughnutOptions} 
+              icon={<Globe className="text-blue-500" size={14} />} 
+            />
+            <TechnicalCard 
+              title={t('reports.browsers', 'Browsers')} 
+              data={browserData} 
+              options={doughnutOptions} 
+              icon={<Globe className="text-emerald-500" size={14} />} 
+            />
+            <TechnicalCard 
+              title={t('reports.os', 'OS Distribution')} 
+              data={osData} 
+              options={doughnutOptions} 
+              icon={<Globe className="text-indigo-500" size={14} />} 
+            />
           </div>
         </div>
 
         <div className="space-y-6">
           {/* Top Cameras Rankings */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                <Camera className="h-4 w-4 text-indigo-500" />
-                {t('reports.top_n_cameras', { count: topLimit })}
+          <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm h-full flex flex-col">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em] flex items-center gap-3">
+                <Camera className="text-indigo-500" size={18} />
+                {t('reports.top_rankings', 'Camera Rankings')}
               </h3>
               <select 
-                className="text-[10px] font-black bg-slate-100 border-none rounded-lg px-2 py-1 outline-none"
+                className="text-[10px] font-black bg-slate-100 hover:bg-slate-200 border-none rounded-xl px-4 py-2 outline-none transition-colors cursor-pointer"
                 value={topLimit}
                 onChange={(e) => setTopLimit(parseInt(e.target.value))}
               >
@@ -483,7 +559,7 @@ const Reports = () => {
                 <option value={20}>Top 20</option>
               </select>
             </div>
-            <div className="h-[300px]">
+            <div className="flex-1 min-h-[400px]">
               <Bar 
                 data={barChartData}
                 options={{
@@ -492,68 +568,138 @@ const Reports = () => {
                   maintainAspectRatio: false,
                   plugins: { legend: { display: false } },
                   scales: {
-                    x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
-                    y: { grid: { display: false } }
+                    x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 10 } } },
+                    y: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' } } }
                   }
                 }}
               />
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Device Stats */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-             <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 mb-6">
-              <Globe className="h-4 w-4 text-emerald-500" />
-              {t('reports.device_stats', 'Device Distribution')}
-            </h3>
-            <div className="space-y-4">
-               {enhancedData?.techStats?.devices && Object.entries(enhancedData.techStats.devices).map(([type, count]) => (
-                 <div key={type} className="flex items-center justify-between">
-                   <span className="text-xs font-bold text-slate-600">{type}</span>
-                   <div className="flex items-center gap-3 flex-1 mx-4">
-                     <div className="h-1.5 bg-slate-100 rounded-full flex-1 overflow-hidden">
-                       <div 
-                         className="h-full bg-emerald-500 rounded-full" 
-                         style={{ width: `${(count / (enhancedData.trends.views.current || 1) * 100) || 0}%` }}
-                       />
-                     </div>
-                   </div>
-                   <span className="text-[10px] font-black text-slate-400">{Math.round((count / (enhancedData.trends.views.current || 1) * 100) || 0)}%</span>
-                 </div>
-               ))}
-            </div>
-          </div>
+      {/* 🕒 Hourly Traffic Chart - Full Width */}
+      <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+        <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em] flex items-center gap-3 mb-8">
+          <Clock className="text-indigo-500" size={18} />
+          {t('reports.peak_time_analysis', 'Hourly Traffic (Peak Time Analysis)')}
+        </h3>
+        <div className="h-[250px]">
+          <Bar 
+            data={hourlyChartData}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 10 } } },
+                x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+              }
+            }}
+          />
+        </div>
+      </div>
+
+      {/* 👥 Top Visitors Table - Clean & Compact */}
+      <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between mb-8">
+          <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em] flex items-center gap-3">
+            <Users className="text-blue-500" size={18} />
+            {t('reports.top_visitors', 'Top 10 Visitors (By IP)')}
+          </h3>
+          <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-full uppercase tracking-widest">
+            {t('reports.unique_ips', 'Unique Devices')}
+          </span>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full border-separate border-spacing-y-2">
+            <thead>
+              <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">
+                <th className="px-6 py-2">{t('reports.ip_address', 'IP Address')}</th>
+                <th className="px-6 py-2">{t('reports.last_activity', 'Last Activity')}</th>
+                <th className="px-6 py-2">{t('reports.total_visits', 'Visits')}</th>
+                <th className="px-6 py-2">{t('reports.platform_browser', 'Platform / Browser')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {enhancedData?.topVisitors && enhancedData.topVisitors.map((visitor, idx) => (
+                <tr key={idx} className="group hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 bg-slate-50 group-hover:bg-blue-50/50 rounded-l-2xl border-y border-l border-slate-100 transition-colors">
+                    <span className="text-xs font-black text-slate-700 tracking-wider font-mono">{visitor.ip}</span>
+                  </td>
+                  <td className="px-6 py-4 bg-slate-50 group-hover:bg-blue-50/50 border-y border-slate-100 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Clock size={10} className="text-slate-400" />
+                      <span className="text-[10px] font-bold text-slate-500">
+                        {format(new Date(visitor.lastSeen), 'dd MMM yyyy HH:mm', { locale: th })}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 bg-slate-50 group-hover:bg-blue-50/50 border-y border-slate-100 transition-colors">
+                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-[10px] font-black rounded-lg">
+                      {visitor.count} {t('reports.times', 'times')}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 bg-slate-50 group-hover:bg-blue-50/50 rounded-r-2xl border-y border-r border-slate-100 transition-colors">
+                    <span className="text-[10px] font-medium text-slate-400 truncate max-w-[250px] block">
+                      {visitor.userAgent}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {(!enhancedData?.topVisitors || enhancedData.topVisitors.length === 0) && (
+                <tr>
+                  <td colSpan="4" className="text-center py-10 text-xs font-bold text-slate-400 uppercase tracking-widest italic">
+                    {t('reports.no_data', 'No visitor data found for this period')}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
 };
 
+const TechnicalCard = ({ title, data, options, icon }) => (
+  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col h-[280px]">
+    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
+      {icon}
+      {title}
+    </h4>
+    <div className="flex-1 relative">
+      <Doughnut data={data} options={options} />
+    </div>
+  </div>
+);
+
 const StatCard = ({ icon, label, value, subValue, color, trend }) => {
   const colors = {
-    blue: 'bg-blue-50 text-blue-600 border-blue-100',
-    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-    indigo: 'bg-indigo-50 text-indigo-600 border-indigo-100',
-    amber: 'bg-amber-50 text-amber-600 border-amber-100'
+    blue: 'bg-blue-50 text-blue-600 border-blue-100 shadow-blue-500/5',
+    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100 shadow-emerald-500/5',
+    indigo: 'bg-indigo-50 text-indigo-600 border-indigo-100 shadow-indigo-500/5',
+    amber: 'bg-amber-50 text-amber-600 border-amber-100 shadow-blue-500/5'
   };
 
   return (
-    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all group">
-      <div className={`w-12 h-12 rounded-2xl ${colors[color]} border flex items-center justify-center mb-4 transition-all group-hover:scale-110`}>
+    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+      <div className={`w-14 h-14 rounded-2xl ${colors[color]} border flex items-center justify-center mb-6 transition-all duration-500 group-hover:rotate-12 group-hover:scale-110 shadow-lg`}>
         {icon}
       </div>
-      <div className="flex items-center justify-between mb-1">
+      <div className="flex items-center justify-between mb-2">
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{label}</p>
         {trend !== undefined && (
-          <div className={`flex items-center gap-0.5 text-[10px] font-black ${trend >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-            {trend >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+          <div className={`flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-black ${trend >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+            {trend >= 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
             {Math.abs(trend)}%
           </div>
         )}
       </div>
       <div className="flex items-baseline gap-2">
-        <h4 className="text-xl font-black text-slate-800 tracking-tight">{value}</h4>
-        {subValue && <span className="text-[10px] font-bold text-slate-400">{subValue}</span>}
+        <h4 className="text-2xl font-black text-slate-800 tracking-tight">{value}</h4>
+        {subValue && <span className="text-[10px] font-bold text-slate-400 uppercase italic">{subValue}</span>}
       </div>
     </div>
   );

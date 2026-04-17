@@ -83,7 +83,7 @@ const logController = {
    */
   async exportVisitorReportPdf(req, res, next) {
     try {
-      const { startDate, endDate, cameraId } = req.query;
+      const { startDate, endDate, cameraId, lang = 'th' } = req.query;
 
       if (!startDate || !endDate) {
         return res.status(400).json({ message: 'startDate and endDate are required' });
@@ -97,6 +97,58 @@ const logController = {
         acc[cam.id] = cam.name;
         return acc;
       }, {});
+
+      // --- PDF Translations ---
+      const i18n = {
+        th: {
+          title: 'รายงานวิเคราะห์สถิติผู้เข้าชมเชิงลึก',
+          period: 'ช่วงเวลา',
+          summaryTitle: 'สรุปผลภาพรวม (Executive Summary)',
+          totalViews: 'จำนวนการเข้าชมทั้งหมด',
+          uniqueVisitors: 'ผู้เข้าชมที่ไม่ซ้ำ',
+          availability: 'ความเสถียรของระบบ (Availability Score)',
+          peakTime: 'ช่วงเวลาที่มีการใช้งานสูงสุด',
+          techTitle: 'วิเคราะห์ข้อมูลทางเทคนิค (Technical Insights)',
+          category: 'หมวดหมู่',
+          details: 'รายละเอียดการใช้งาน (Top 5)',
+          device: 'อุปกรณ์ (Devices)',
+          browser: 'เบราว์เซอร์ (Browsers)',
+          os: 'ระบบปฏิบัติการ (OS)',
+          dailyTitle: 'รายละเอียดสถิติรายวัน (Detailed Daily Statistics)',
+          date: 'วันที่',
+          action: 'กิจกรรม',
+          cameraName: 'ชื่อกล้อง',
+          views: 'เข้าชม (ครั้ง)',
+          visitors: 'ผู้ใช้ (ราย)',
+          viewPage: 'เข้าชมหน้าเว็บ',
+          watchStream: 'ดูสตรีมสด'
+        },
+        en: {
+          title: 'Advanced Visitor Analytics Report',
+          period: 'Period',
+          summaryTitle: 'Executive Summary',
+          totalViews: 'Total Page Views',
+          uniqueVisitors: 'Unique Visitors',
+          availability: 'System Availability Score',
+          peakTime: 'Peak Usage Hour',
+          techTitle: 'Technical Distribution Analysis',
+          category: 'Category',
+          details: 'Usage Details (Top 5)',
+          device: 'Device Types',
+          browser: 'Browsers',
+          os: 'Operating Systems',
+          dailyTitle: 'Detailed Daily Statistics',
+          date: 'Date',
+          action: 'Action',
+          cameraName: 'Camera Name',
+          views: 'Views',
+          visitors: 'Visitors',
+          viewPage: 'View Dashboard',
+          watchStream: 'Watch Stream'
+        }
+      };
+
+      const t = i18n[lang] || i18n.th;
 
       const fontPath = path.join(__dirname, '..', 'assets', 'fonts', 'THSarabunNew.ttf');
       const doc = new PDFDocument({ margin: 30, size: 'A4' });
@@ -112,51 +164,108 @@ const logController = {
 
       // --- Header ---
       doc.fontSize(24).fillColor('#4F46E5').text('CCTV Monitoring System', { align: 'center' });
-      doc.fontSize(18).fillColor('#334155').text('รายงานวิเคราะห์สถิติผู้เข้าชมเชิงลึก', { align: 'center' });
-      doc.fontSize(12).fillColor('#64748b').text(`ช่วงเวลา: ${startDate} ถึง ${endDate}`, { align: 'right' });
+      doc.fontSize(18).fillColor('#334155').text(t.title, { align: 'center' });
+      doc.fontSize(12).fillColor('#64748b').text(`${t.period}: ${startDate} to ${endDate}`, { align: 'right' });
       doc.moveDown();
 
       // --- Executive Summary Section ---
-      doc.rect(30, doc.y, 535, 100).fill('#F8FAFC');
-      doc.fillColor('#1E293B').fontSize(16).text('สรุปผลภาพรวม (Executive Summary)', 40, doc.y + 10);
+      const summaryStartY = doc.y;
+      doc.rect(30, summaryStartY, 535, 115).fill('#F8FAFC');
+      doc.rect(30, summaryStartY, 535, 115).lineWidth(0.5).stroke('#E2E8F0');
       
-      doc.fontSize(12).fillColor('#334155');
-      doc.text(`โ€ข จำนวนการเข้าชมทั้งหมด: ${reportData.trends.views.current.toLocaleString()} ครั้ง (${reportData.trends.views.growth >= 0 ? '+' : ''}${reportData.trends.views.growth}%)`, 50, doc.y + 5);
-      doc.text(`โ€ข ผู้เข้าชมที่ไม่ซ้ำ: ${reportData.trends.visitors.current.toLocaleString()} ราย (${reportData.trends.visitors.growth >= 0 ? '+' : ''}${reportData.trends.visitors.growth}%)`, 50, doc.y + 2);
-      doc.text(`โ€ข ความเสถียรของระบบ (Availability Score): ${reportData.availability.score}%`, 50, doc.y + 2);
+      doc.fillColor('#1E293B').fontSize(16).text(t.summaryTitle, 45, summaryStartY + 15);
+      
+      doc.fontSize(11).fillColor('#475569');
+      doc.text(`- ${t.totalViews}: ${reportData.trends.views.current.toLocaleString()} (${reportData.trends.views.growth >= 0 ? '+' : ''}${reportData.trends.views.growth}%)`, 55, summaryStartY + 45);
+      doc.text(`- ${t.uniqueVisitors}: ${reportData.trends.visitors.current.toLocaleString()} (${reportData.trends.visitors.growth >= 0 ? '+' : ''}${reportData.trends.visitors.growth}%)`, 55, summaryStartY + 62);
+      doc.text(`- ${t.availability}: ${reportData.availability.score}%`, 55, summaryStartY + 79);
       
       const peakHour = reportData.hourlyTraffic.reduce((max, h) => h.count > max.count ? h : max, reportData.hourlyTraffic[0]);
-      doc.text(`โ€ข ช่วงเวลาที่มีการใช้งานสูงสุด: ${peakHour.hour}:00 น. (${peakHour.count} views)`, 50, doc.y + 2);
+      doc.text(`- ${t.peakTime}: ${peakHour.hour}:00 (${peakHour.count} views)`, 55, summaryStartY + 96);
       
-      doc.moveDown(3);
+      doc.y = summaryStartY + 140;
 
-      // --- Device Distribution ---
-      doc.fontSize(14).fillColor('#1E293B').text('สัดส่วนอุปกรณ์ที่ใช้งาน (Device Distribution)', 30, doc.y);
-      Object.entries(reportData.techStats.devices).forEach(([type, count]) => {
-        const percent = ((count / reportData.trends.views.current) * 100).toFixed(1);
-        doc.fontSize(11).text(`- ${type}: ${count} ครั้ง (${percent}%)`, 45);
+      // --- Technical Distribution Analysis ---
+      doc.fontSize(14).fillColor('#1E293B').text(t.techTitle, 30, doc.y);
+      doc.moveDown(0.5);
+
+      const techTable = {
+        headers: [
+          { label: t.category, property: 'category', width: 150, headerColor: '#1E293B', headerOpacity: 1 },
+          { label: t.details, property: 'details', width: 385, headerColor: '#1E293B', headerOpacity: 1 }
+        ],
+        rows: [
+          [
+            t.device, 
+            Object.entries(reportData.techStats.devices)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 5)
+              .map(([k, v]) => `- ${k}: ${v} (${((v / (reportData.trends.views.current || 1)) * 100).toFixed(1)}%)`)
+              .join('\n')
+          ],
+          [
+            t.browser, 
+            Object.entries(reportData.techStats.browsers)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 5)
+              .map(([k, v]) => `- ${k}: ${v} (${((v / (reportData.trends.views.current || 1)) * 100).toFixed(1)}%)`)
+              .join('\n')
+          ],
+          [
+            t.os, 
+            Object.entries(reportData.techStats.os)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 5)
+              .map(([k, v]) => `- ${k}: ${v} (${((v / (reportData.trends.views.current || 1)) * 100).toFixed(1)}%)`)
+              .join('\n')
+          ]
+        ]
+      };
+
+      await doc.table(techTable, {
+        prepareHeader: () => doc.font('ThaiFont').fontSize(11).fillColor('#FFFFFF'),
+        prepareRow: (row, indexColumn, indexRow, rectRow, rectCell) => doc.font('ThaiFont').fontSize(10).fillColor('#334155'),
+        width: 535,
+        x: 30,
+        padding: 5,
+        headerColor: '#1E293B',
+        headerOpacity: 1,
+        divider: {
+          header: { disabled: false, width: 0.5, opacity: 0.5 },
+          horizontal: { disabled: false, width: 0.1, opacity: 0.2 }
+        }
       });
-      doc.moveDown();
+
+      doc.moveDown(1.5);
 
       // --- Data Table ---
       const table = {
-        title: "รายละเอียดสถิติรายวัน",
-        headers: ["วันที่", "กิจกรรม", "ชื่อกล้อง", "การเข้าชม", "ผู้เข้าชม"],
+        title: t.dailyTitle,
+        headers: [
+          { label: t.date, width: 80, headerColor: '#4F46E5', headerOpacity: 1 },
+          { label: t.action, width: 100, headerColor: '#4F46E5', headerOpacity: 1 },
+          { label: t.cameraName, width: 215, headerColor: '#4F46E5', headerOpacity: 1 },
+          { label: t.views, width: 70, align: 'center', headerColor: '#4F46E5', headerOpacity: 1 },
+          { label: t.visitors, width: 70, align: 'center', headerColor: '#4F46E5', headerOpacity: 1 }
+        ],
         rows: reportData.dailyStats.map(item => [
           item.date || item.createdAt.toISOString().split('T')[0],
-          item.action === 'VIEW_PAGE' ? 'เข้าชมหน้าเว็บ' : 'ดูสตรีมสด',
-          item.cameraId ? (cameraMap[item.cameraId] || `กล้อง ${item.cameraId}`) : 'N/A',
+          item.action === 'VIEW_PAGE' ? t.viewPage : t.watchStream,
+          item.cameraId ? (cameraMap[item.cameraId] || `Cam ${item.cameraId}`) : 'N/A',
           item.totalViews.toString(),
           item.uniqueIPs.toString()
         ])
       };
 
       await doc.table(table, {
-        prepareHeader: () => doc.font('ThaiFont').fontSize(12).fillColor('#FFFFFF'),
-        prepareRow: () => doc.font('ThaiFont').fontSize(11).fillColor('#1E293B'),
+        prepareHeader: () => doc.font('ThaiFont').fontSize(11).fillColor('#FFFFFF'),
+        prepareRow: (row, indexColumn, indexRow, rectRow, rectCell) => doc.font('ThaiFont').fontSize(10).fillColor('#334155'),
         width: 535,
-        columnsSize: [80, 100, 215, 70, 70],
+        x: 30,
+        padding: 5, // เพิ่ม Padding ให้ข้อความไม่ชิดขอบ
         headerColor: '#4F46E5',
+        headerOpacity: 1,
+        border: { size: 0.1, color: '#E2E8F0' }
       });
 
       doc.end();

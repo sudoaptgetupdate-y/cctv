@@ -165,22 +165,98 @@ const Settings = () => {
             )}
 
             {activeTab === 'security' && (
-              <div className="space-y-6">
-                <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
-                  <Database className="text-blue-600" size={24} />
-                  Security & Maintenance
-                </h3>
-                <section className="bg-slate-50 p-8 rounded-3xl border border-slate-200/50 space-y-6 shadow-inner">
-                  <h4 className="font-black text-slate-900 uppercase text-[10px] tracking-[0.2em]">Maintenance Mode</h4>
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <p className="text-sm text-slate-500 font-medium max-w-md">
-                      เปิดโหมดการทำงานบำรุงรักษา เพื่อระงับการแจ้งเตือนชั่วคราวขณะกำลังทำงานกับระบบกล้อง
-                    </p>
-                    <button className="px-6 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-2xl font-bold text-sm shadow-sm transition-all active:scale-95 whitespace-nowrap">
-                      Enter Maintenance Mode
-                    </button>
-                  </div>
-                </section>
+              <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
+                <div>
+                  <h3 className="text-xl font-black text-slate-800 mb-2 flex items-center gap-2">
+                    <Database className="text-blue-600" size={24} />
+                    Security & Data Maintenance
+                  </h3>
+                  <p className="text-sm text-slate-500 font-medium tracking-tight">
+                    จัดการนโยบายการจัดเก็บข้อมูลและการบำรุงรักษาระบบฐานข้อมูล
+                  </p>
+                </div>
+
+                {/* Log Retention Section */}
+                <div className="grid grid-cols-1 gap-6">
+                  <section className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                    <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                      <div className="h-10 w-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                        <Database size={20} />
+                      </div>
+                      <div>
+                        <h4 className="font-black text-slate-800 tracking-tight uppercase text-xs tracking-widest">Log Retention Policy</h4>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">นโยบายการลบข้อมูลประวัติผู้เข้าชมอัตโนมัติ</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      {/* Raw Logs */}
+                      <div className="group">
+                        <label className="block text-sm font-black text-slate-700 mb-2 group-focus-within:text-blue-600 transition-colors">
+                          ระยะเวลาเก็บ Raw Visitor Logs (วัน)
+                        </label>
+                        <div className="flex items-center gap-4">
+                          <input
+                            type="number"
+                            name="VISITOR_LOG_RETENTION_DAYS"
+                            value={settings.VISITOR_LOG_RETENTION_DAYS}
+                            onChange={handleChange}
+                            min="7"
+                            max="365"
+                            className="w-32 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-slate-800"
+                          />
+                          <div className="flex-1">
+                            <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                              เก็บข้อมูลดิบ เช่น IP Address, Browser, Device Type อย่างละเอียด
+                              <br/>
+                              <span className="text-amber-600 font-bold italic text-[10px] uppercase">🚩 ใช้พื้นที่ HDD ปานกลาง (แนะนำ 30-90 วัน)</span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Summary Data */}
+                      <div className="group">
+                        <label className="block text-sm font-black text-slate-700 mb-2 group-focus-within:text-blue-600 transition-colors">
+                          ระยะเวลาเก็บ Visitor Summary Data (เดือน)
+                        </label>
+                        <div className="flex items-center gap-4">
+                          <input
+                            type="number"
+                            name="VISITOR_SUMMARY_RETENTION_MONTHS"
+                            value={settings.VISITOR_SUMMARY_RETENTION_MONTHS}
+                            onChange={handleChange}
+                            min="1"
+                            max="120"
+                            className="w-32 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-slate-800"
+                          />
+                          <div className="flex-1">
+                            <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                              เก็บยอดสรุปจำนวนผู้เข้าชมรายวันสำหรับแสดงผลบนกราฟ Trend ย้อนหลัง
+                              <br/>
+                              <span className="text-emerald-600 font-bold italic text-[10px] uppercase">✅ ใช้พื้นที่ HDD น้อยมาก (แนะนำ 12-60 เดือน)</span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="bg-slate-900 p-8 rounded-3xl text-white overflow-hidden relative group shadow-xl">
+                    <div className="relative z-10">
+                      <h4 className="font-black text-slate-100 uppercase text-[10px] tracking-[0.2em] mb-4">Maintenance Mode</h4>
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <p className="text-sm text-slate-400 font-medium max-w-md">
+                          เปิดโหมดการทำงานบำรุงรักษา เพื่อระงับการแจ้งเตือนชั่วคราวขณะกำลังทำงานกับระบบกล้อง
+                        </p>
+                        <button className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-2xl font-bold text-sm transition-all active:scale-95 whitespace-nowrap">
+                          Enter Maintenance Mode
+                        </button>
+                      </div>
+                    </div>
+                    <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl transition-all duration-700 group-hover:bg-blue-500/20"></div>
+                  </section>
+                </div>
               </div>
             )}
           </div>

@@ -228,11 +228,38 @@ const logService = {
 
       const uptimeData = await this.getSystemAvailability(start, end, cameraId);
 
+      // ดึงข้อมูล Top 10 Visitors โดยการ Group ตาม IP
+      const topVisitorsRaw = await prisma.publicVisitorLog.groupBy({
+        by: ['ipAddress'],
+        where: where,
+        _count: {
+          id: true
+        },
+        _max: {
+          createdAt: true,
+          userAgent: true
+        },
+        orderBy: {
+          _count: {
+            id: 'desc'
+          }
+        },
+        take: 10
+      });
+
+      const topVisitors = topVisitorsRaw.map(v => ({
+        ip: v.ipAddress || 'Unknown',
+        count: v._count.id,
+        lastSeen: v._max.createdAt,
+        userAgent: v._max.userAgent
+      }));
+
       return {
         dailyStats: basicReport,
         hourlyTraffic,
         techStats,
         availability: uptimeData,
+        topVisitors,
         trends: {
           views: {
             current: currentTotal,
@@ -348,11 +375,31 @@ const logService = {
 
       await prisma.$transaction(summaryEntries);
       
-      const deleteThreshold = new Date();
-      deleteThreshold.setDate(deleteThreshold.getDate() - 60);
-      await prisma.publicVisitorLog.deleteMany({
-        where: { createdAt: { lt: deleteThreshold } }
+      // ดึงการตั้งค่าการลบข้อมูล (Retention Policy)
+      const settings = await prisma.systemSetting.findMany({
+        where: {
+          key: { in: ['VISITOR_LOG_RETENTION_DAYS', 'VISITOR_SUMMARY_RETENTION_MONTHS'] }
+        }
       });
+
+      const logRetentionDays = parseInt(settings.find(s => s.key === 'VISITOR_LOG_RETENTION_DAYS')?.value || '60');
+      const summaryRetentionMonths = parseInt(settings.find(s => s.key === 'VISITOR_SUMMARY_RETENTION_MONTHS')?.value || '36');
+
+      // 1. ลบ Raw Logs (ข้อมูลดิบ)
+      const logDeleteThreshold = new Date();
+      logDeleteThreshold.setDate(logDeleteThreshold.getDate() - logRetentionDays);
+      await prisma.publicVisitorLog.deleteMany({
+        where: { createdAt: { lt: logDeleteThreshold } }
+      });
+
+      // 2. ลบ Summary Data (ข้อมูลสรุป - ถ้ามีการตั้งค่าไว้)
+      if (summaryRetentionMonths > 0) {
+        const summaryDeleteThreshold = new Date();
+        summaryDeleteThreshold.setMonth(summaryDeleteThreshold.getMonth() - summaryRetentionMonths);
+        await prisma.publicVisitorSummary.deleteMany({
+          where: { date: { lt: summaryDeleteThreshold } }
+        });
+      }
     } catch (error) {
       console.error('Failed to summarize daily visitors:', error);
     }

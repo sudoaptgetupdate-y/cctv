@@ -45,10 +45,10 @@ const logService = {
   /**
    * ส่งออกรายงานผู้เข้าชม (Excel/PDF)
    */
-  async exportVisitorReport(startDate, endDate, cameraId = null, format = 'excel') {
+  async exportVisitorReport(startDate, endDate, cameraId = null, format = 'excel', lang = 'th') {
     try {
       const response = await apiClient.get(`/logs/export/${format}`, {
-        params: { startDate, endDate, cameraId },
+        params: { startDate, endDate, cameraId, lang },
         responseType: 'blob'
       });
       return response.data;
