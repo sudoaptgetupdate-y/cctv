@@ -15,7 +15,10 @@
 - **UX/UI Standard:** ใช้หน้า **Camera Groups** เป็นต้นแบบในการพัฒนาหน้าอื่นๆ เสมอ (Card UI + Modal สองคอลัมน์)
 - **กฎเหล็กสำหรับการสร้างหน้าใหม่ (New Page Requirements):**
     1. **Real-time Validation:** ต้องมีระบบตรวจสอบข้อมูลซ้ำ (Duplicate Check) ขณะพิมพ์ (Debounced 500ms)
-    2. **i18n Support:** รองรับ TH/EN 100% ผ่านระบบ `t()`
+    2. **Bilingual Standard (i18n):** รองรับ TH/EN 100%
+        - ห้าม Hardcode ข้อความใน Component ให้ใช้ `t('key')` เท่านั้น
+        - ทุก `useMemo`/`useEffect` ที่แสดงผลข้อความต้องมี `i18n.language` ใน Dependency array
+        - จัดการรูปแบบวันที่ผ่าน `date-fns` ตาม Locale ปัจจุบันเสมอ
     3. **Consistent Feedback:** ใช้ **SweetAlert2** สำหรับการยืนยัน และ **react-hot-toast** สำหรับแจ้งสถานะทั่วไป
     4. **Submit Protection:** มี `isSubmitting` state ทุกฟอร์ม
     5. **Sticky Pagination:** ใช้คอมโพเนนต์ Pagination สี Indigo แบบลอยตัวที่ท้ายตารางเสมอ
@@ -31,16 +34,18 @@
 - [x] **UI Overhaul:** ปรับปรุง Create/Edit Modal ให้เป็นสัดส่วน (Logical Sections) สวยงามและใช้งานง่าย
 - [x] **Performance Optimization:** ปรับปรุง API สำหรับจัดการสมาชิกให้เป็นแบบ "Lean" (ส่งเฉพาะข้อมูลที่จำเป็น) ลด Latency เหลือ < 20ms ในระบบจริง
 - [x] **Visitor Analytics:** ระบบเก็บสถิติผู้เข้าชมหน้า Public Dashboard และการคลิกดูสตรีมกล้องแยกตามรายตัว
-- [x] **Advanced Reporting:** หน้าจอสรุปสถิติ (Reports) พร้อมกราฟวิเคราะห์แนวโน้ม (Chart.js) รองรับการเลือกช่วงเวลาแบบ Hybrid และระบบวิเคราะห์เชิงลึก (Trends, Peak Time, Device Stats)
-- [x] **Universal Audio Control:** ระบบเปิด-ปิดเสียงที่เสถียร 100% ทั้งโหมดปกติและ Transcoding โดยใช้เทคนิค WebRTC Track Filtering (Frontend) ควบคู่กับ FFmpeg Parameter (Backend)
-- [x] **Intelligent Report Export:** ระบบส่งออกรายงาน PDF/Excel ระดับมืออาชีพ พร้อมส่วนสรุปผู้บริหาร (Executive Summary) และการวิเคราะห์แนวโน้ม (รองรับภาษาไทย 100%)
-- [x] **Dynamic Ranking System:** ระบบจัดอันดับกล้องยอดนิยมแบบยืดหยุ่น (Top 5, 10, 20) พร้อม UI ที่ปรับเปลี่ยนตามการเลือกของผู้ใช้
+- [x] **Advanced Reporting:** หน้าจอสรุปสถิติ (Reports) พร้อมกราฟวิเคราะห์แนวโน้ม (Chart.js) รองรับระบบวิเคราะห์เชิงลึก (Trends, Peak Time, Tech Stats)
+- [x] **Universal Audio Control:** ระบบเปิด-ปิดเสียงที่เสถียร 100% ทั้งโหมดปกติและ Transcoding
+- [x] **Enterprise Report Export:** ระบบส่งออก PDF/Excel รองรับ 2 ภาษา (Bilingual) พร้อมส่วนสรุปผู้บริหาร
+- [x] **Log Retention Policy:** ระบบตั้งค่าระยะเวลาเก็บข้อมูล (Visitor Logs/Summary) ผ่านหน้า Settings
+- [x] **Full Bilingual Support:** หน้า Dashboard และ Reports รองรับการสลับภาษาแบบ Reactive 100%
 
 ## 🛠️ Tech Stack & Ports
 ...
 - Streaming: go2rtc (Windows exe / Docker Container)
 - Analytics: Chart.js + React-Chartjs-2 + UA-Parser-JS
 - Export: ExcelJS + PDFKit (THSarabunNew support)
+- i18n: react-i18next + i18next-browser-languagedetector
 
 ---
 
@@ -58,7 +63,7 @@ gemini "objective" --path D:\1.Development\dev-cctv\cctv
 ```
 
 ## 📝 บันทึกถึง Gemini
-- **Lean API Policy:** ห้ามดึงข้อมูล Full Object มาใช้ใน Modal ที่แสดงแค่รายชื่อ (เช่น Membership Modal) ให้ดึงเฉพาะ ID, Name, RTSP
-- **Latency Note:** หากพบ Delay 4000ms+ บน Local PC ให้ตรวจสอบการเชื่อมต่อ DNS หรือ Antivirus เพราะบน Production ทำงานได้ < 20ms
+- **Strict i18n Policy:** ห้ามใช้ Default Text ในฟังก์ชัน `t()` เพื่อบังคับให้ดึงจาก `config.js` เท่านั้น ป้องกันปัญหาภาษาไม่เปลี่ยน
+- **Lean API Policy:** ห้ามดึงข้อมูล Full Object มาใช้ใน Modal ที่แสดงแค่รายชื่อ ให้ดึงเฉพาะ ID, Name, RTSP
 - **Testing:** ทุกการแก้ไขต้องทดสอบบน Local Dev (Windows) และตรวจสอบผลลัพธ์บน Virtual Production (Linux) เสมอ
 ---

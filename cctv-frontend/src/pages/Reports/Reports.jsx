@@ -184,9 +184,14 @@ const Reports = () => {
     return { labels: entries.map(e => e[0]), datasets: [{ label, data: entries.map(e => e[1]), backgroundColor: palette, borderColor: '#fff', borderWidth: 2, hoverOffset: 10 }] };
   };
 
-  const deviceData = useMemo(() => getDoughnutData(enhancedData?.techStats?.devices, t('reports.devices'), ['#4F46E5', '#6366F1', '#818CF8', '#A5B4FC', '#C7D2FE']), [enhancedData, t, i18n.language]);
-  const browserData = useMemo(() => getDoughnutData(enhancedData?.techStats?.browsers, t('reports.browsers'), ['#10B981', '#34D399', '#6EE7B7', '#A7F3D0', '#D1FAE5']), [enhancedData, t, i18n.language]);
-  const osData = useMemo(() => getDoughnutData(enhancedData?.techStats?.os, t('reports.os'), ['#F59E0B', '#FBBF24', '#FCD34D', '#FDE68A', '#FEF3C7']), [enhancedData, t, i18n.language]);
+  // 🎨 High-Contrast Categorical Palettes
+  const devicePalette = ['#4F46E5', '#10B981', '#F59E0B', '#F43F5E', '#8B5CF6']; // Indigo, Emerald, Amber, Rose, Violet
+  const browserPalette = ['#3B82F6', '#06B6D4', '#F97316', '#8B5CF6', '#EC4899']; // Blue, Cyan, Orange, Violet, Pink
+  const osPalette = ['#0EA5E9', '#22C55E', '#64748B', '#F43F5E', '#FBBF24']; // Sky, Green, Slate, Rose, Amber
+
+  const deviceData = useMemo(() => getDoughnutData(enhancedData?.techStats?.devices, t('reports.devices'), devicePalette), [enhancedData, t, i18n.language]);
+  const browserData = useMemo(() => getDoughnutData(enhancedData?.techStats?.browsers, t('reports.browsers'), browserPalette), [enhancedData, t, i18n.language]);
+  const osData = useMemo(() => getDoughnutData(enhancedData?.techStats?.os, t('reports.os'), osPalette), [enhancedData, t, i18n.language]);
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
