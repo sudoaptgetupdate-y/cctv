@@ -25,6 +25,13 @@
     6. **Component Architecture:** สำหรับหน้าที่ซับซ้อน ให้แยก Sub-components ไว้ในโฟลเดอร์ `components/` ภายใต้นั้น (เช่น `src/pages/Reports/components/`)
         - **Logic & UI Separation:** หน้าหลัก (Main Page) จัดการเฉพาะ State, Data Fetching และ Business Logic ส่วน Sub-components รับข้อมูลผ่าน Props เพื่อแสดงผลเท่านั้น
         - **Independent i18n:** ทุก Sub-component ต้องรองรับ i18n 100% โดยใช้ `useTranslation` ภายในตัวคอมโพเนนต์เอง
+    7. **Modal Architecture Standard:**
+        - ใช้ **Headless UI (Dialog, Transition)** เท่านั้น เพื่อความเสถียรของ Animation
+        - **Z-Index Standard:** กำหนดเป็น `z-[1060]` เพื่อให้ทับส่วนของ Sidebar และ Header หลักเสมอ
+        - **Layout Structure:** แบ่งเป็น 3 ส่วนชัดเจน:
+            - **Header:** มี Icon Gradient, Title และ Subtitle ภาษาอังกฤษ (Tracking-widest)
+            - **Body:** เนื้อหาหลักต้องรองรับการ Scroll (`max-h-[70vh] overflow-y-auto`)
+            - **Footer:** ปุ่มยกเลิกอยู่ซ้าย, ปุ่มบันทึกอยู่ขวา พร้อมเงา `shadow-xl` และ `active:scale-95`
 
 ## 📍 สถานะปัจจุบัน (Current Progress)
 - [x] **Backend Foundation:** Express + Prisma + MariaDB (Many-to-Many Relationships)

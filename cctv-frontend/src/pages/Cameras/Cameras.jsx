@@ -14,6 +14,7 @@ import CameraFormModal from './components/CameraFormModal';
 import CameraListToolbar from './components/CameraListToolbar';
 import AcknowledgeModal from './components/AcknowledgeModal';
 import EventHistoryModal from './components/EventHistoryModal';
+import BulkAddModal from './components/BulkAddModal';
 
 const PAGE_SIZES = [5, 10, 20, 50];
 
@@ -31,6 +32,7 @@ const Cameras = () => {
   const [itemsPerPage, setItemsPerPage] = useState(PAGE_SIZES[0]);
 
   const [showFormModal, setShowFormModal] = useState(false);
+  const [showBulkModal, setShowBulkModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCamera, setSelectedCamera] = useState(null);
   const [modalPosition, setModalPosition] = useState(null);
@@ -146,7 +148,7 @@ const Cameras = () => {
       setEditingCamera(null);
 
       // 🚀 ค้นหา ID ของกลุ่ม "All Camera" เพื่อเลือกเป็น Default
-      const allGroup = groups.find(g => g.name === 'All Camera');
+      const allGroup = groups.find(g => g.name === 'All Cameras' || g.name === 'All Camera');
       const defaultGroupIds = allGroup ? [allGroup.id.toString()] : [];
 
       setFormData({
@@ -273,6 +275,20 @@ const Cameras = () => {
     }
   };
 
+  const handleBulkSubmit = async (data) => {
+    setIsSubmitting(true);
+    try {
+      await cameraService.bulkCreate(data);
+      toast.success(t('cameras.messages.bulk_save_success'));
+      setShowBulkModal(false);
+      fetchData();
+    } catch (error) {
+      toast.error(t('cameras.messages.bulk_save_error'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleDelete = async (id) => {
     const result = await Swal.fire({
       title: t('cameras.messages.delete_confirm_title'),
@@ -322,7 +338,14 @@ const Cameras = () => {
           </div>
         </div>
         
-        <div className="relative z-10">
+        <div className="relative z-10 flex items-center gap-3">
+          <button 
+            onClick={() => setShowBulkModal(true)} 
+            className="shrink-0 bg-white border border-slate-200 text-slate-600 px-6 py-3 rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-50 hover:-translate-y-1 transition-all font-bold text-sm shadow-xl shadow-slate-200 active:scale-95"
+          >
+            <Plus size={18} strokeWidth={3} className="text-indigo-600" /> 
+            <span>{t('cameras.bulk_add')}</span>
+          </button>
           <button 
             onClick={() => handleOpenForm()} 
             className="shrink-0 bg-slate-900 text-white px-6 py-3 rounded-2xl flex items-center justify-center gap-2 hover:bg-blue-600 hover:-translate-y-1 transition-all font-bold text-sm shadow-xl shadow-slate-200 active:scale-95"
@@ -365,6 +388,11 @@ const Cameras = () => {
         onSubmit={handleSubmitForm} formData={formData} setFormData={setFormData} 
         editingCamera={editingCamera} groups={groups} isSubmitting={isSubmitting}
         formErrors={formErrors}
+      />
+      <BulkAddModal
+        isOpen={showBulkModal} onClose={() => setShowBulkModal(false)}
+        onConfirm={handleBulkSubmit} isSubmitting={isSubmitting}
+        groups={groups}
       />
       <AcknowledgeModal 
         isOpen={isAckModalOpen} onClose={() => setIsAckModalOpen(false)} 

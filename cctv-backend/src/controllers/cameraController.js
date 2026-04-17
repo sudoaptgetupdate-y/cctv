@@ -33,7 +33,20 @@ const cameraController = {
     try {
       // req.user.id มาจาก verifyToken middleware
       const camera = await cameraService.createCamera(req.body, req.user.id);
-      res.status(211).json({ success: true, message: 'Camera created successfully', data: camera });
+      res.status(201).json({ success: true, message: 'Camera created successfully', data: camera });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async bulkCreate(req, res, next) {
+    try {
+      const cameras = await cameraService.bulkCreateCameras(req.body, req.user.id);
+      res.status(201).json({ 
+        success: true, 
+        message: `${cameras.length} cameras created successfully`, 
+        data: cameras 
+      });
     } catch (error) {
       next(error);
     }

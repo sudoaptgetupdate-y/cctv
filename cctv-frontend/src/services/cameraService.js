@@ -18,6 +18,10 @@ const cameraService = {
     const res = await apiClient.post('/cameras', data);
     return res.data.data;
   },
+  async bulkCreate(data) {
+    const res = await apiClient.post('/cameras/bulk', data);
+    return res.data.data;
+  },
   async update(id, data) {
     const res = await apiClient.put(`/cameras/${id}`, data);
     return res.data.data;

@@ -49,13 +49,12 @@ const cameraService = {
     });
   },
 
-  // 🚀 ตรวจสอบข้อมูลซ้ำ (สำหรับ Frontend เรียกเช็ค)
+  // 🚀 ตรวจสอบข้อมูลซ้ำ
   async validateCameraData(data, excludeId = null) {
     const { name, rtspUrl } = data;
     const warnings = [];
     const errors = [];
 
-    // 1. ตรวจสอบชื่อกล้อง (Strict Unique)
     const existingName = await prisma.camera.findFirst({
       where: { 
         name,
@@ -66,7 +65,6 @@ const cameraService = {
       errors.push(`ชื่อกล้อง "${name}" ถูกใช้งานแล้วในระบบ`);
     }
 
-    // 2. ตรวจสอบ RTSP URL (Warning only)
     if (rtspUrl) {
       const existingUrl = await prisma.camera.findFirst({
         where: { 
@@ -79,25 +77,23 @@ const cameraService = {
       }
     }
 
-    return { 
-      isValid: errors.length === 0,
-      errors,
-      warnings
-    };
+    return { isValid: errors.length === 0, errors, warnings };
   },
 
   // เพิ่มกล้องใหม่
   async createCamera(data, userId) {
     let { groupIds, ...cameraData } = data;
     
-    // ตรวจสอบชื่อซ้ำก่อนสร้าง
     const validation = await this.validateCameraData(cameraData);
     if (!validation.isValid) {
       throw new Error(`VALIDATION_ERROR: ${validation.errors.join(', ')}`);
     }
 
-    // 🚀 เพิ่มกลุ่ม "All Camera" เข้าไปโดยอัตโนมัติ
-    const allGroup = await prisma.cameraGroup.findFirst({ where: { name: 'All Camera' } });
+    // 🚀 เพิ่มกลุ่ม "All Cameras" เข้าไปโดยอัตโนมัติ
+    const allGroup = await prisma.cameraGroup.findFirst({ 
+      where: { OR: [{ name: 'All Camera' }, { name: 'All Cameras' }] } 
+    });
+    
     if (allGroup) {
       if (!groupIds) groupIds = [];
       if (!groupIds.includes(allGroup.id) && !groupIds.includes(allGroup.id.toString())) {
@@ -116,17 +112,70 @@ const cameraService = {
     });
   },
 
-  // แก้ไขข้อมูลกล้อง
+  // 🚀 เพิ่มกล้องจำนวนมาก (Bulk Create) - รองรับชื่อกลุ่มอัตโนมัติ
+  async bulkCreateCameras(cameras, userId) {
+    // 1. เตรียมกลุ่ม "All Cameras"
+    const allGroup = await prisma.cameraGroup.findFirst({ 
+      where: { OR: [{ name: 'All Camera' }, { name: 'All Cameras' }] } 
+    });
+    const allGroupId = allGroup ? allGroup.id : null;
+
+    const results = [];
+    
+    // ใช้ for loop เพื่อให้จัดการ async/await ภายในแต่ละรายการได้แม่นยำ
+    for (const cam of cameras) {
+      let { groupIds, targetGroupName, ...cameraData } = cam;
+      const finalGroupIds = new Set();
+
+      // ใส่ All Cameras เสมอ
+      if (allGroupId) finalGroupIds.add(allGroupId);
+
+      // จัดการกลุ่มที่ระบุมา
+      if (targetGroupName && targetGroupName.toLowerCase() !== 'all cameras' && targetGroupName.toLowerCase() !== 'all camera') {
+        // ค้นหากลุ่มตามชื่อ
+        let group = await prisma.cameraGroup.findFirst({
+          where: { name: { equals: targetGroupName.trim() } }
+        });
+
+        // ถ้าไม่มีกลุ่มนี้ ให้สร้างใหม่ทันที!
+        if (!group) {
+          group = await prisma.cameraGroup.create({
+            data: { 
+              name: targetGroupName.trim(),
+              description: `Auto-created during bulk import from camera "${cameraData.name}"`
+            }
+          });
+        }
+        finalGroupIds.add(group.id);
+      }
+
+      // รวมกลุ่มเดิมที่ส่งมา (ถ้ามี)
+      if (groupIds && Array.isArray(groupIds)) {
+        groupIds.forEach(id => finalGroupIds.add(parseInt(id)));
+      }
+
+      const created = await prisma.camera.create({
+        data: {
+          ...cameraData,
+          userId: userId,
+          groups: {
+            connect: Array.from(finalGroupIds).map(id => ({ id }))
+          }
+        }
+      });
+      results.push(created);
+    }
+
+    return results;
+  },
+
   async updateCamera(id, data) {
     const { groupIds, ...cameraData } = data;
-    
-    // ตรวจสอบชื่อซ้ำ (ยกเว้นตัวเอง)
     const validation = await this.validateCameraData(cameraData, id);
     if (!validation.isValid) {
       throw new Error(`VALIDATION_ERROR: ${validation.errors.join(', ')}`);
     }
 
-    // แปลงค่าพิกัด
     if (cameraData.latitude) cameraData.latitude = parseFloat(cameraData.latitude);
     if (cameraData.longitude) cameraData.longitude = parseFloat(cameraData.longitude);
 
@@ -141,28 +190,17 @@ const cameraService = {
     });
   },
 
-  // ลบกล้อง (พร้อมลบความสัมพันธ์ที่เกี่ยวข้อง)
   async deleteCamera(id) {
     const cameraId = parseInt(id);
-
-    // 1. ตรวจสอบก่อนว่ากล้องมีอยู่จริงไหม
     const camera = await prisma.camera.findUnique({ where: { id: cameraId } });
-    if (!camera) return { success: true, message: 'Camera already deleted or not found' };
+    if (!camera) return { success: true };
 
-    // 2. ลบข้อมูลที่เกี่ยวข้องกันก่อน (เนื่องจากบางส่วนไม่ได้ตั้ง Cascade Delete ใน Prisma Schema)
-    // - ลบประวัติการซ่อม (MaintenanceRecord)
     await prisma.maintenanceRecord.deleteMany({ where: { cameraId } });
-    
-    // - ลบประวัติเหตุการณ์ (Event Logs) - ตัวนี้ตั้ง Cascade ไว้แล้วแต่ลบซ้ำเผื่อไว้ก็ไม่เสียหาย
     await prisma.cameraEventLog.deleteMany({ where: { cameraId } });
 
-    // 3. ลบตัวกล้อง (ใช้ deleteMany แทน delete เพื่อป้องกัน 'Record not found' error จาก Race Condition)
-    return await prisma.camera.deleteMany({
-      where: { id: cameraId }
-    });
+    return await prisma.camera.deleteMany({ where: { id: cameraId } });
   },
 
-  // รับทราบเหตุการณ์ (Acknowledge)
   async acknowledgeCamera(id, data) {
     return await prisma.camera.update({
       where: { id: parseInt(id) },
@@ -174,7 +212,6 @@ const cameraService = {
     });
   },
 
-  // ดึงประวัติเหตุการณ์
   async getCameraEvents(id, limit = 50) {
     return await prisma.cameraEventLog.findMany({
       where: { cameraId: parseInt(id) },

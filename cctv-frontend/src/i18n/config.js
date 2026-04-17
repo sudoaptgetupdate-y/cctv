@@ -37,7 +37,9 @@ const resources = {
         export: "Export",
         apply: "Apply",
         days: "Days",
-        custom: "Custom"
+        custom: "Custom",
+        copied: "Copied to clipboard!",
+        back: "Back"
       },
       sidebar: {
         dashboard: "Dashboard",
@@ -191,6 +193,7 @@ const resources = {
         title: "Camera Management",
         subtitle: "MANAGE AND MONITOR ALL CCTV SYSTEMS",
         add_new: "Add New Camera",
+        bulk_add: "Bulk Import",
         edit_camera: "Edit Camera",
         search_placeholder: "Search camera name or RTSP URL...",
         status: "Status",
@@ -213,6 +216,22 @@ const resources = {
           online: "Online",
           problem: "Error",
           offline: "Offline"
+        },
+        bulk: {
+          title: "Bulk Camera Import",
+          subtitle: "Register multiple devices at once",
+          format_title: "Data Format Guide",
+          format_desc: "Paste your data using comma or tab separation",
+          copy_example: "Copy Example Data",
+          paste_label: "Paste your camera list here",
+          placeholder: "e.g. Office-01, 13.75, 100.51, rtsp://...",
+          next_preview: "Preview & Validate",
+          preview_list: "Import Preview List",
+          items: "items",
+          target_group: "Target Group Assignment",
+          only_all_cameras: "Only All Cameras",
+          confirm: "Import All Cameras",
+          no_valid_data: "No valid camera data found to import"
         },
         form: {
           basic_info: "Basic Information",
@@ -247,6 +266,8 @@ const resources = {
         messages: {
           fetch_error: "Failed to fetch cameras",
           save_success: "Camera added successfully",
+          bulk_save_success: "Bulk import completed successfully",
+          bulk_save_error: "Failed to import cameras",
           update_success: "Camera updated successfully",
           delete_success: "Camera deleted successfully",
           save_error: "Failed to save camera",
@@ -356,7 +377,9 @@ const resources = {
         export: "ส่งออก",
         apply: "ตกลง",
         days: "วัน",
-        custom: "กำหนดเอง"
+        custom: "กำหนดเอง",
+        copied: "คัดลอกลงคลิปบอร์ดแล้ว!",
+        back: "ย้อนกลับ"
       },
       sidebar: {
         dashboard: "แดชบอร์ด",
@@ -492,7 +515,7 @@ const resources = {
           saving: "กำลังบันทึกข้อมูล...",
           deleting: "กำลังลบข้อมูล...",
           password_mismatch: "รหัสผ่านไม่ตรงกัน",
-          password_invalid: "รหัสผ่านไม่ตรงตามข้อกำหนดความปลอดภัย"
+          password_invalid: "รหัสผ่านไม่ตามข้อกำหนดความปลอดภัย"
         },
         actions: {
           create_success: "สร้างผู้ใช้งานสำเร็จ",
@@ -510,6 +533,7 @@ const resources = {
         title: "ระบบจัดการกล้อง",
         subtitle: "จัดการข้อมูลและตรวจสอบสถานะกล้องวงจรปิดทั้งหมด",
         add_new: "เพิ่มกล้องใหม่",
+        bulk_add: "เพิ่มกล้องจำนวนมาก",
         edit_camera: "แก้ไขข้อมูลกล้อง",
         search_placeholder: "ค้นหาชื่อกล้อง หรือ RTSP URL...",
         status: "สถานะ",
@@ -532,6 +556,22 @@ const resources = {
           online: "ออนไลน์",
           problem: "มีปัญหา",
           offline: "ออฟไลน์"
+        },
+        bulk: {
+          title: "นำเข้ากล้องแบบกลุ่ม",
+          subtitle: "ลงทะเบียนอุปกรณ์หลายรายการพร้อมกัน",
+          format_title: "คำแนะนำรูปแบบข้อมูล",
+          format_desc: "วางข้อมูลของคุณโดยใช้เครื่องหมายคอมม่า (,) หรือ Tab ในการแบ่งคอลัมน์",
+          copy_example: "คัดลอกข้อมูลตัวอย่าง",
+          paste_label: "วางรายการกล้องที่นี่",
+          placeholder: "เช่น หน้าออฟฟิศ, 8.39, 99.96, rtsp://...",
+          next_preview: "ตรวจสอบข้อมูล",
+          preview_list: "รายการที่เตรียมนำเข้า",
+          items: "รายการ",
+          target_group: "กำหนดกลุ่มเป้าหมาย",
+          only_all_cameras: "เฉพาะกลุ่ม All Cameras",
+          confirm: "นำเข้ากล้องทั้งหมด",
+          no_valid_data: "ไม่พบข้อมูลกล้องที่ถูกต้องสำหรับการนำเข้า"
         },
         form: {
           basic_info: "ข้อมูลพื้นฐาน",
@@ -566,6 +606,8 @@ const resources = {
         messages: {
           fetch_error: "ไม่สามารถดึงข้อมูลกล้องได้",
           save_success: "เพิ่มกล้องใหม่สำเร็จ",
+          bulk_save_success: "นำเข้ากล้องจำนวนมากสำเร็จเรียบร้อย",
+          bulk_save_error: "นำเข้ากล้องไม่สำเร็จ",
           update_success: "อัปเดตข้อมูลกล้องเรียบร้อย",
           delete_success: "ลบข้อมูลสำเร็จ",
           save_error: "บันทึกข้อมูลไม่สำเร็จ",

@@ -3,7 +3,7 @@ const router = express.Router();
 const cameraController = require('../controllers/cameraController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const validate = require('../middlewares/validateMiddleware');
-const { cameraSchema } = require('../validations/schemas');
+const { cameraSchema, bulkCameraSchema } = require('../validations/schemas');
 
 // Route สาธารณะ (ไม่ต้อง Login)
 router.get('/public', cameraController.getAllPublic);
@@ -13,7 +13,8 @@ router.use(verifyToken);
 
 router.get('/', cameraController.getAll);
 router.get('/:id', cameraController.getById);
-router.post('/validate', cameraController.validate); // 🚀 เพิ่มเส้นทางตรวจสอบข้อมูล
+router.post('/validate', cameraController.validate);
+router.post('/bulk', validate(bulkCameraSchema), cameraController.bulkCreate);
 router.post('/', validate(cameraSchema), cameraController.create);
 router.put('/:id', validate(cameraSchema), cameraController.update);
 router.delete('/:id', cameraController.delete);

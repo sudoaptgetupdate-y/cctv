@@ -37,11 +37,24 @@ const cameraSchema = z.object({
     rtspUrl: z.string().min(1, "กรุณากรอก RTSP URL"),
     latitude: z.union([z.number(), z.string().regex(/^-?\d+(\.\d+)?$/)]).optional().nullable(),
     longitude: z.union([z.number(), z.string().regex(/^-?\d+(\.\d+)?$/)]).optional().nullable(),
-    status: z.enum(['ACTIVE', 'INACTIVE', 'MAINTENANCE']).optional(),
+    status: z.enum(['ACTIVE', 'INACTIVE', 'MAINTENANCE', 'PENDING']).optional(),
     isPublic: z.boolean().optional(),
     groupIds: z.array(z.union([z.number(), z.string()])).optional().nullable(),
     streamSettings: z.any().optional()
   })
+});
+
+const bulkCameraSchema = z.object({
+  body: z.array(z.object({
+    name: z.string().min(1, "กรุณากรอกชื่อกล้อง"),
+    rtspUrl: z.string().min(1, "กรุณากรอก RTSP URL"),
+    latitude: z.number().optional().nullable(),
+    longitude: z.number().optional().nullable(),
+    subStream: z.string().optional().nullable(),
+    status: z.string().optional(),
+    isPublic: z.boolean().optional(),
+    groupIds: z.array(z.union([z.number(), z.string()])).optional()
+  }))
 });
 
 // ==========================================
@@ -62,5 +75,6 @@ module.exports = {
   createUserSchema,
   updateUserSchema,
   cameraSchema,
+  bulkCameraSchema,
   groupSchema
 };
