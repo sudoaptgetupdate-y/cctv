@@ -174,10 +174,26 @@ const BulkAddModal = ({ isOpen, onClose, onConfirm, isSubmitting, groups }) => {
                           <div className="flex-1 space-y-3">
                             <div>
                               <h4 className="text-sm font-black text-indigo-900 uppercase tracking-wider">{t('cameras.bulk.format_title')}</h4>
-                              <p className="text-[11px] text-indigo-700/70 font-bold mt-0.5">
-                                Name, Group, Lat, Long, Main_RTSP, Sub_RTSP
+                              <p className="text-[11px] text-indigo-700/70 font-bold mt-1">
+                                {t('cameras.bulk.format_desc')}
                               </p>
                             </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 py-1">
+                              {[
+                                t('cameras.bulk.guide_name'),
+                                t('cameras.bulk.guide_rtsp'),
+                                t('cameras.bulk.guide_group'),
+                                t('cameras.bulk.guide_pos'),
+                                t('cameras.bulk.guide_sub')
+                              ].map((guide, i) => (
+                                <div key={i} className="flex items-center gap-2 text-[10px] font-bold text-indigo-800/80">
+                                  <div className="w-1 h-1 bg-indigo-400 rounded-full" />
+                                  {guide}
+                                </div>
+                              ))}
+                            </div>
+
                             <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-indigo-100/50 font-mono text-[11px] text-indigo-900 leading-relaxed shadow-inner">
                               Engineer-Office, Main Zone, 8.3993, 99.9699, rtsp://..., rtsp://...<br/>
                               Main-Gate, , , , rtsp://... <span className="text-slate-400 italic">(Empty Pos = 13.75, 100.50)</span>
