@@ -1,19 +1,5 @@
 services:
-  # 🌐 Reverse Proxy (Nginx Proxy Manager)
-  proxy:
-    image: 'jc21/nginx-proxy-manager:latest'
-    restart: always
-    ports:
-      - '80:80'   # HTTP
-      - '443:443' # HTTPS
-      - '81:81'   # Admin UI
-    volumes:
-      - ./proxy_data:/data
-      - ./proxy_letsencrypt:/etc/letsencrypt
-    networks:
-      - cctv-network
-
-  # 🗄️ Database
+  # 🗄️ Database 
   db:
     image: mariadb:10.11
     restart: always
@@ -31,7 +17,7 @@ services:
   go2rtc:
     image: alexxit/go2rtc
     restart: always
-    network_mode: host # ต้องใช้ host mode สำหรับ WebRTC/UDP บน Linux
+    network_mode: host 
     volumes:
       - ./cctv-backend/go2rtc.yaml:/config/go2rtc.yaml
 
@@ -59,6 +45,9 @@ services:
       context: ./cctv-frontend
       dockerfile: Dockerfile
     restart: always
+    #เพิ่ม: เปิด Port 80 ของเครื่อง .89 ให้ NPM จาก .80 ยิงเข้ามาได้
+    ports:
+      - '80:80'
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
