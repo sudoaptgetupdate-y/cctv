@@ -62,9 +62,10 @@
 ---
 
 ## 🎯 เป้าหมายถัดไป (Next Tasks)
-1. [ ] **Interactive Telegram Bot:** พัฒนา Webhook ให้ Bot ตอบโต้ด้วย AI และรายงานสถิติอัตโนมัติ
-2. [ ] **Snapshot Service:** ระบบบันทึกภาพนิ่งลง Server เมื่อเกิดเหตุการณ์สำคัญ
-3. [ ] **Advanced Filtering:** ระบบค้นหา Log กรองตามประเภทอุปกรณ์หรือเบราว์เซอร์
+1. [ ] **Uniview Audio Fix:** แก้ไขปัญหาหน้าจอดำบนกล้อง Uniview เมื่อเปิดใช้งานเสียง (Audio Enabled) ใน WebRTCPlayer
+2. [ ] **Interactive Telegram Bot:** พัฒนา Webhook ให้ Bot ตอบโต้ด้วย AI และรายงานสถิติอัตโนมัติ
+3. [ ] **Snapshot Service:** ระบบบันทึกภาพนิ่งลง Server เมื่อเกิดเหตุการณ์สำคัญ
+4. [ ] **Advanced Filtering:** ระบบค้นหา Log กรองตามประเภทอุปกรณ์หรือเบราว์เซอร์
 
 ---
 

@@ -41,10 +41,12 @@ const streamService = {
         const res = (effectiveType === 'SUB' ? camera.subResolution : camera.resolution) || (effectiveType === 'SUB' ? '640x360' : '1280x720');
         const fps = (effectiveType === 'SUB' ? camera.subFps : camera.fps) || (effectiveType === 'SUB' ? 10 : 15);
 
-        const audioParam = camera.isAudioEnabled ? '#audio=opus' : '#audio=no';
-        const finalSrc = `ffmpeg:${sourceId}#video=h264#size=${res}#fps=${fps}#vprofile=main${audioParam}`;
+        // 🚀 ปรับปรุง: เพื่อความเสถียรสูงสุดของ Uniview และลดโอกาสเกิดจอดำ
+        // เราจะไม่ใช้ #audio=no ในระดับ FFmpeg แต่จะส่งช่องสัญญาณเสียงไปเสมอ (ถ้าต้นทางมี)
+        // แล้วให้ Frontend เป็นคนจัดการ Mute แทน วิธีนี้ช่วยให้ Handshake สมบูรณ์ 100%
+        const finalSrc = `ffmpeg:${sourceId}#video=h264#size=${res}#fps=${fps}#vprofile=main#audio=opus`;
         
-        console.log(`[StreamService] Transcode PUT: ${finalSrc}`);
+        console.log(`[StreamService] Transcode PUT: ${finalSrc} (Audio handled by Frontend)`);
         await axios.put(`${go2rtcUrl}/api/streams`, null, { params: { name: streamId, src: finalSrc } });
       } else {
         // 🚀 กลับมาใช้ Direct Pass เพื่อความเสถียรสูงสุด
