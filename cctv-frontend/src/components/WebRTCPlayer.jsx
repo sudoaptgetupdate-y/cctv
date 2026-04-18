@@ -43,12 +43,9 @@ const WebRTCPlayer = ({ streamId, isAudioEnabled = false, initialTranscode = fal
       
       const videoElement = document.createElement('video-stream');
       
-      // 🚀 ปรับปรุง: สำหรับ Uniview และกล้องบางรุ่น การตัด Audio track ออกจากการเจรจา (Handshake) 
-      // จะทำให้การสร้าง Stream ล้มเหลว (จอดำ) เราจึงต้องขอทั้งภาพและเสียงมาเสมอ
-      // แล้วใช้วิธี Mute ที่ตัว Player แทนหากระบบตั้งค่าปิดเสียงไว้
-      videoElement.media = 'video,audio';
-      
-      // ควบคุมการ Mute ผ่านสถานะ isAudioEnabled
+      // 🚀 ปรับปรุง: ใช้พารามิเตอร์ media ของ go2rtc เพื่อคุมการส่ง Track มาจาก Server
+      // วิธีนี้จะช่วยให้ Browser ไม่สับสนเรื่อง Audio Context
+      videoElement.media = isAudioEnabled ? 'video,audio' : 'video';
       videoElement.muted = !isAudioEnabled;
       
       videoElement.style.width = '100%';
@@ -60,8 +57,9 @@ const WebRTCPlayer = ({ streamId, isAudioEnabled = false, initialTranscode = fal
       setTimeout(() => {
         if (isCancelled) return;
         const cacheBuster = `&t=${Date.now()}`;
-        // 🚀 ยกเลิกการใช้ &media=video เพื่อให้การ Handshake กับ Uniview สมบูรณ์
-        videoElement.src = `/go2rtc-ws?src=${streamId}&mode=mse,webrtc${cacheBuster}`;
+        // 🚀 ส่งพารามิเตอร์ media ไปที่ go2rtc โดยตรง
+        const mediaParam = isAudioEnabled ? '&media=video,audio' : '&media=video';
+        videoElement.src = `/go2rtc-ws?src=${streamId}&mode=mse,webrtc${mediaParam}${cacheBuster}`;
       }, 50);
 
       const checkVideoEvents = () => {
