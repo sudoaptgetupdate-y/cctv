@@ -47,20 +47,21 @@ const streamService = {
         console.log(`[StreamService] Transcode PUT: ${finalSrc}`);
         await axios.put(`${go2rtcUrl}/api/streams`, null, { params: { name: streamId, src: finalSrc } });
       } else {
-        // 🚀 ปรับปรุง: แยก Logic ตามยี่ห้อกล้องเพื่อประหยัด CPU
-        // ตรวจสอบว่าเป็น Uniview หรือไม่ (ดูจากชื่อกล้องหรือ URL)
+        // 🚀 ปรับปรุง: แยก Logic ตามยี่ห้อกล้องเพื่อประสิทธิภาพสูงสุด
         const isUniview = camera.name.toLowerCase().includes('uniview') || 
                           (camera.rtspUrl && camera.rtspUrl.toLowerCase().includes('/unicast/'));
 
         let finalSrc = currentRtspUrl;
 
-        // ถ้าเป็น Uniview และเปิดเสียง ให้ใช้ Sync Fix (ffmpeg:copy) เพื่อกันจอดำ
+        // ถ้าเป็น Uniview และเปิดเสียง 
+        // ใช้ go2rtc internal transcode (#video=h264#audio=opus) เพื่อความเสถียร
+        // วิธีนี้จะช่วยแก้ปัญหาจอดำ/Loading screen โดยที่ยังประหยัด CPU กว่าการเรียก ffmpeg ตรงๆ
         if (isUniview && camera.isAudioEnabled) {
-          finalSrc = `ffmpeg:${currentRtspUrl}#video=copy#audio=opus`;
-          console.log(`[StreamService] Uniview detected, applying Sync Fix: ${finalSrc}`);
+          finalSrc = `${currentRtspUrl}#video=h264#audio=opus`;
+          console.log(`[StreamService] Uniview detected, using Internal Sync Fix: ${finalSrc}`);
         } else {
-          // กล้องทั่วไป (เช่น Tiandy) หรือ Uniview ที่ปิดเสียง ให้ใช้ Direct Pass 100% (ไม่กิน CPU)
-          console.log(`[StreamService] Standard Direct Pass (CPU Efficient): ${finalSrc}`);
+          // กล้องทั่วไป (Tiandy) หรือ Uniview ที่ปิดเสียง ให้ใช้ Direct Pass 100% (ประหยัด CPU ที่สุด)
+          console.log(`[StreamService] Standard Direct Pass (CPU 0%): ${finalSrc}`);
         }
         
         await axios.put(`${go2rtcUrl}/api/streams`, null, { params: { name: streamId, src: finalSrc } });
