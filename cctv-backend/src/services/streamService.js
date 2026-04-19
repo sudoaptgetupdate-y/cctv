@@ -47,16 +47,22 @@ const streamService = {
         console.log(`[StreamService] Transcode PUT: ${finalSrc}`);
         await axios.put(`${go2rtcUrl}/api/streams`, null, { params: { name: streamId, src: finalSrc } });
       } else {
-        // 🚀 ปรับปรุง: สำหรับ Uniview และกล้องทั่วไป ถ้าเปิดเสียง (แต่ไม่ได้เปิด Transcode) 
-        // เราจะใช้ ffmpeg copy วิดีโอ (ไม่กิน CPU) และแปลงเสียงเป็น opus (เพื่อความเสถียรบน WebRTC)
-        // วิธีนี้แก้ปัญหา "มีแต่เสียง ไม่มีภาพ" ใน Uniview ได้ดีที่สุด และช่วยให้การ Sync ภาพ/เสียงแม่นยำขึ้น
+        // 🚀 ปรับปรุง: แยก Logic ตามยี่ห้อกล้องเพื่อประหยัด CPU
+        // ตรวจสอบว่าเป็น Uniview หรือไม่ (ดูจากชื่อกล้องหรือ URL)
+        const isUniview = camera.name.toLowerCase().includes('uniview') || 
+                          (camera.rtspUrl && camera.rtspUrl.toLowerCase().includes('/unicast/'));
+
         let finalSrc = currentRtspUrl;
-        if (camera.isAudioEnabled) {
+
+        // ถ้าเป็น Uniview และเปิดเสียง ให้ใช้ Sync Fix (ffmpeg:copy) เพื่อกันจอดำ
+        if (isUniview && camera.isAudioEnabled) {
           finalSrc = `ffmpeg:${currentRtspUrl}#video=copy#audio=opus`;
-          console.log(`[StreamService] Direct Copy with Audio Sync Fix: ${finalSrc}`);
+          console.log(`[StreamService] Uniview detected, applying Sync Fix: ${finalSrc}`);
         } else {
-          console.log(`[StreamService] Direct Pass: ${finalSrc}`);
+          // กล้องทั่วไป (เช่น Tiandy) หรือ Uniview ที่ปิดเสียง ให้ใช้ Direct Pass 100% (ไม่กิน CPU)
+          console.log(`[StreamService] Standard Direct Pass (CPU Efficient): ${finalSrc}`);
         }
+        
         await axios.put(`${go2rtcUrl}/api/streams`, null, { params: { name: streamId, src: finalSrc } });
       }
     } catch (error) {
