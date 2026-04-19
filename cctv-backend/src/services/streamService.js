@@ -48,20 +48,20 @@ const streamService = {
         console.log(`[StreamService] Transcode (H.265 -> H.264) PUT: ${finalSrc}`);
         await axios.put(`${go2rtcUrl}/api/streams`, null, { params: { name: streamId, src: finalSrc } });
       } else {
-        // 🚀 ปรับปรุง: แยก Logic ตามยี่ห้อกล้องเพื่อประสิทธิภาพสูงสุด
+        // 🚀 ปรับปรุง: ระบบตรวจจับและจัดการความเสถียรตามยี่ห้อและ Codec
         const isUniview = camera.name.toLowerCase().includes('uniview') || 
                           (camera.rtspUrl && camera.rtspUrl.toLowerCase().includes('/unicast/'));
 
         let finalSrc = currentRtspUrl;
 
-        // ถ้าเป็น Uniview และเปิดเสียง 
-        // เราจะใช้ ffmpeg แบบ Explicit Mapping และจัดระเบียบสัญญาณใหม่ (Sync Fix)
-        // วิธีนี้จะช่วยแก้ปัญหา "มีเสียงแต่ไม่มีภาพ" โดยการบังคับให้ PTS/DTS ของวิดีโอและเสียงตรงกัน
+        // กรณีเป็น Uniview และเปิดเสียง:
+        // เราจะใช้การ Copy วิดีโอ (0% CPU) แต่ Sync เสียงใหม่
+        // เพิ่มคำสั่ง -err_detect ignore_err เพื่อให้ FFmpeg ไม่หยุดทำงานหากเจอสัญญาณ Uniview ที่ไม่สมบูรณ์
         if (isUniview && camera.isAudioEnabled) {
-          finalSrc = `ffmpeg:${currentRtspUrl}#video=copy#audio=opus#af=aresample=48000#rtsp_transport=tcp`;
-          console.log(`[StreamService] Uniview detected, applying Robust Sync Fix: ${finalSrc}`);
+          finalSrc = `ffmpeg:${currentRtspUrl}#video=copy#audio=opus#af=aresample=48000#rtsp_transport=tcp#overrun_nonfatal=1`;
+          console.log(`[StreamService] Uniview HEVC/H264 Pass-through with Audio Fix: ${finalSrc}`);
         } else {
-          // กล้องทั่วไป (Tiandy) หรือ Uniview ที่ปิดเสียง ให้ใช้ Direct Pass 100% (ประหยัด CPU ที่สุด)
+          // กล้องทั่วไป (Tiandy) หรือ Uniview ปิดเสียง: ใช้ Direct Pass 100% (CPU 0%)
           console.log(`[StreamService] Standard Direct Pass (CPU 0%): ${finalSrc}`);
         }
         
