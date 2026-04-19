@@ -54,11 +54,11 @@ const streamService = {
         let finalSrc = currentRtspUrl;
 
         // ถ้าเป็น Uniview และเปิดเสียง 
-        // ใช้ go2rtc internal transcode (#video=h264#audio=opus) เพื่อความเสถียร
-        // วิธีนี้จะช่วยแก้ปัญหาจอดำ/Loading screen โดยที่ยังประหยัด CPU กว่าการเรียก ffmpeg ตรงๆ
+        // เราจะใช้ ffmpeg แบบ Explicit Mapping และจัดระเบียบสัญญาณใหม่ (Sync Fix)
+        // วิธีนี้จะช่วยแก้ปัญหา "มีเสียงแต่ไม่มีภาพ" โดยการบังคับให้ PTS/DTS ของวิดีโอและเสียงตรงกัน
         if (isUniview && camera.isAudioEnabled) {
-          finalSrc = `${currentRtspUrl}#video=h264#audio=opus`;
-          console.log(`[StreamService] Uniview detected, using Internal Sync Fix: ${finalSrc}`);
+          finalSrc = `ffmpeg:${currentRtspUrl}#video=copy#audio=opus#af=aresample=48000#rtsp_transport=tcp`;
+          console.log(`[StreamService] Uniview detected, applying Robust Sync Fix: ${finalSrc}`);
         } else {
           // กล้องทั่วไป (Tiandy) หรือ Uniview ที่ปิดเสียง ให้ใช้ Direct Pass 100% (ประหยัด CPU ที่สุด)
           console.log(`[StreamService] Standard Direct Pass (CPU 0%): ${finalSrc}`);
