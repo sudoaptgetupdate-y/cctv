@@ -41,10 +41,11 @@ const streamService = {
         const res = (effectiveType === 'SUB' ? camera.subResolution : camera.resolution) || (effectiveType === 'SUB' ? '640x360' : '1280x720');
         const fps = (effectiveType === 'SUB' ? camera.subFps : camera.fps) || (effectiveType === 'SUB' ? 10 : 15);
 
-        const audioParam = camera.isAudioEnabled ? '#audio=opus' : '#audio=no';
-        const finalSrc = `ffmpeg:${sourceId}#video=h264#size=${res}#fps=${fps}#vprofile=main${audioParam}`;
+        // 🚀 ปรับปรุง: เพิ่ม vprofile และระดับคุณภาพเพื่อให้ H.265 แปลงเป็น H.264 ได้ลื่นไหลที่สุด
+        const audioParam = camera.isAudioEnabled ? '#audio=opus#af=aresample=48000' : '#audio=no';
+        const finalSrc = `ffmpeg:${sourceId}#video=h264#size=${res}#fps=${fps}#vprofile=main#preset=ultrafast${audioParam}`;
         
-        console.log(`[StreamService] Transcode PUT: ${finalSrc}`);
+        console.log(`[StreamService] Transcode (H.265 -> H.264) PUT: ${finalSrc}`);
         await axios.put(`${go2rtcUrl}/api/streams`, null, { params: { name: streamId, src: finalSrc } });
       } else {
         // 🚀 ปรับปรุง: แยก Logic ตามยี่ห้อกล้องเพื่อประสิทธิภาพสูงสุด
