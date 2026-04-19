@@ -45,7 +45,7 @@ streams:
   camera_22_main:
     - rtsp://kkjlakd.com
   camera_27_main:
-    - rtsp://admin:Lkfgxifde0905@192.168.123.124:554/cam/realmonitor?channel=1&subtype=0
+    - ffmpeg:rtsp://admin:Lkfgxifde0905@192.168.123.124:554/cam/realmonitor?channel=1&subtype=0#video=copy#audio=opus
   camera_27_sub:
     - rtsp://admin:Lkfgxifde0905@192.168.123.124:554/cam/realmonitor?channel=1&subtype=1
   camera_27_main_src:

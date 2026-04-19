@@ -47,10 +47,17 @@ const streamService = {
         console.log(`[StreamService] Transcode PUT: ${finalSrc}`);
         await axios.put(`${go2rtcUrl}/api/streams`, null, { params: { name: streamId, src: finalSrc } });
       } else {
-        // 🚀 กลับมาใช้ Direct Pass เพื่อความเสถียรสูงสุด
-        // ส่วนการปิดเสียงจะไปจัดการที่ Frontend ผ่าน Parameter &media=video แทน
-        console.log(`[StreamService] Direct Pass: ${currentRtspUrl}`);
-        await axios.put(`${go2rtcUrl}/api/streams`, null, { params: { name: streamId, src: currentRtspUrl } });
+        // 🚀 ปรับปรุง: สำหรับ Uniview และกล้องทั่วไป ถ้าเปิดเสียง (แต่ไม่ได้เปิด Transcode) 
+        // เราจะใช้ ffmpeg copy วิดีโอ (ไม่กิน CPU) และแปลงเสียงเป็น opus (เพื่อความเสถียรบน WebRTC)
+        // วิธีนี้แก้ปัญหา "มีแต่เสียง ไม่มีภาพ" ใน Uniview ได้ดีที่สุด และช่วยให้การ Sync ภาพ/เสียงแม่นยำขึ้น
+        let finalSrc = currentRtspUrl;
+        if (camera.isAudioEnabled) {
+          finalSrc = `ffmpeg:${currentRtspUrl}#video=copy#audio=opus`;
+          console.log(`[StreamService] Direct Copy with Audio Sync Fix: ${finalSrc}`);
+        } else {
+          console.log(`[StreamService] Direct Pass: ${finalSrc}`);
+        }
+        await axios.put(`${go2rtcUrl}/api/streams`, null, { params: { name: streamId, src: finalSrc } });
       }
     } catch (error) {
       console.error(`[StreamService] Error:`, error.message);
