@@ -70,12 +70,21 @@
 *   บังคับแปลงเสียงเป็น **OPUS** (`#audio=opus`) เมื่อเปิด Transcode เพื่อให้ปุ่มเสียงใช้งานได้จริงบน HTTPS (Production) เนื่องจากเบราว์เซอร์ส่วนใหญ่ไม่รองรับ G.711/AAC ดั้งเดิมผ่าน WebRTC
 *   หากสั่งปิดเสียง ระบบจะส่ง `#audio=no` ไปยัง FFmpeg เพื่อตัด Track เสียงออกตั้งแต่ขั้นตอนการ Encode
 
-### **WebRTC Track Filtering (When Transcode is OFF)**
-*   **ปัญหา:** การส่ง `#audio=no` ใน RTSP URL ตรงๆ มักถูกละเลยโดย Streaming Engine หรือทำให้การ Handshake ล้มเหลว (จอดำ)
-*   **แนวทางแก้ไข:** ใช้การควบคุมที่ระดับ **Protocol Handshake (Frontend)** โดยการตั้งค่าพร็อพเพอร์ตี้ `.media = 'video'` ให้กับ Custom Element `<video-stream>`
-*   **ผลลัพธ์:** เบราว์เซอร์จะไม่สร้าง Audio Transceiver ในขั้นตอน WebRTC Negotiation ทำให้ Server ไม่ส่งข้อมูลเสียงข้าม Network มาเลย ช่วยประหยัด Bandwidth และรับประกันความเงียบ 100% โดยไม่ต้องพึ่งพา FFmpeg
+### **Dynamic Audio Control (When Transcode is OFF)**
+*   **ปัญหา (Uniview/Strict Cameras):** การตัดช่องสัญญาณเสียงออกทันที (Hard Cut) มักทำให้กล้องยี่ห้อ Uniview จอดำ เนื่องจากการเจรจาโปรโตคอล (Handshake) ไม่สมบูรณ์
+*   **แนวทางแก้ไข:** 
+    1.  **Backend (Selective Logic):** ตรวจสอบยี่ห้อกล้อง หากเป็นกล้องทั่วไป (Tiandy) จะใช้ **Direct Pass (CPU 0%)** แต่หากเป็น Uniview และเปิดเสียง จะใช้ **Sync Fix (`ffmpeg:copy#audio=opus`)** เพื่อประมวลผลเฉพาะเสียงให้เสถียรขึ้นโดยไม่แตะต้องวิดีโอ
+    2.  **Frontend (Parameter Control):** ใช้พารามิเตอร์ `&media=video` (ปิดเสียง) และ `&media=video,audio` (เปิดเสียง) ส่งไปยัง go2rtc เพื่อคุมการส่ง Track มาจาก Server ให้แม่นยำที่สุด
+*   **ผลลัพธ์:** ปิดเสียงได้สนิท 100% ประหยัด Bandwidth และรองรับกล้องที่ Strict เรื่อง Protocol ได้โดยที่ภาพไม่ดำ
 
 ---
+
+## 8. กลยุทธ์การรองรับ H.265 (HEVC Compatibility)
+
+*   **ข้อจำกัดของ Web:** Web Browser ส่วนใหญ่ไม่รองรับการเล่น H.265 (HEVC) ผ่าน WebRTC โดยตรง (จะเห็นเป็น Loading ค้าง หรือจอดำแต่มีเสียง)
+*   **ทางเลือกการจัดการ:**
+    1.  **Camera-Side Change (Best Practice):** เปลี่ยนการบีบอัดที่ตัวกล้องเป็น **H.264** และปิด **U-Code/Smart Encoding** เพื่อให้ทำงานแบบ Native Direct Pass (CPU 0%) ได้ลื่นไหลที่สุด
+    2.  **System Transcoding:** หากจำเป็นต้องใช้ H.265 ให้เปิด **Performance Mode (Transcoding)** ในระบบ ระบบจะใช้ FFmpeg แปลงเป็น H.264 ด้วยโปรไฟล์ `ultrafast` เพื่อลด Latency และช่วยให้ Browser แสดงผลได้ปกติ
 
 ---
 
@@ -92,4 +101,3 @@
     *   **ช่วง < 30 วัน:** ดึงข้อมูลจาก Raw Logs เพื่อความแม่นยำสูงสุด
     *   **ช่วง > 30 วัน:** ดึงข้อมูลจาก Summary Table เพื่อความเร็วในการประมวลผล (Aggregated Data)
 *   **Dimensions Preservation:** แม้จะเป็นข้อมูลสรุปรายวัน แต่ยังคงเก็บ Camera ID ไว้ ทำให้ผู้ใช้ยังคงสามารถ Filter ดูรายงานแยกตามกล้องหรือกลุ่มกล้องย้อนหลังเป็นปีได้เหมือนเดิม
-
